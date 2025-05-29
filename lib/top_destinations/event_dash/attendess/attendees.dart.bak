@@ -1,0 +1,1692 @@
+import 'dart:io';
+import 'dart:ui';
+import 'package:excel/excel.dart' as exl;
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:haflaway/services/strg_service.dart';
+import 'package:haflaway/top_destinations/event_dash/attendess/crtattendees.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:haflaway/top_destinations/event_dash/attendess/view_card.dart';
+import 'package:icons_plus/icons_plus.dart';
+import 'package:haflaway/models/attendee.dart';
+import 'package:haflaway/models/event.dart';
+import 'package:haflaway/models/card.dart';
+import 'package:haflaway/utils/colors.dart';
+import 'package:haflaway/utils/dimensions.dart';
+import 'package:haflaway/utils/errorstrs.dart';
+import 'package:haflaway/utils/globalfns.dart';
+import 'package:haflaway/utils/globalwids.dart';
+import 'package:haflaway/utils/styles.dart';
+import 'package:string_similarity/string_similarity.dart';
+// import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'imp_preview.dart';
+
+// Extension to add firstWhereOrNull to List
+extension ListExtension<T> on List<T> {
+  T? firstWhereOrNull(bool Function(T) test) {
+    for (final element in this) {
+      if (test(element)) return element;
+    }
+    return null;
+  }
+}
+
+class Attendees extends StatefulWidget {
+  final dynamic edata;
+  const Attendees({super.key, required this.edata});
+
+  @override
+  State<Attendees> createState() => _AttendeesState();
+}
+
+class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
+  File? file;
+  List<Kard> lcrds = [];
+  String? _selectedKardFilter;
+  List<Attendee> atList = [];
+  List<Attendee> filteredList = [];
+  List<Attendee> selectList = [];
+  TextEditingController mpname = TextEditingController();
+  TextEditingController mpphone = TextEditingController();
+  TextEditingController mpcard = TextEditingController();
+  FirebaseStorage storage = FirebaseStorage.instance;
+  TextEditingController scont = TextEditingController();
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  // Animation controllers
+  late AnimationController _colorController;
+
+  // Attendance status filters
+  String _currentFilter = "All";
+  final List<String> _filters = ["All", "Confirmed", "Pending", "Declined"];
+
+  // Pagination variables
+  final int pageSize = 20;
+  DocumentSnapshot? lastDocument;
+  bool isLoading = false;
+  bool hasMore = true;
+  ScrollController scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    getCards();
+    // Add scroll listener for pagination
+    scrollController.addListener(_scrollListener);
+
+    // Initialize animation controllers
+    _colorController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _colorController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    scrollController.removeListener(_scrollListener);
+    scrollController.dispose();
+    _colorController.dispose();
+    super.dispose();
+  }
+
+  // Scroll listener to detect when user reaches bottom
+  void _scrollListener() {
+    // Debug the scroll position
+    if (scrollController.position.pixels >=
+        scrollController.position.maxScrollExtent - 200) {
+      if (!isLoading && hasMore && scont.text.isEmpty) {
+        _loadMoreAttendees();
+      }
+    }
+  }
+
+  // Load first batch of attendees
+  Future<void> _loadAttendees() async {
+    if (isLoading) return;
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      var query = firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .orderBy("createdAt", descending: true)
+          .limit(pageSize);
+
+      var snapshot = await query.get();
+
+      if (snapshot.docs.isEmpty) {
+        setState(() {
+          hasMore = false;
+          isLoading = false;
+        });
+        return;
+      }
+      lastDocument = snapshot.docs.last;
+      setState(() {
+        atList =
+            snapshot.docs.map<Attendee>((doc) {
+              return Attendee.fromMap(doc.id, doc.data());
+            }).toList();
+
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  // Load more attendees when scrolling to bottom
+  Future<void> _loadMoreAttendees() async {
+    if (isLoading || !hasMore || lastDocument == null) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      var query = firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .orderBy("createdAt", descending: true)
+          .startAfterDocument(lastDocument!)
+          .limit(pageSize);
+
+      var snapshot = await query.get();
+      if (snapshot.docs.isEmpty) {
+        setState(() {
+          hasMore = false;
+          isLoading = false;
+        });
+        return;
+      }
+
+      lastDocument = snapshot.docs.last;
+
+      final newAttendees =
+          snapshot.docs.map<Attendee>((doc) {
+            return Attendee.fromMap(doc.id, doc.data());
+          }).toList();
+
+      setState(() {
+        atList.addAll(newAttendees);
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  // Search attendees from Firebase
+  Future<void> _searchAttendees(String searchText) async {
+    if (searchText.isEmpty) {
+      // Reset to initial pagination state
+      atList = [];
+      lastDocument = null;
+      hasMore = true;
+      await _loadAttendees();
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      // Get all attendees for search (unfortunately we need to retrieve all to perform string similarity)
+      var snapshot =
+          await firestore
+              .collection(ecol)
+              .doc(widget.edata.id)
+              .collection(atcol)
+              .orderBy("createdAt", descending: true)
+              .get();
+
+      var allAttendees =
+          snapshot.docs.map<Attendee>((doc) {
+            return Attendee.fromMap(doc.id, doc.data());
+          }).toList();
+
+      // Sort by similarity
+      allAttendees.sort((a, b) {
+        var bm1 = StringSimilarity.compareTwoStrings(searchText, a.fullName);
+        var bm2 = StringSimilarity.compareTwoStrings(searchText, b.fullName);
+        return bm2.compareTo(bm1);
+      });
+
+      setState(() {
+        atList = allAttendees;
+        hasMore = false; // No more pagination during search
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  // Filter attendees by attendance status
+  List<Attendee> _filterAttendees(List<Attendee> attendees) {
+    // First filter by status
+    List<Attendee> statusFiltered = attendees;
+    if (_currentFilter != "All") {
+      statusFiltered = attendees.where((attendee) {
+        String status = attendee.attendanceStatus ?? "Pending";
+        return status == _currentFilter;
+      }).toList();
+    }
+    
+    // Then filter by Kard if selected
+    if (_selectedKardFilter != null) {
+      return statusFiltered.where((attendee) {
+        return attendee.cardId == _selectedKardFilter;
+      }).toList();
+    }
+    
+    return statusFiltered;
+  }
+
+  // Call attendee
+  Future<void> _callAttendee(String phoneNumber) async {
+    final Uri phoneUri = Uri(scheme: "tel", path: phoneNumber);
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri);
+    } else {
+      showToast(isGood: false, msg: "Could not launch phone dialer");
+    }
+  }
+
+  // Update attendance status
+  Future<void> _updateAttendanceStatus(Attendee attendee, String status) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+
+      // Perform the update
+      await firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .doc(attendee.id)
+          .update({"attendanceStatus": status});
+
+      // Update local state
+      int index = atList.indexWhere((element) => element.id == attendee.id);
+      if (index != -1) {
+        atList[index].attendanceStatus = status;
+      }
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      // Show success message
+      showToast(isGood: true, msg: "Attendance status updated to $status");
+
+      // Trigger UI refresh
+      setState(() {});
+    } catch (e) {
+      // Close loading dialog
+      Navigator.pop(context);
+
+      showToast(isGood: false, msg: "Error updating attendance status: $e");
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // if (atList.isEmpty) {
+    _loadAttendees();
+    // }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    primaryColor.withOpacity(0.7),
+                    primaryColor.withOpacity(0.4),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withOpacity(0.2),
+                    width: 0.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        titleSpacing: 16,
+        centerTitle: true,
+        title: Text(
+          "All Invitations",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            letterSpacing: 0.3,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: buildPop(
+              list: atActnlist,
+              icon: Clarity.ellipsis_vertical_line,
+              onTap: (value) {
+                // Add haptic feedback
+                HapticFeedback.lightImpact();
+                switch (value) {
+                  case atActnCrt:
+                    showCards();
+                    break;
+                  case atActnSelAll:
+                    selectAll();
+                    break;
+                  case atActnDel:
+                    delSelect();
+                    break;
+                  case atActnDwn:
+                    downCards();
+                    break;
+                  case atActnImprt:
+                    importNow();
+                    break;
+                  default:
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.grey.shade50,
+              Colors.grey.shade100,
+            ],
+          ),
+        ),
+        child: atList.isEmpty && isLoading
+            ? buildLoader()
+            : atList.isEmpty && !isLoading
+            ? BuildNoDt(
+                string: "No Invitations Found",
+                isRefreshed: () async {
+                  await _loadAttendees();
+                },
+              )
+            : buildAtList(_filterAttendees(atList)),
+      ),
+    );
+  }
+
+  Widget buildAtList(List<Attendee> atdata) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        HapticFeedback.mediumImpact();
+        await _loadAttendees();
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Search and stats container with frosted glass effect
+          ClipRRect(
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.7),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      spreadRadius: 0,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Stats row
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Total invitations counter
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.03),
+                                  blurRadius: 5,
+                                  spreadRadius: 0,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.people_alt_rounded, size: 16, color: primaryColor),
+                                SizedBox(width: 6),
+                                Text(
+                                  "${atdata.length}",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: primaryColor,
+                                  ),
+                                ),
+                                Text(
+                                  " Invitations",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          _buildAttendanceStats(),
+                        ],
+                      ),
+                    ),
+                    
+                    // Selected count if any
+                    if (selectList.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: primaryColor.withOpacity(0.3), width: 1),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.check_circle_outline, size: 18, color: primaryColor),
+                              SizedBox(width: 8),
+                              Text(
+                                "${selectList.length} selected",
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      
+                    // Search field with rounded design
+                    Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            spreadRadius: 0,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: scont,
+                        onChanged: (_) => _searchAttendees(scont.text),
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                          hintText: "Search invitations",
+                          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+                          prefixIcon: Icon(Icons.search, color: primaryColor, size: 22),
+                          suffixIcon: scont.text.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(Icons.clear, color: Colors.grey.shade400),
+                                onPressed: () {
+                                  setState(() {
+                                    scont.clear();
+                                    _searchAttendees("");
+                                  });
+                                },
+                              )
+                            : null,
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          _buildStatusFilterChips(),
+          const SizedBox(height: 12),
+          _buildKardFilterChips(),
+          const SizedBox(height: 16),
+          Expanded(
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (ScrollNotification scrollInfo) {
+                if (scrollInfo is ScrollEndNotification) {
+                  if (scrollInfo.metrics.pixels >=
+                          scrollInfo.metrics.maxScrollExtent - 200 &&
+                      !isLoading &&
+                      hasMore &&
+                      scont.text.isEmpty) {
+                    debugPrint("NotificationListener triggering load more");
+                    _loadMoreAttendees();
+                  }
+                }
+                return false;
+              },
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: atdata.length + 1, // +1 for the loading indicator
+                itemBuilder: (context, index) {
+                  // Show loading indicator at the end
+                  if (index == atdata.length) {
+                    if (isLoading) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    } else if (!hasMore && atdata.isNotEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Center(
+                          child: Text(
+                            "No more attendees to load",
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      );
+                    } else {
+                      return const SizedBox(height: 20);
+                    }
+                  }
+
+                  // Show attendee item
+                  return _buildAttendeeCard(atdata[index]);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build attendance stats widget
+  Widget _buildAttendanceStats() {
+    // Count attendees by status
+    String confirmed = "Confirmed";
+    String pending = "Pending";
+    String declined = "Declined";
+
+    return Row(
+      children: [
+        _buildStatIndicator(true, confirmed, Colors.green),
+        const SizedBox(width: 8),
+        _buildStatIndicator(
+          false,
+          pending,
+          const Color.fromARGB(255, 196, 153, 21),
+        ),
+        const SizedBox(width: 8),
+        _buildStatIndicator(true, declined, Colors.red),
+      ],
+    );
+  }
+
+  // Build stat indicator
+  Widget _buildStatIndicator(bool postv, String fltr, Color color) {
+    var pathy =
+        postv
+            ? firestore
+                .collection(ecol)
+                .doc(widget.edata.id)
+                .collection(atcol)
+                .where("attendanceStatus", isEqualTo: fltr)
+            : firestore
+                .collection(ecol)
+                .doc(widget.edata.id)
+                .collection(atcol)
+                .where(
+                  Filter.or(
+                    Filter('attendanceStatus', isNull: true),
+                    Filter('attendanceStatus', isEqualTo: 'Pending'),
+                  ),
+                );
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: psm, vertical: 4),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(88),
+      ),
+      child: FutureBuilder(
+        future: pathy.count().get(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Text("🥵");
+          } else if (snapshot.hasData) {
+            return Text(
+              "${snapshot.data?.count}",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            );
+          } else {
+            return CupertinoActivityIndicator(color: Colors.white);
+          }
+        },
+      ),
+    );
+  }
+
+  // Build status filter chips
+  Widget _buildStatusFilterChips() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title
+        Padding(
+          padding: const EdgeInsets.only(left: 16, bottom: 8),
+          child: Text(
+            "Status",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+              letterSpacing: -0.3,
+            ),
+          ),
+        ),
+        // Chips container
+        Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: _filters.map((filter) {
+              bool isSelected = _currentFilter == filter;
+              // Determine color scheme based on filter type
+              Color chipColor;
+              Color textColor;
+              Color iconColor;
+              
+              if (filter == "Confirmed") {
+                chipColor = isSelected ? Colors.green.shade50 : Colors.white;
+                textColor = isSelected ? Colors.green.shade700 : Colors.black54;
+                iconColor = isSelected ? Colors.green : Colors.green.shade300;
+              } else if (filter == "Declined") {
+                chipColor = isSelected ? Colors.red.shade50 : Colors.white;
+                textColor = isSelected ? Colors.red.shade700 : Colors.black54;
+                iconColor = isSelected ? Colors.red : Colors.red.shade300;
+              } else if (filter == "Pending") {
+                chipColor = isSelected ? Colors.amber.shade50 : Colors.white;
+                textColor = isSelected ? Colors.amber.shade700 : Colors.black54;
+                iconColor = isSelected ? Colors.amber : Colors.amber.shade300;
+              } else { // All
+                chipColor = isSelected ? primaryColor.withOpacity(0.1) : Colors.white;
+                textColor = isSelected ? primaryColor : Colors.black54;
+                iconColor = isSelected ? primaryColor : Colors.grey.shade400;
+              }
+              
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Material(
+                  elevation: isSelected ? 0 : 1,
+                  shadowColor: Colors.black12,
+                  borderRadius: BorderRadius.circular(30),
+                  child: InkWell(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _currentFilter = filter;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(30),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: chipColor,
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: isSelected ? 
+                            (filter == "Confirmed" ? Colors.green.shade200 : 
+                             filter == "Declined" ? Colors.red.shade200 : 
+                             filter == "Pending" ? Colors.amber.shade200 : 
+                             primaryColor.withOpacity(0.3)) : 
+                            Colors.grey.shade100,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            filter == "All" ? Icons.people :
+                            filter == "Confirmed" ? Icons.check_circle :
+                            filter == "Pending" ? Icons.schedule :
+                            Icons.cancel,
+                            size: 18,
+                            color: iconColor,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            filter,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                              color: textColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildKardFilterChips() {
+    if (lcrds.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section title
+        Padding(
+          padding: const EdgeInsets.only(left: 16, bottom: 8),
+          child: Text(
+            "Card Type",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+              letterSpacing: -0.3,
+            ),
+          ),
+        ),
+        // Chips container
+        Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              // All cards filter option
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Material(
+                  elevation: _selectedKardFilter == null ? 0 : 1,
+                  shadowColor: Colors.black12,
+                  borderRadius: BorderRadius.circular(30),
+                  child: InkWell(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _selectedKardFilter = null;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(30),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _selectedKardFilter == null ? primaryColor.withOpacity(0.1) : Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: _selectedKardFilter == null ? primaryColor.withOpacity(0.3) : Colors.grey.shade100,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.credit_card,
+                            size: 18,
+                            color: _selectedKardFilter == null ? primaryColor : Colors.grey.shade400,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            "All Cards",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: _selectedKardFilter == null ? FontWeight.w600 : FontWeight.w500,
+                              color: _selectedKardFilter == null ? primaryColor : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Individual card filters
+              ...lcrds.map((kard) {
+                bool isSelected = _selectedKardFilter == kard.id;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Material(
+                    elevation: isSelected ? 0 : 1,
+                    shadowColor: Colors.black12,
+                    borderRadius: BorderRadius.circular(30),
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _selectedKardFilter = isSelected ? null : kard.id;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(30),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? primaryColor.withOpacity(0.1) : Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: isSelected ? primaryColor.withOpacity(0.3) : Colors.grey.shade100,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.credit_card,
+                              size: 18,
+                              color: isSelected ? primaryColor : Colors.grey.shade400,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              kard.type,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                color: isSelected ? primaryColor : Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Build attendee card
+  Widget _buildAttendeeCard(Attendee attendee) {
+    var fullname = attendee.fullName;
+    var lcardname = attendee.cardName;
+    String attendanceStatus = attendee.attendanceStatus ?? "Pending";
+
+    // Set colors based on status
+    Color statusColor;
+    Color statusBgColor;
+    IconData statusIcon;
+    
+    if (attendanceStatus == "Confirmed") {
+      statusColor = Colors.green.shade700;
+      statusBgColor = Colors.green.shade50;
+      statusIcon = Icons.check_circle;
+    } else if (attendanceStatus == "Declined") {
+      statusColor = Colors.red.shade700;
+      statusBgColor = Colors.red.shade50;
+      statusIcon = Icons.cancel;
+    } else { // Pending
+      statusColor = Colors.amber.shade700;
+      statusBgColor = Colors.amber.shade50;
+      statusIcon = Icons.schedule;
+    }
+
+    var hasKey = selectList.any((test) => test.id == attendee.id);
+
+    // Calculate message count if messages property exists
+    int messageCount = (attendee.messages).length;
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        var found = selectList.firstWhereOrNull((test) => test.id == attendee.id);
+        if (found != null) {
+          setState(() {
+            selectList.remove(found);
+          });
+        } else {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => ViewCard(
+                cardUrl: attendee.cardUrl,
+              ),
+            ),
+          );
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 6,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              offset: const Offset(0, 2),
+              blurRadius: 8,
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Avatar with selection indicator
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: hasKey
+                              ? LinearGradient(
+                                  colors: [
+                                    primaryColor,
+                                    primaryColor.withOpacity(0.8),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : null,
+                          color: hasKey ? null : Colors.grey.shade100,
+                          boxShadow: hasKey
+                              ? [
+                                  BoxShadow(
+                                    color: primaryColor.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    spreadRadius: 0,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Center(
+                          child: Icon(
+                            hasKey ? Icons.check : Icons.person,
+                            color: hasKey ? Colors.white : Colors.grey.shade400,
+                            size: 26,
+                          ),
+                        ),
+                      ),
+                      // Message counter badge
+                      if (messageCount > 0)
+                        Positioned(
+                          right: -5,
+                          top: -5,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              "$messageCount",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  
+                  const SizedBox(width: 16),
+                  
+                  // Attendee details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Name
+                        Text(
+                          fullname,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: hasKey ? primaryColor : Colors.black87,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        
+                        // Phone number with tap-to-call
+                        GestureDetector(
+                          onTap: () => _callAttendee(attendee.phone),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.phone,
+                                size: 14,
+                                color: Colors.blue.shade700,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                attendee.phone,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.blue.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        SizedBox(height: 6),
+                        
+                        // Card name if available
+                        if (lcardname.isNotEmpty)
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.credit_card,
+                                size: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                lcardname,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                        SizedBox(height: 10),
+                        
+                        // Status pill
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: statusBgColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                statusIcon,
+                                size: 14,
+                                color: statusColor,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                attendanceStatus,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Actions
+                Column(
+                  children: [
+                    // Call button
+                    Container(
+                      width: 40,
+                      height: 40,
+                      margin: EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: Icon(Icons.phone),
+                        color: Colors.blue.shade700,
+                        iconSize: 20,
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          _callAttendee(attendee.phone);
+                        },
+                      ),
+                    ),
+                    
+                    // Selection checkbox
+                    if (selectList.isNotEmpty)
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: hasKey ? primaryColor.withOpacity(0.1) : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: hasKey ? primaryColor.withOpacity(0.3) : Colors.grey.shade300,
+                            width: 1,
+                          ),
+                        ),
+                        child: Checkbox(
+                          value: hasKey,
+                          onChanged: (value) {
+                            HapticFeedback.selectionClick();
+                            if (value == true) {
+                              setState(() {
+                                selectList.add(attendee);
+                              });
+                            } else {
+                              var found = selectList.firstWhereOrNull((test) {
+                                return test.id == attendee.id;
+                              });
+                              if (found != null) {
+                                setState(() {
+                                  selectList.remove(found);
+                                });
+                              }
+                            }
+                          },
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          activeColor: primaryColor,
+                          checkColor: Colors.white,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+            const Divider(height: 1),
+            _buildAttendanceControls(attendee),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttendanceControls(Attendee attendee) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(16),
+        bottomRight: Radius.circular(16),
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50.withOpacity(0.9),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(16),
+              bottomRight: Radius.circular(16),
+            ),
+            border: Border(
+              top: BorderSide(
+                color: Colors.grey.shade200,
+                width: 1,
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Attendance",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.black87,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              Row(
+                children: [
+                  _buildStatusButton(
+                    attendee,
+                    "Confirmed",
+                    Icons.check_circle,
+                    Colors.green,
+                    attendee.attendanceStatus == "Confirmed",
+                  ),
+                  const SizedBox(width: 8),
+                  _buildStatusButton(
+                    attendee,
+                    "Pending",
+                    Icons.schedule,
+                    Colors.amber,
+                    attendee.attendanceStatus == "Pending" ||
+                        attendee.attendanceStatus == null,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildStatusButton(
+                    attendee,
+                    "Declined",
+                    Icons.cancel,
+                    Colors.red,
+                    attendee.attendanceStatus == "Declined",
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          // Vibrate for haptic feedback
+          HapticFeedback.mediumImpact();
+          _updateAttendanceStatus(attendee, status);
+        },
+        borderRadius: BorderRadius.circular(30),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive ? color.withOpacity(0.1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+            border: isActive
+                ? Border.all(color: color.withOpacity(0.5), width: 1)
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: color,
+              ),
+              if (isActive) const SizedBox(width: 6),
+              if (isActive)
+                Text(
+                  status,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  selectAll() {
+    if (atList.isNotEmpty) {
+      if (selectList.length != atList.length) {
+        selectList.addAll(atList);
+      } else {
+        selectList = [];
+      }
+      setState(() {});
+    }
+  }
+
+  showCards() {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: SingleChildScrollView(
+            child: CupertinoListSection.insetGrouped(
+              header: const Text("Select Primary Card"),
+              margin: EdgeInsets.zero,
+              children: List.generate(lcrds.length, (index) {
+                return GestureDetector(
+                  onTap: () async {
+                    poper();
+                    await navNormal(
+                      context: context,
+                      widget: CreateAttendees(card: lcrds[index]),
+                    );
+                    await _loadAttendees();
+                  },
+                  child: ListTile(
+                    title: Text(
+                      lcrds[index].type,
+                      style: const TextStyle(
+                        fontSize: fsm,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    trailing: const Icon(size: icnmd, Icons.arrow_forward_ios),
+                  ),
+                );
+              }),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  getCards() async {
+    try {
+      var res =
+          await firestore
+              .collection(ecol)
+              .doc(widget.edata.id)
+              .collection(cardcol)
+              .get();
+      lcrds =
+          res.docs.map<Kard>((doc) {
+            return Kard.fromMap(doc.id, doc.data());
+          }).toList();
+    } catch (e) {
+      debugPrint("shida: $e");
+    }
+  }
+
+  downCards() async {
+    if (selectList.isEmpty) {
+      showToast(isGood: false, msg: "No attendee(s) selected");
+      return;
+    }
+    List<Attendee> lList = selectList;
+    await StorageService.fetchFile(
+      atList: lList,
+      fdbck: (p0) {
+        showToast(isGood: true, msg: p0);
+      },
+    );
+  }
+
+  delSelect() async {
+    if (selectList.isEmpty) {
+      showToast(isGood: false, msg: "Select attendee(s) first");
+      return;
+    }
+    return await showCupertinoModalPopup(
+      context: context,
+      builder: (context) {
+        return CupertinoActionSheet(
+          title: const Text("Destructive Action"),
+          message: Text(
+            "You are about to delete ${selectList.length} attendee(s), keep in mind this action is ireversible",
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: fsm),
+          ),
+          actions: [
+            CupertinoActionSheetAction(
+              isDefaultAction: true,
+              child: const Text("Delete", style: TextStyle(color: Colors.red)),
+              onPressed: () async {
+                await del();
+                await _loadAttendees();
+              },
+            ),
+            CupertinoActionSheetAction(
+              child: const Text("Cancel"),
+              onPressed: () {
+                poper();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  del() async {
+    try {
+      poper();
+      showToast(isGood: true, msg: "Deleting....");
+      for (var sel in selectList) {
+        var cRef = storage.refFromURL(sel.cardUrl);
+        await cRef.delete();
+        await firestore
+            .collection(ecol)
+            .doc(widget.edata.id)
+            .collection(atcol)
+            .doc(sel.id)
+            .delete();
+      }
+      selectList = [];
+      showToast(isGood: true, msg: "Success");
+    } catch (e) {
+      showToast(isGood: false, msg: "$e");
+    }
+  }
+
+  importNow() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['xls', 'xlsx', 'xlsm', 'xlsb'],
+    );
+    if (result != null) {
+      file = File(result.files.single.path!);
+      var bytes = file?.readAsBytesSync();
+      var excel = exl.Excel.decodeBytes(bytes!);
+      var tblKey = excel.tables.keys.firstOrNull;
+      var table = excel.tables[tblKey];
+
+      var frow = table!.rows.first;
+      Map<dynamic, dynamic> sels = {};
+      for (var cell in frow) {
+        sels[cell!.columnIndex] = cell.value;
+      }
+      await showMatcher(sels);
+    } else {
+      showToast(isGood: false, msg: genErrMsg);
+    }
+  }
+
+  showMatcher(Map<dynamic, dynamic> sels) {
+    if (lcrds.isEmpty) {
+      showToast(isGood: false, msg: "This action requires existing cards");
+      return;
+    }
+    // creating a synthetic map for cards
+    var synCrdmap = {};
+    for (var lcrd in lcrds) {
+      synCrdmap[lcrd.id] = lcrd.type;
+    }
+    // ends here
+    return showModalBottomSheet(
+      showDragHandle: true,
+      context: context,
+      builder: (context) {
+        return SingleChildScrollView(
+          child: CupertinoListSection.insetGrouped(
+            margin: const EdgeInsets.only(
+              left: psm * 0.5,
+              right: psm * 0.5,
+              bottom: psm * 1.5,
+            ),
+            header: const Text("Map Excel Data"),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(psm),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Name",
+                      style: TextStyle(
+                        fontSize: fsm + 2,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    buildDrop(sels, mpname),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(psm),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Phone",
+                      style: TextStyle(
+                        fontSize: fsm + 2,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    buildDrop(sels, mpphone),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(psm),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Card",
+                      style: TextStyle(
+                        fontSize: fsm + 2,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    buildDrop(synCrdmap, mpcard),
+                  ],
+                ),
+              ),
+              SizedBox(
+                width: double.maxFinite,
+                child: MaterialButton(
+                  color: primaryColor,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(bsm),
+                      bottomRight: Radius.circular(bsm),
+                    ),
+                  ),
+                  height: kToolbarHeight * 0.75,
+                  child: const Text(
+                    "Continue",
+                    style: TextStyle(
+                      fontSize: fsm,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onPressed: () async {
+                    if (isGreen()) {
+                      poper();
+                      Map<String, dynamic> mapp = {
+                        'fullName': int.parse(mpname.text),
+                        'phone': int.parse(mpphone.text),
+                      };
+                      var carddata = lcrds.firstWhere((lcrd) {
+                        return lcrd.id == mpcard.text;
+                      });
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) {
+                            return ImpPreview(
+                              mapp: mapp,
+                              xcelFile: file!,
+                              carddata: carddata,
+                              eId: widget.edata.id,
+                            );
+                          },
+                        ),
+                      );
+                      await _loadAttendees();
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  buildDrop(Map sels, TextEditingController mapcont) {
+    return DropdownMenu(
+      hintText: "Select values",
+      width: MediaQuery.of(context).size.width * 0.4,
+      inputDecorationTheme: const InputDecorationTheme(),
+      onSelected: (value) {
+        mapcont.text = "$value";
+      },
+      dropdownMenuEntries:
+          sels.entries.map((entry) {
+            return DropdownMenuEntry(value: entry.key, label: "${entry.value}");
+          }).toList(),
+    );
+  }
+
+  isGreen() {
+    if (mpname.text.isEmpty) {
+      showToast(isGood: false, msg: "Select a column with values for name");
+      return false;
+    } else if (mpphone.text.isEmpty) {
+      showToast(isGood: false, msg: "Select a column with values for phone");
+      return false;
+    } else if (mpcard.text.isEmpty) {
+      showToast(isGood: false, msg: "Select a card to assign the attendees");
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  poper() {
+    Navigator.of(context).pop();
+  }
+}

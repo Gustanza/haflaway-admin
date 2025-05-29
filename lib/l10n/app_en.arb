@@ -1,0 +1,14 @@
+{
+    "language": "English",
+    "@language":{
+        "description": "The current Language"
+    },
+    "helloworld": "Hello World",
+    "@helloworld":{
+        "description": "A programmers greeting"
+    },
+    "jamboprime": "Jambo Prime",
+    "@jamboprime":{
+        "description": "App title"
+    }
+}

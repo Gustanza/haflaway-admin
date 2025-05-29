@@ -1,0 +1,66 @@
+import 'package:haflaway/auth/utils.dart';
+
+const ucol = "users";
+
+class Userr {
+  String id;
+  String profileImage;
+  String firstName;
+  String lastName;
+  String phoneNumber;
+  String email;
+  double balance;
+  DateTime registrationDate;
+  DateTime lastLoginDate;
+  String couponCode;
+
+  Userr({
+    required this.id,
+    required this.profileImage,
+    required this.firstName,
+    required this.lastName,
+    required this.couponCode,
+    required this.phoneNumber,
+    required this.email,
+    required this.balance,
+    required this.registrationDate,
+    required this.lastLoginDate,
+  });
+
+  Map<String, dynamic> kwendaJson() => {
+    ufname: firstName,
+    ulname: lastName,
+    uphoneno: phoneNumber,
+    uregdate: registrationDate.toIso8601String(),
+    ulastlogin: lastLoginDate.toIso8601String(),
+    ucouponcode: couponCode,
+    uemail: email,
+    ubalance: balance,
+    uprofileImage: profileImage,
+  };
+
+  factory Userr.fromMap(String id, Map<String, dynamic> map) {
+    return Userr(
+      id: id,
+      profileImage: map['profileImage'] ?? defImg,
+      firstName: map['firstName'] ?? "",
+      lastName: map['lastName'] ?? "",
+      couponCode: map['couponCode'] ?? "",
+      phoneNumber: map['phoneNumber'] ?? "",
+      email: map['email'] ?? "",
+      balance: (map['balance'] as num).toDouble(),
+      registrationDate: DateTime.parse(map['registrationDate']),
+      lastLoginDate: DateTime.parse(map['lastLoginDate']),
+    );
+  }
+}
+
+String ufname = "firstName";
+String ulname = "lastName";
+String uphoneno = "phoneNumber";
+String uregdate = "registrationDate";
+String ulastlogin = "lastLoginDate";
+String ucouponcode = "couponCode";
+String uemail = "email";
+String ubalance = "balance";
+String uprofileImage = "profileImage";
