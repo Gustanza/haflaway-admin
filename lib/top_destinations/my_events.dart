@@ -1,104 +1,207 @@
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/event_tile.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/create_event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/admin_pane.dart';
-import 'package:haflaway/utils/colors.dart';
-import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
-import 'package:haflaway/utils/globalwids.dart';
 
-class MyEvents extends StatefulWidget {
-  const MyEvents({super.key});
+class HaflaList extends StatefulWidget {
+  const HaflaList({super.key});
 
   @override
-  State<MyEvents> createState() => _MyEventsState();
+  State<HaflaList> createState() => _HaflaListState();
 }
 
-class _MyEventsState extends State<MyEvents> {
-  // int groupValue = 0;
+class _HaflaListState extends State<HaflaList> with TickerProviderStateMixin {
   String _currentFilter = "My Haflas";
   PageController pcont = PageController();
   final List<String> _filters = ["My Haflas", "Guest Haflas"];
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        elevation: psm,
-        title: const Text("HAFLAWAY HOME"),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(gradient: primaryGrad),
-        ),
-        actions: [
-          MaterialButton(
-            onPressed: () {
-              navNormal(context: context, widget: const CreateEvent());
-            },
-            textColor: Colors.white,
-            child: const Text("Create"),
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.only(
-          left: psm,
-          right: psm,
-          top: psm * 0.5,
-          bottom: psm,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
+      appBar: appBar(
+        title: "Haflaway",
+        actions: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildStatusFilterChips(),
-            Expanded(
-              child: PageView(
-                controller: pcont,
-                children: const [PersonalEvents(), GuestEvents()],
-              ),
+            Row(
+              children: [
+                _buildActionButton(icon: Icons.search, onTap: () {}),
+                const SizedBox(width: 8),
+                _buildActionButton(
+                  icon: Icons.add,
+                  onTap: () {
+                    navNormal(context: context, widget: const CreateEvent());
+                  },
+                ),
+              ],
             ),
           ],
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f3460)],
+          ),
+        ),
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                _buildFilterSelector(),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: PageView(
+                    controller: pcont,
+                    children: const [PersonalEvents(), GuestEvents()],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatusFilterChips() {
-    return SizedBox(
-      height: 50,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children:
-            _filters.map((filter) {
-              bool isSelected = _currentFilter == filter;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: FilterChip(
-                  label: Text(filter),
-                  selected: isSelected,
-                  showCheckmark: false,
-                  backgroundColor: Colors.grey.shade200,
-                  selectedColor:
-                      filter == _currentFilter
-                          ? primaryColor.shade100
-                          : Colors.green.shade100,
-                  avatar:
-                      filter == _currentFilter
-                          ? Icon(Icons.event_available)
-                          : Icon(Icons.event_repeat_outlined),
-                  onSelected: (selected) {
-                    _currentFilter = filter;
-                    if (_currentFilter == "My Haflas") {
-                      pcont.jumpToPage(0);
-                    } else {
-                      pcont.jumpToPage(1);
-                    }
-                    setState(() {});
-                  },
-                ),
-              );
-            }).toList(),
+  Widget _buildActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 0.5,
+              ),
+            ),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterSelector() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 0.5,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Row(
+                children:
+                    _filters.map((filter) {
+                      bool isSelected = _currentFilter == filter;
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _currentFilter = filter;
+                            });
+                            if (_currentFilter == "My Haflas") {
+                              pcont.animateToPage(
+                                0,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            } else {
+                              pcont.animateToPage(
+                                1,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color:
+                                  isSelected
+                                      ? Colors.white.withOpacity(0.9)
+                                      : Colors.transparent,
+                              borderRadius: BorderRadius.circular(21),
+                            ),
+                            child: Center(
+                              child: Text(
+                                filter,
+                                style: TextStyle(
+                                  color:
+                                      isSelected
+                                          ? Colors.black
+                                          : Colors.white.withOpacity(0.8),
+                                  fontSize: 16,
+                                  fontWeight:
+                                      isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -114,6 +217,7 @@ class PersonalEvents extends StatefulWidget {
 class _PersonalEventsState extends State<PersonalEvents> {
   String? uid = FirebaseAuth.instance.currentUser?.uid;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
@@ -130,12 +234,13 @@ class _PersonalEventsState extends State<PersonalEvents> {
               (snapshot.data as dynamic).docs.map<Event>((doc) {
                 return Event.fromMap(doc.id, doc.data());
               }).toList();
+
           if (data.isEmpty) {
-            return BuildNoDt(string: "No Events");
+            return _buildEmptyState("No Events Created Yet");
           } else {
             return ListView.builder(
               itemCount: data.length,
-              padding: const EdgeInsets.only(top: psm * 0.5),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               itemBuilder: (context, index) {
                 var evlvl = data[index].categoryLevel;
                 return GestureDetector(
@@ -153,11 +258,40 @@ class _PersonalEventsState extends State<PersonalEvents> {
             );
           }
         } else if (snapshot.hasError) {
-          return buildErr();
+          return _buildEmptyState("Something went wrong");
         } else {
-          return buildLoader();
+          return const Center(
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
+            ),
+          );
         }
       },
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.event_note_outlined,
+            size: 80,
+            color: Colors.white.withOpacity(0.3),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -172,6 +306,7 @@ class GuestEvents extends StatefulWidget {
 class _GuestEventsState extends State<GuestEvents> {
   String? uid = FirebaseAuth.instance.currentUser?.uid;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
@@ -188,12 +323,13 @@ class _GuestEventsState extends State<GuestEvents> {
               (snapshot.data as dynamic).docs.map<Event>((doc) {
                 return Event.fromMap(doc.id, doc.data());
               }).toList();
+
           if (data.isEmpty) {
-            return BuildNoDt(string: "No Events");
+            return _buildEmptyState("No Invitations Yet");
           } else {
             return ListView.builder(
               itemCount: data.length,
-              padding: const EdgeInsets.only(top: psm * 0.5),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               itemBuilder: (context, index) {
                 var evlvl = data[index].categoryLevel;
                 return GestureDetector(
@@ -211,11 +347,40 @@ class _GuestEventsState extends State<GuestEvents> {
             );
           }
         } else if (snapshot.hasError) {
-          return buildErr();
+          return _buildEmptyState("Something went wrong");
         } else {
-          return buildLoader();
+          return const Center(
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
+            ),
+          );
         }
       },
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.mail_outline,
+            size: 80,
+            color: Colors.white.withOpacity(0.3),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

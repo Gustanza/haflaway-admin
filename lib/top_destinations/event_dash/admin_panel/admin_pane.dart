@@ -1,6 +1,8 @@
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
@@ -35,7 +37,10 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   bool _isScrolled = false;
   final ScrollController _scrollController = ScrollController();
-  double fabScale = 1.0;
+  // late AnimationController _fabController;
+  // late AnimationController _headerController;
+  // late Animation<double> _fabAnimation;
+  // late Animation<double> _headerAnimation;
 
   @override
   void initState() {
@@ -45,15 +50,28 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     provider.startWatchingEventPlan(planId: widget.edata.eventPlanId);
 
     _scrollController.addListener(_onScroll);
-    // Simulate FAB pulse animation
-    Future.delayed(const Duration(milliseconds: 500), () {
+
+    // // Initialize animations
+    // _fabController = AnimationController(
+    //   duration: const Duration(milliseconds: 800),
+    //   vsync: this,
+    // );
+    // _headerController = AnimationController(
+    //   duration: const Duration(milliseconds: 1200),
+    //   vsync: this,
+    // );
+
+    // _fabAnimation = Curves.elasticOut.animate(_fabController);
+    // _headerAnimation = Curves.easeOutCubic.animate(_headerController);
+
+    // Start animations
+    Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
-        setState(() => fabScale = 1.1);
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) setState(() => fabScale = 1.0);
-        });
+        // _headerController.forward();
+        // _fabController.forward();
       }
     });
+
     super.initState();
   }
 
@@ -61,13 +79,15 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    // _fabController.dispose();
+    // _headerController.dispose();
     super.dispose();
   }
 
   void _onScroll() {
-    if (_scrollController.offset > 80 && !_isScrolled) {
+    if (_scrollController.offset > 100 && !_isScrolled) {
       setState(() => _isScrolled = true);
-    } else if (_scrollController.offset <= 80 && _isScrolled) {
+    } else if (_scrollController.offset <= 100 && _isScrolled) {
       setState(() => _isScrolled = false);
     }
   }
@@ -76,136 +96,256 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.grey[200]!.withOpacity(_isScrolled ? 0.8 : 0.95),
-              Colors.white,
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // Background gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF1a1a2e),
+                  const Color(0xFF16213e),
+                  const Color(0xFF0f3460),
+                ],
+              ),
+            ),
+          ),
+
+          // Main content
+          CustomScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              _buildGlassAppBar(),
+              _buildEventHeader(),
+              if (widget.isAdmin) _buildAdminToolsSection(),
+              _buildCheckpointsSection(),
+              const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
             ],
           ),
-        ),
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            _buildAppBar(),
-            _buildEventHeader(),
-            if (widget.isAdmin) _buildAdminToolsSection(),
-            _buildCheckpointsSection(),
-            const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  SliverAppBar _buildAppBar() {
+  SliverAppBar _buildGlassAppBar() {
     return SliverAppBar(
+      expandedHeight: 0,
+      floating: true,
       pinned: true,
-      elevation: _isScrolled ? 4 : 0,
-      flexibleSpace: Container(
-        decoration: BoxDecoration(gradient: primaryGrad),
-      ),
-      titleSpacing: 0,
-      title: AnimatedOpacity(
-        opacity: _isScrolled ? 1.0 : 0.0,
-        duration: const Duration(milliseconds: 300),
-        child: Text(
-          widget.edata.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            color: Colors.white,
-            letterSpacing: 0.5,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      flexibleSpace: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(_isScrolled ? 0.25 : 0.1),
+                  Colors.white.withOpacity(_isScrolled ? 0.15 : 0.05),
+                ],
+              ),
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.white.withOpacity(0.1),
+                  width: 0.5,
+                ),
+              ),
+            ),
           ),
         ),
       ),
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 22),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      actions: [
-        IconButton(
-          onPressed: () {},
-          icon: Icon(Icons.more_vert_rounded, color: Colors.white, size: 24),
+      leading: GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.15),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 0.5,
+            ),
+          ),
+          child: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
         ),
-      ],
+      ),
+      title:
+          _isScrolled
+              ? Text(
+                widget.edata.title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              )
+              : null,
     );
   }
 
   SliverToBoxAdapter _buildEventHeader() {
     return SliverToBoxAdapter(
-      child: Stack(
-        children: [
-          Container(
-            height: MediaQuery.of(context).size.height * 0.4,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                buildImage(url: widget.edata.eventThumbnail),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.75),
-                      ],
-                    ),
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.5,
+        margin: const EdgeInsets.all(20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background image
+              buildImage(url: widget.edata.eventThumbnail),
+
+              // Gradient overlay
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.3),
+                      Colors.black.withOpacity(0.8),
+                    ],
+                    stops: const [0.0, 0.6, 1.0],
                   ),
                 ),
-              ],
-            ),
-          ),
-          Positioned(
-            bottom: 24,
-            left: 24,
-            right: 24,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.edata.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: fsm * 1.75,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_month,
-                      color: Colors.white.withOpacity(0.85),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "${formatDate(dtime: widget.edata.calendar[0].eventDate)}",
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+              ),
+
+              // Content overlay with glass effect
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.white.withOpacity(0.1),
+                            Colors.white.withOpacity(0.2),
+                          ],
+                        ),
+                        border: Border(
+                          top: BorderSide(
+                            color: Colors.white.withOpacity(0.2),
+                            width: 0.5,
+                          ),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.edata.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDateChip(),
+                          const SizedBox(height: 16),
+                          _buildEventStats(),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateChip() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.calendar_today_rounded,
+            color: Colors.white.withOpacity(0.9),
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            formatDate(dtime: widget.edata.calendar[0].eventDate),
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEventStats() {
+    return Row(
+      children: [
+        _buildStatBubble("Active", "12", Icons.people_rounded),
+        const SizedBox(width: 12),
+        _buildStatBubble("Check-ins", "8", Icons.check_circle_rounded),
+      ],
+    );
+  }
+
+  Widget _buildStatBubble(String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white.withOpacity(0.8), size: 14),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -216,52 +356,69 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   Widget _buildAdminToolsSection() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.only(left: psm, right: psm),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: psm),
-            buildSectionHeader(
+            const SizedBox(height: 8),
+            _buildGlassSectionHeader(
               "Admin Tools",
               Icons.admin_panel_settings_rounded,
-              null,
             ),
-            const SizedBox(height: psm),
-            buildListItemCard(
-              title: "Event Notifications",
-              subtitle: "Manage all event messages and alerts",
-              icon: Clarity.notification_solid,
-              color: const Color(0xFF4CAF50),
-              onTap:
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => InRem(event: widget.edata),
-                    ),
+            const SizedBox(height: 16),
+            _buildGlassCard(
+              child: Column(
+                children: [
+                  _buildGlassListItem(
+                    title: "Event Notifications",
+                    subtitle: "Manage all event messages and alerts",
+                    icon: Clarity.notification_solid,
+                    gradient: [
+                      const Color(0xFF4CAF50),
+                      const Color(0xFF45A047),
+                    ],
+                    onTap:
+                        () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => InRem(event: widget.edata),
+                          ),
+                        ),
                   ),
-            ),
-            buildListItemCard(
-              title: "Attendees Management",
-              subtitle: "View and manage event participants",
-              icon: Clarity.user_solid,
-              color: const Color(0xFF2196F3),
-              onTap:
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => Attendees(edata: widget.edata),
-                    ),
+                  _buildDivider(),
+                  _buildGlassListItem(
+                    title: "Attendees Management",
+                    subtitle: "View and manage event participants",
+                    icon: Clarity.user_solid,
+                    gradient: [
+                      const Color(0xFF2196F3),
+                      const Color(0xFF1976D2),
+                    ],
+                    onTap:
+                        () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder:
+                                (context) => Attendees(edata: widget.edata),
+                          ),
+                        ),
                   ),
-            ),
-            buildListItemCard(
-              title: "Team Management",
-              subtitle: "Manage staff permissions and roles",
-              icon: Clarity.user_solid_alerted,
-              color: const Color(0xFFFF9800),
-              onTap:
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => Users(eId: widget.edata.id),
-                    ),
+                  _buildDivider(),
+                  _buildGlassListItem(
+                    title: "Team Management",
+                    subtitle: "Manage staff permissions and roles",
+                    icon: Clarity.user_solid_alerted,
+                    gradient: [
+                      const Color(0xFFFF9800),
+                      const Color(0xFFF57C00),
+                    ],
+                    onTap:
+                        () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => Users(eId: widget.edata.id),
+                          ),
+                        ),
                   ),
+                ],
+              ),
             ),
           ],
         ),
@@ -269,23 +426,28 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     );
   }
 
+  Widget _buildDivider() {
+    return Container(
+      height: 0.5,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      color: Colors.white.withOpacity(0.1),
+    );
+  }
+
   SliverToBoxAdapter _buildCheckpointsSection() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.only(left: psm, right: psm),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: psm),
-            buildSectionHeader(
+            const SizedBox(height: 32),
+            _buildGlassSectionHeader(
               "Checkpoints",
               Icons.check_circle_outline_rounded,
-              TextButton(
-                onPressed: showCrtChkpn,
-                child: Icon(Clarity.plus_line),
-              ),
+              showAddButton: widget.isAdmin,
             ),
-            const SizedBox(height: psm),
+            const SizedBox(height: 16),
             StreamBuilder(
               stream:
                   firestore
@@ -302,20 +464,28 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                           doc.data() as Map<String, dynamic>,
                         );
                       }).toList();
+
                   if (docs.isEmpty) {
-                    return _buildEmptyState();
+                    return _buildGlassEmptyState();
                   }
-                  return Column(
-                    children: List.generate(
-                      docs.length,
-                      (index) =>
-                          _buildCheckpointCard(docs[index], index: index),
+
+                  return _buildGlassCard(
+                    child: Column(
+                      children: List.generate(docs.length, (index) {
+                        final isLast = index == docs.length - 1;
+                        return Column(
+                          children: [
+                            _buildGlassCheckpointItem(docs[index]),
+                            if (!isLast) _buildDivider(),
+                          ],
+                        );
+                      }),
                     ),
                   );
                 } else if (snapshot.hasError) {
-                  return _buildErrorView();
+                  return _buildGlassErrorView();
                 }
-                return _buildShimmerLoader();
+                return _buildGlassShimmerLoader();
               },
             ),
           ],
@@ -324,146 +494,271 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildCheckpointCard(CheckPoint checkpoint, {required int index}) {
-    bool isHovered = false;
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return GestureDetector(
-          onTapDown: (_) => setState(() => isHovered = true),
-          onTapCancel: () => setState(() => isHovered = false),
-          onTapUp: (_) {
-            setState(() => isHovered = false);
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder:
-                    (context) =>
-                        InCheck(checkpoint: checkpoint, eId: widget.edata.id),
-              ),
-            );
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            transform: Matrix4.identity()..scale(isHovered ? 1.02 : 1.0),
-            margin: const EdgeInsets.only(bottom: psm),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.85),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: primaryColor.withOpacity(0.3),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: primaryColor.withOpacity(isHovered ? 0.2 : 0.1),
-                  blurRadius: isHovered ? 12 : 8,
-                  offset: const Offset(0, 4),
-                ),
+  Widget _buildGlassSectionHeader(
+    String title,
+    IconData icon, {
+    bool showAddButton = false,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 0.5,
+            ),
+          ),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const Spacer(),
+        if (showAddButton) _buildGlassAddButton(),
+      ],
+    );
+  }
+
+  Widget _buildGlassAddButton() {
+    return GestureDetector(
+      onTap: null, // showCrtChkpn,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              primaryColor.withOpacity(0.8),
+              primaryColor.withOpacity(0.6),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 0.5),
+          boxShadow: [
+            BoxShadow(
+              color: primaryColor.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+      ),
+    );
+  }
+
+  Widget _buildGlassCard({required Widget child}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.15),
+                Colors.white.withOpacity(0.08),
               ],
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(psm),
-              child: Row(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 0.5,
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassListItem({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required List<Color> gradient,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: gradient),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: gradient[0].withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Hero(
-                    tag: 'checkpoint-${checkpoint.id}',
-                    child: Container(
-                      padding: const EdgeInsets.all(psm * 0.5),
-                      decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Clarity.check_circle_line,
-                        color: primaryColor,
-                        size: 28,
-                      ),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          checkpoint.name,
-                          style: const TextStyle(
-                            fontSize: fsm,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          "ID: ${checkpoint.id}",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
                     ),
-                  ),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 18,
-                    color: Colors.grey[600],
                   ),
                 ],
               ),
             ),
-          ),
-        );
-      },
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white.withOpacity(0.5),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_circle_outline_rounded,
-              size: 80,
-              color: Colors.grey[400],
+  Widget _buildGlassCheckpointItem(CheckPoint checkpoint) {
+    return GestureDetector(
+      onTap:
+          () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder:
+                  (context) =>
+                      InCheck(checkpoint: checkpoint, eId: widget.edata.id),
             ),
-            const SizedBox(height: 20),
+          ),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.green.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(
+                Icons.check_circle_rounded,
+                color: Colors.green,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    checkpoint.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "ID: ${checkpoint.id}",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white.withOpacity(0.5),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassEmptyState() {
+    return _buildGlassCard(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                Icons.check_circle_outline_rounded,
+                size: 48,
+                color: Colors.white.withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(height: 24),
             Text(
               "No Checkpoints Available",
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Colors.grey[800],
+                color: Colors.white.withOpacity(0.9),
               ),
             ),
             const SizedBox(height: 12),
             Text(
               "Create a checkpoint to start managing check-ins",
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.6),
+              ),
             ),
             if (widget.isAdmin) ...[
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: showCrtChkpn,
-                icon: const Icon(Icons.add_circle_outline, size: 24),
-                label: const Text(
-                  "Create First Checkpoint",
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: secondaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 0,
-                ),
+              const SizedBox(height: 32),
+              _buildGlassButton(
+                text: "Create First Checkpoint",
+                icon: Icons.add_circle_outline,
+                onPressed: null, // showCrtChkpn,
               ),
             ],
           ],
@@ -472,43 +767,42 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildErrorView() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Center(
+  Widget _buildGlassErrorView() {
+    return _buildGlassCard(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 80, color: Colors.red[300]),
-            const SizedBox(height: 20),
-            Text(
-              "Something Went Wrong",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Colors.red[400],
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.red.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.red,
               ),
             ),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
+            const SizedBox(height: 24),
+            const Text(
+              "Something Went Wrong",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(height: 24),
+            _buildGlassButton(
+              text: "Try Again",
+              icon: Icons.refresh,
               onPressed: () => setState(() {}),
-              icon: const Icon(Icons.refresh, size: 24),
-              label: const Text(
-                "Try Again",
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: secondaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 28,
-                  vertical: 14,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                elevation: 0,
-              ),
             ),
           ],
         ),
@@ -516,114 +810,108 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildShimmerLoader() {
-    // Fallback to CircularProgressIndicator if shimmer is unstable
-    try {
-      return Shimmer.fromColors(
-        baseColor: Colors.grey[300]!,
-        highlightColor: Colors.grey[100]!,
-        child: Column(
-          children: List.generate(
-            3,
-            (index) => Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              height: 90,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+  Widget _buildGlassButton({
+    required String text,
+    required IconData icon,
+    required VoidCallback? onPressed,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                primaryColor.withOpacity(0.8),
+                primaryColor.withOpacity(0.6),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 0.5,
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onPressed,
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, color: Colors.white, size: 20),
+                    const SizedBox(width: 12),
+                    Text(
+                      text,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      );
-    } catch (e) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 40),
-          child: CircularProgressIndicator(color: secondaryColor),
-        ),
-      );
-    }
+      ),
+    );
   }
 
-  void showCrtChkpn() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.85,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          builder: (_, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.grey[200]!, Colors.white],
+  Widget _buildGlassShimmerLoader() {
+    return _buildGlassCard(
+      child: Column(
+        children: List.generate(3, (index) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 16,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 12,
+                        width: 200,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(top: 12),
-                    width: 50,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: psm),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Create Checkpoint",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close_rounded, size: 28),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.grey[200],
-                            foregroundColor: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(
-                    height: 32,
-                    thickness: 1,
-                    indent: psm,
-                    endIndent: psm,
-                  ),
-                  Expanded(child: ChkpnForm(eId: widget.edata.id)),
-                ],
-              ),
-            );
-          },
-        );
-      },
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 }
