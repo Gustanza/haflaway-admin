@@ -1,21 +1,19 @@
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/components/appbar.dart';
-import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/providers/balance_provider.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/helpers.dart';
-import 'package:haflaway/utils/styles.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
-import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/attendees.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/inrem.dart';
 import 'package:provider/provider.dart';
@@ -37,10 +35,6 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   bool _isScrolled = false;
   final ScrollController _scrollController = ScrollController();
-  // late AnimationController _fabController;
-  // late AnimationController _headerController;
-  // late Animation<double> _fabAnimation;
-  // late Animation<double> _headerAnimation;
 
   @override
   void initState() {
@@ -51,27 +45,6 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
 
     _scrollController.addListener(_onScroll);
 
-    // // Initialize animations
-    // _fabController = AnimationController(
-    //   duration: const Duration(milliseconds: 800),
-    //   vsync: this,
-    // );
-    // _headerController = AnimationController(
-    //   duration: const Duration(milliseconds: 1200),
-    //   vsync: this,
-    // );
-
-    // _fabAnimation = Curves.elasticOut.animate(_fabController);
-    // _headerAnimation = Curves.easeOutCubic.animate(_headerController);
-
-    // Start animations
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        // _headerController.forward();
-        // _fabController.forward();
-      }
-    });
-
     super.initState();
   }
 
@@ -79,8 +52,6 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    // _fabController.dispose();
-    // _headerController.dispose();
     super.dispose();
   }
 
@@ -96,211 +67,137 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // Background gradient
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF1a1a2e),
-                  const Color(0xFF16213e),
-                  const Color(0xFF0f3460),
-                ],
-              ),
-            ),
+      backgroundColor: const Color(
+        0xFF1a1a2e,
+      ), // Dark background matching the gradient
+      appBar: appBar(
+        title: "Dashboard",
+        leading: _buildActionButton(
+          icon: Icons.arrow_back_ios,
+          onTap: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f3460)],
           ),
-
-          // Main content
-          CustomScrollView(
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              _buildGlassAppBar(),
-              _buildEventHeader(),
-              if (widget.isAdmin) _buildAdminToolsSection(),
-              _buildCheckpointsSection(),
-              const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
-            ],
-          ),
-        ],
+        ),
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverToBoxAdapter(child: SizedBox(height: 150)),
+            _buildEventImageCard(),
+            // _buildEventContent(),
+            SliverToBoxAdapter(child: SizedBox(height: psm)),
+            if (widget.isAdmin) _buildAdminToolsSection(),
+            _buildCheckpointsSection(),
+            const SliverPadding(padding: EdgeInsets.only(bottom: p20)),
+          ],
+        ),
       ),
     );
   }
 
-  SliverAppBar _buildGlassAppBar() {
-    return SliverAppBar(
-      expandedHeight: 0,
-      floating: true,
-      pinned: true,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      flexibleSpace: ClipRRect(
+  // Action button for the appBar, styled the same as in my_events.dart
+  Widget _buildActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(_isScrolled ? 0.25 : 0.1),
-                  Colors.white.withOpacity(_isScrolled ? 0.15 : 0.05),
-                ],
-              ),
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.white.withOpacity(0.1),
-                  width: 0.5,
-                ),
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 0.5,
               ),
             ),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
         ),
       ),
-      leading: GestureDetector(
-        onTap: () => Navigator.pop(context),
+    );
+  }
+
+  // Mirror-like event image card
+  SliverToBoxAdapter _buildEventImageCard() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(p20, 0, p20, p20),
         child: Container(
-          margin: const EdgeInsets.all(8),
+          height: 280,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.15),
             border: Border.all(
               color: Colors.white.withOpacity(0.2),
               width: 0.5,
             ),
+            borderRadius: BorderRadius.circular(20),
           ),
-          child: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
-            size: 20,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+
+            child: CachedNetworkImage(
+              imageUrl: widget.edata.eventThumbnail,
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.high,
+              placeholder:
+                  (context, url) => Shimmer.fromColors(
+                    baseColor: primaryColor,
+                    highlightColor: primaryColor.withValues(alpha: 0.85),
+                    child: Container(color: primaryColor),
+                  ),
+              errorWidget:
+                  (context, url, error) => const Icon(Clarity.error_line),
+            ),
           ),
         ),
       ),
-      title:
-          _isScrolled
-              ? Text(
-                widget.edata.title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              )
-              : null,
     );
   }
 
-  SliverToBoxAdapter _buildEventHeader() {
+  // Event content without image
+  SliverToBoxAdapter _buildEventContent() {
     return SliverToBoxAdapter(
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.5,
-        margin: const EdgeInsets.all(20),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(32),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Background image
-              buildImage(url: widget.edata.eventThumbnail),
-
-              // Gradient overlay
-              Container(
+      child: Stack(
+        children: [
+          Container(
+            height: 200,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                fit: BoxFit.cover,
+                image: NetworkImage(widget.edata.eventThumbnail),
+              ),
+            ),
+          ),
+          Container(
+            height: 150,
+            width: double.infinity,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                height: 200,
+                width: double.infinity,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.3),
-                      Colors.black.withOpacity(0.8),
-                    ],
-                    stops: const [0.0, 0.6, 1.0],
+                  image: DecorationImage(
+                    fit: BoxFit.cover,
+                    image: NetworkImage(widget.edata.eventThumbnail),
                   ),
                 ),
               ),
-
-              // Content overlay with glass effect
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: ClipRRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.white.withOpacity(0.1),
-                            Colors.white.withOpacity(0.2),
-                          ],
-                        ),
-                        border: Border(
-                          top: BorderSide(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 0.5,
-                          ),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.edata.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _buildDateChip(),
-                          const SizedBox(height: 16),
-                          _buildEventStats(),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateChip() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 0.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.calendar_today_rounded,
-            color: Colors.white.withOpacity(0.9),
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            formatDate(dtime: widget.edata.calendar[0].eventDate),
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -308,64 +205,14 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildEventStats() {
-    return Row(
-      children: [
-        _buildStatBubble("Active", "12", Icons.people_rounded),
-        const SizedBox(width: 12),
-        _buildStatBubble("Check-ins", "8", Icons.check_circle_rounded),
-      ],
-    );
-  }
-
-  Widget _buildStatBubble(String label, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 0.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white.withOpacity(0.8), size: 14),
-          const SizedBox(width: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // Removing unused _buildEventHeader method to fix lint warning
   Widget _buildAdminToolsSection() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: p20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 8),
-            _buildGlassSectionHeader(
-              "Admin Tools",
-              Icons.admin_panel_settings_rounded,
-            ),
-            const SizedBox(height: 16),
             _buildGlassCard(
               child: Column(
                 children: [
@@ -447,7 +294,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
               Icons.check_circle_outline_rounded,
               showAddButton: widget.isAdmin,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 26),
             StreamBuilder(
               stream:
                   firestore

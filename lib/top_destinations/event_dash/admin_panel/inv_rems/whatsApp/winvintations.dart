@@ -29,10 +29,11 @@ class WInvSender extends StatefulWidget {
 }
 
 class _WInvSenderState extends State<WInvSender> {
-  WspDStates groupValue = WspDStates.unsent;
   int cost = 0;
   late int price;
   List<Attendee> senderList = [];
+  WspDStates grpState = WspDStates.unsent;
+  SenderChannels grpChnl = SenderChannels.all;
   TextEditingController scont = TextEditingController();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -53,8 +54,8 @@ class _WInvSenderState extends State<WInvSender> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children:
-                  WspDStates.values.map((e) {
-                    bool isSelected = e == groupValue;
+                  SenderChannels.values.map((e) {
+                    bool isSelected = e == grpChnl;
                     return Padding(
                       padding: const EdgeInsets.only(right: psm * 0.75),
                       child: FilterChip(
@@ -63,7 +64,30 @@ class _WInvSenderState extends State<WInvSender> {
                         onSelected: (val) {
                           if (val) {
                             setState(() {
-                              groupValue = e;
+                              grpChnl = e;
+                            });
+                          }
+                        },
+                      ),
+                    );
+                  }).toList(),
+            ),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children:
+                  WspDStates.values.map((e) {
+                    bool isSelected = e == grpState;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: psm * 0.75),
+                      child: FilterChip(
+                        label: Text(e.name.toUpperCase()),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          if (val) {
+                            setState(() {
+                              grpState = e;
                             });
                           }
                         },
@@ -86,10 +110,7 @@ class _WInvSenderState extends State<WInvSender> {
                 if (snapshot.hasData) {
                   List<Attendee> docs =
                       (snapshot.data as dynamic).docs.map<Attendee>((doc) {
-                        return Attendee.fromMap(
-                          doc.id,
-                          doc.data() as Map<String, dynamic>,
-                        );
+                        return Attendee.fromMap(doc.id, doc.data());
                       }).toList();
                   if (docs.isEmpty) {
                     return const BuildNoDt(string: "No Attendees Found");
@@ -131,20 +152,33 @@ class _WInvSenderState extends State<WInvSender> {
               msgs.entries.map<AttendeeMessage>((entry) {
                 return AttendeeMessage.fromMap(id: entry.key, map: entry.value);
               }).toList();
-          if (messages.isEmpty && groupValue == WspDStates.unsent) {
+          if (messages.isEmpty && grpState == WspDStates.unsent) {
             return true;
           }
 
           List<AttendeeMessage> targetMessages =
               messages.where((tstMsg) {
-                return tstMsg.channel == SenderChannels.whatsapp.name &&
-                    tstMsg.type == widget.campaignId;
+                bool cndtn1 = false;
+                if (tstMsg.type == widget.campaignId) {
+                  if (grpChnl.name == SenderChannels.all.name) {
+                    cndtn1 =
+                        tstMsg.channel == SenderChannels.whatsapp.name ||
+                        tstMsg.channel == SenderChannels.sms.name;
+                  } else if (grpChnl.name == SenderChannels.whatsapp.name) {
+                    cndtn1 = tstMsg.channel == SenderChannels.whatsapp.name;
+                  } else if (grpChnl.name == SenderChannels.sms.name) {
+                    cndtn1 = tstMsg.channel == SenderChannels.sms.name;
+                  }
+                }
+                return cndtn1;
+                // tstMsg.channel == SenderChannels.whatsapp.name &&
+                //     tstMsg.type == widget.campaignId;
               }).toList();
-          if (targetMessages.isEmpty && groupValue == WspDStates.unsent) {
+          if (targetMessages.isEmpty && grpState == WspDStates.unsent) {
             return true;
           }
           return targetMessages.any((tst) {
-            return tst.status == groupValue.name;
+            return tst.status == grpState.name;
           });
         }).toList();
     return Column(

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/components/templates.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/reusables/stuff.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/sms/sms_host.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/whatsApp/host.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/whatsApp/wsp_host.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:icons_plus/icons_plus.dart';
@@ -107,7 +108,7 @@ class _InRemState extends State<InRem> {
                     return SMSsenderHost(
                       event: widget.event,
                       title: "SMS Invitations",
-                      campaignId: "sms_wedding_invitations",
+                      campaignId: campaignId,
                     );
                   },
                 ),
@@ -127,7 +128,7 @@ class _InRemState extends State<InRem> {
                     return SMSsenderHost(
                       event: widget.event,
                       title: "SMS Reminder",
-                      campaignId: "sms_wedding_reminders",
+                      campaignId: remCampaignId,
                     );
                   },
                 ),
@@ -147,7 +148,7 @@ class _InRemState extends State<InRem> {
                     return SMSsenderHost(
                       event: widget.event,
                       title: "SMS Gratitude",
-                      campaignId: "sms_wedding_gratitudes",
+                      campaignId: gratCampaignId,
                     );
                   },
                 ),

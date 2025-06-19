@@ -1,7 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:haflaway/utils/dimensions.dart';
 
-appBar({title, actions}) {
+appBar({leading, title, actions}) {
   return PreferredSize(
     preferredSize: const Size.fromHeight(100),
     child: ClipRRect(
@@ -11,7 +12,7 @@ appBar({title, actions}) {
           backgroundColor: Colors.white.withOpacity(0.1),
           elevation: 0,
           toolbarHeight: 100,
-          leading: const SizedBox.shrink(),
+          leading: SizedBox.shrink(),
           leadingWidth: 0,
           flexibleSpace: SafeArea(
             child: Padding(
@@ -20,8 +21,10 @@ appBar({title, actions}) {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      if (leading != null) leading,
+                      if (leading != null) const SizedBox(width: psm),
                       Text(
                         title,
                         style: TextStyle(
@@ -31,7 +34,8 @@ appBar({title, actions}) {
                           letterSpacing: -0.5,
                         ),
                       ),
-                      actions,
+                      Spacer(),
+                      if (actions != null) actions,
                     ],
                   ),
                 ],

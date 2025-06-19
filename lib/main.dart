@@ -1,6 +1,7 @@
 // import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+// import 'package:flutter/services.dart';
 import 'package:haflaway/firebase_options.dart';
 // import 'package:firebase_storage/firebase_storage.dart';
 // import 'package:flutter/foundation.dart';
@@ -18,6 +19,13 @@ void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('sw', null);
+  // SystemChrome.setSystemUIOverlayStyle(
+  //   const SystemUiOverlayStyle(
+  //     statusBarColor: Colors.black, // or your dark color
+  //     statusBarIconBrightness: Brightness.light, // For Android
+  //     statusBarBrightness: Brightness.dark, // For iOS
+  //   ),
+  // );
   // if (kDebugMode) {
   //   try {
   //     FirebaseFirestore.instance.settings = const Settings(

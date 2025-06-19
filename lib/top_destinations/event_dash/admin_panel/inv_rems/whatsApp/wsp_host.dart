@@ -4,6 +4,7 @@ import 'package:haflaway/models/event.dart';
 import 'package:haflaway/providers/balance_provider.dart';
 // import 'package:haflaway/services/balance_service.dart';
 import 'package:haflaway/services/plan_service.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/reusables/stuff.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/whatsApp/select_template.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/whatsApp/winvintations.dart';
 import 'package:haflaway/utils/colors.dart';
@@ -20,9 +21,9 @@ class WInvHost extends StatefulWidget {
 
 class _WInvHostState extends State<WInvHost> {
   int currentStep = 0;
+  bool isWhatsApp = true;
   late EventPlan eventPlan;
   List<Attendee> senderList = [];
-  String campaignId = "whatsapp_invitation_campaign";
   PageController pageController = PageController();
   GlobalKey<SelectTemplateState> someKey = GlobalKey<SelectTemplateState>();
 
@@ -34,11 +35,11 @@ class _WInvHostState extends State<WInvHost> {
         return Scaffold(
           appBar: AppBar(
             centerTitle: false,
-            titleSpacing: 0,
+            // titleSpacing: 0,
             flexibleSpace: Container(
               decoration: BoxDecoration(gradient: primaryGrad),
             ),
-            title: Text("WhatsApp Invitation"),
+            title: Text("Send Invitation(s)"),
           ),
           body: Column(
             children: [
@@ -63,6 +64,7 @@ class _WInvHostState extends State<WInvHost> {
                       eventPlan: eventPlan,
                       senderList: senderList,
                       campaignId: campaignId,
+                      isWhatsApp: isWhatsApp,
                     ),
                   ],
                 ),
@@ -79,7 +81,7 @@ class _WInvHostState extends State<WInvHost> {
                       onPressed:
                           currentStep > 0
                               ? () {
-                                setState(() {
+                                safeState(() {
                                   currentStep -= 1;
                                   pageController.jumpToPage(currentStep);
                                 });
@@ -87,13 +89,14 @@ class _WInvHostState extends State<WInvHost> {
                               : null,
                       child: Text("Back"),
                     ),
+
                     SizedBox(width: psm),
                     ElevatedButton(
                       onPressed:
                           senderList.isNotEmpty
                               ? () async {
                                 if (currentStep < 1) {
-                                  setState(() {
+                                  safeState(() {
                                     currentStep += 1;
                                     pageController.jumpToPage(currentStep);
                                   });
@@ -104,6 +107,24 @@ class _WInvHostState extends State<WInvHost> {
                               : null,
                       child: Text(currentStep < 1 ? "Next" : "Send"),
                     ),
+                    Expanded(
+                      child: SwitchListTile(
+                        contentPadding: EdgeInsets.only(left: psm * 2),
+                        value: isWhatsApp,
+                        title: Text(
+                          "WhatsApp",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        onChanged:
+                            currentStep < 1
+                                ? (val) {
+                                  safeState(() {
+                                    isWhatsApp = val;
+                                  });
+                                }
+                                : null,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -112,5 +133,13 @@ class _WInvHostState extends State<WInvHost> {
         );
       },
     );
+  }
+
+  safeState(Function runnable) {
+    if (mounted) {
+      setState(() {
+        runnable();
+      });
+    }
   }
 }

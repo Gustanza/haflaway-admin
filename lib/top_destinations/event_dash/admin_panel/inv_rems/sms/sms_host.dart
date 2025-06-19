@@ -41,8 +41,8 @@ class _SMSsenderHostState extends State<SMSsenderHost> {
         // int bfigure = balance != null ? balance.balance.toInt() : 0;
         return Scaffold(
           appBar: AppBar(
+            // titleSpacing: 0,
             centerTitle: false,
-            titleSpacing: 0,
             flexibleSpace: Container(
               decoration: BoxDecoration(gradient: primaryGrad),
             ),
