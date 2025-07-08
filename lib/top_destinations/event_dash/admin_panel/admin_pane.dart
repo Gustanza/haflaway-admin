@@ -7,9 +7,9 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
+import 'package:haflaway/playground/index.dart';
 import 'package:haflaway/providers/balance_provider.dart';
 import 'package:haflaway/utils/dimensions.dart';
-import 'package:haflaway/utils/helpers.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
 import 'package:haflaway/utils/colors.dart';
@@ -67,9 +67,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      backgroundColor: const Color(
-        0xFF1a1a2e,
-      ), // Dark background matching the gradient
+      backgroundColor: const Color(0xFF1a1a2e),
       appBar: appBar(
         title: "Dashboard",
         leading: _buildActionButton(
@@ -90,11 +88,10 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            SliverToBoxAdapter(child: SizedBox(height: 150)),
+            SliverToBoxAdapter(child: SizedBox(height: 125)),
             _buildEventImageCard(),
-            // _buildEventContent(),
             SliverToBoxAdapter(child: SizedBox(height: psm)),
-            if (widget.isAdmin) _buildAdminToolsSection(),
+            _buildAdminToolsSection(),
             _buildCheckpointsSection(),
             const SliverPadding(padding: EdgeInsets.only(bottom: p20)),
           ],
@@ -144,11 +141,10 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
               color: Colors.white.withOpacity(0.2),
               width: 0.5,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(p20),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-
+            borderRadius: BorderRadius.circular(p20),
             child: CachedNetworkImage(
               imageUrl: widget.edata.eventThumbnail,
               fit: BoxFit.cover,
@@ -164,43 +160,6 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  // Event content without image
-  SliverToBoxAdapter _buildEventContent() {
-    return SliverToBoxAdapter(
-      child: Stack(
-        children: [
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                fit: BoxFit.cover,
-                image: NetworkImage(widget.edata.eventThumbnail),
-              ),
-            ),
-          ),
-          Container(
-            height: 150,
-            width: double.infinity,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    fit: BoxFit.cover,
-                    image: NetworkImage(widget.edata.eventThumbnail),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -378,7 +337,11 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
 
   Widget _buildGlassAddButton() {
     return GestureDetector(
-      onTap: null, // showCrtChkpn,
+      onTap: () {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => PlayGround()));
+      }, // showCrtChkpn,
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -404,29 +367,21 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   }
 
   Widget _buildGlassCard({required Widget child}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.15),
-                Colors.white.withOpacity(0.08),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-              width: 0.5,
-            ),
-          ),
-          child: child,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.15),
+            Colors.white.withOpacity(0.1),
+            Colors.white.withOpacity(0.08),
+          ],
         ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.4), width: 0.5),
       ),
+      child: child,
     );
   }
 
@@ -440,7 +395,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(p20),
         child: Row(
           children: [
             Container(
@@ -450,7 +405,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: gradient[0].withOpacity(0.3),
+                    color: gradient[0].withOpacity(0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
