@@ -67,10 +67,10 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      backgroundColor: const Color(0xFF1a1a2e),
+      backgroundColor: scaback,
       appBar: appBar(
         title: "Dashboard",
-        leading: _buildActionButton(
+        leading: buildActionButton(
           icon: Icons.arrow_back_ios,
           onTap: () {
             Navigator.of(context).pop();
@@ -88,42 +88,12 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            SliverToBoxAdapter(child: SizedBox(height: 125)),
+            SliverToBoxAdapter(child: SizedBox(height: 145)),
             _buildEventImageCard(),
-            SliverToBoxAdapter(child: SizedBox(height: psm)),
             _buildAdminToolsSection(),
             _buildCheckpointsSection(),
             const SliverPadding(padding: EdgeInsets.only(bottom: p20)),
           ],
-        ),
-      ),
-    );
-  }
-
-  // Action button for the appBar, styled the same as in my_events.dart
-  Widget _buildActionButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 0.5,
-              ),
-            ),
-            child: Icon(icon, color: Colors.white, size: 20),
-          ),
         ),
       ),
     );
@@ -137,11 +107,12 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
         child: Container(
           height: 280,
           decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-              width: 0.5,
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.5)),
             borderRadius: BorderRadius.circular(p20),
+            boxShadow: [
+              BoxShadow(color: Colors.white),
+              // BoxShadow(color: Colors.white.withOpacity(0.5)),
+            ],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(p20),

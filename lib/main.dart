@@ -56,13 +56,14 @@ class HfApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<ThemeProvider>(context);
+    // sfinal provider = Provider.of<ThemeProvider>(context);
     return MaterialApp(
       home: const SpScr(),
       debugShowCheckedModeBanner: false,
-      themeMode: provider.themeMode,
-      theme: MyThemes.lightTheme,
-      darkTheme: MyThemes.darkTheme,
+      themeMode: ThemeMode.dark,
+      theme: ThemeData(colorScheme: ColorScheme.dark()),
+      // theme: MyThemes.darkTheme,
+      // darkTheme: MyThemes.darkTheme,
     );
   }
 }

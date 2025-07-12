@@ -59,19 +59,19 @@ class Kard {
   String type;
   List clearAt;
   String eventId;
+  String purpose;
   DateTime createdAt;
   DateTime updatedAt;
-  double price;
   int capacity;
 
   Kard({
     required this.id,
     required this.type,
+    required this.purpose,
     required this.clearAt,
     required this.eventId,
     required this.createdAt,
     required this.updatedAt,
-    required this.price,
     required this.capacity,
   });
 
@@ -82,7 +82,7 @@ class Kard {
       'eventId': eventId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
-      'price': price,
+      'purpose': purpose,
       'capacity': capacity,
     };
   }
@@ -90,12 +90,75 @@ class Kard {
   factory Kard.fromMap(String id, Map<String, dynamic> map) {
     return Kard(
       id: id,
-      type: map['type'],
-      clearAt: map['clearAt'] as List,
-      eventId: map['eventId'] as String,
+      type: map['type'] ?? "",
+      purpose: map['purpose'] ?? "",
+      clearAt: map['clearAt'] ?? [],
+      eventId: map['eventId'] ?? "",
       createdAt: DateTime.parse(map['createdAt']),
       updatedAt: DateTime.parse(map['updatedAt']),
-      price: (map['price'] as num).toDouble(),
+      capacity: (map['capacity'] as num).toInt(),
+    );
+  }
+}
+
+class CardConfig {
+  String? id;
+  String type;
+  List clearAt;
+  String eventId;
+  String purpose;
+  double cardHeight;
+  double cardWidth;
+  dynamic elements;
+  DateTime createdAt;
+  DateTime updatedAt;
+  String templateUrl;
+  int capacity;
+
+  CardConfig({
+    this.id,
+    required this.type,
+    required this.purpose,
+    required this.clearAt,
+    required this.eventId,
+    required this.cardWidth,
+    required this.cardHeight,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.elements,
+    required this.capacity,
+    required this.templateUrl,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'type': type,
+      'clearAt': clearAt,
+      'eventId': eventId,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'purpose': purpose,
+      'elements': elements,
+      'cardWidth': cardWidth,
+      'cardHeight': cardHeight,
+      'capacity': capacity,
+      'templateUrl': templateUrl,
+    };
+  }
+
+  factory CardConfig.fromMap(String id, Map<String, dynamic> map) {
+    return CardConfig(
+      id: id,
+      type: map['type'] ?? "",
+      purpose: map['purpose'] ?? "",
+      clearAt: map['clearAt'] ?? [],
+      eventId: map['eventId'] ?? "",
+      cardWidth: map['cardWidth'] ?? 10,
+      cardHeight: map['cardHeight'] ?? 10,
+      elements: map['elements'] ?? {},
+      templateUrl: map['templateUrl'] ?? '',
+      createdAt: DateTime.parse(map['createdAt']),
+      updatedAt: DateTime.parse(map['updatedAt']),
       capacity: (map['capacity'] as num).toInt(),
     );
   }

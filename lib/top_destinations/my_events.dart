@@ -130,75 +130,72 @@ class _HaflaListState extends State<HaflaList> with TickerProviderStateMixin {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(25),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 0.5,
-              ),
+        child: Container(
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 0.5,
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Row(
-                children:
-                    _filters.map((filter) {
-                      bool isSelected = _currentFilter == filter;
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _currentFilter = filter;
-                            });
-                            if (_currentFilter == "My Haflas") {
-                              pcont.animateToPage(
-                                0,
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            } else {
-                              pcont.animateToPage(
-                                1,
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            }
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color:
-                                  isSelected
-                                      ? Colors.white.withOpacity(0.9)
-                                      : Colors.transparent,
-                              borderRadius: BorderRadius.circular(21),
-                            ),
-                            child: Center(
-                              child: Text(
-                                filter,
-                                style: TextStyle(
-                                  color:
-                                      isSelected
-                                          ? Colors.black
-                                          : Colors.white.withOpacity(0.8),
-                                  fontSize: 16,
-                                  fontWeight:
-                                      isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.w500,
-                                ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children:
+                  _filters.map((filter) {
+                    bool isSelected = _currentFilter == filter;
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _currentFilter = filter;
+                          });
+                          if (_currentFilter == "My Haflas") {
+                            pcont.animateToPage(
+                              0,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          } else {
+                            pcont.animateToPage(
+                              1,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          }
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color:
+                                isSelected
+                                    ? Colors.white.withOpacity(0.9)
+                                    : Colors.transparent,
+                            borderRadius: BorderRadius.circular(21),
+                          ),
+                          child: Center(
+                            child: Text(
+                              filter,
+                              style: TextStyle(
+                                color:
+                                    isSelected
+                                        ? Colors.black
+                                        : Colors.white.withOpacity(0.8),
+                                fontSize: 16,
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w500,
                               ),
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
-              ),
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
         ),

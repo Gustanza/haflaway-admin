@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:haflaway/utils/strings.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:haflaway/models/event.dart';
@@ -28,10 +29,12 @@ class CreateCard extends StatefulWidget {
 class _CreateCardState extends State<CreateCard> {
   XFile? pic;
   dynamic cardConfig;
+  String? cpurpose;
   List checkpoints = [];
   FirebaseFirestore fstr = FirebaseFirestore.instance;
   TextEditingController cArtCont = TextEditingController();
   TextEditingController cTypeCont = TextEditingController();
+  TextEditingController cPrpsCont = TextEditingController();
   TextEditingController cPriceCont = TextEditingController();
   TextEditingController cCapCont = TextEditingController();
   TextEditingController cCountCont = TextEditingController();
@@ -42,7 +45,8 @@ class _CreateCardState extends State<CreateCard> {
     return Scaffold(
       appBar: AppBar(
         elevation: psm,
-        title: const Text("New Card"),
+        titleSpacing: 0,
+        title: const Text("Create Card"),
         actions: [
           widget.card == null
               ? TextButton(onPressed: crtFn, child: const Text("Create"))
@@ -82,16 +86,26 @@ class _CreateCardState extends State<CreateCard> {
                 },
               ),
               const SizedBox(height: psm),
-              buildField(cont: cTypeCont, lbl: cardname),
+              bldDrdDwn(
+                lbl: "Card Purpose",
+                controller: cPrpsCont,
+                entries: cardPrps.entries,
+                onSelected: (val) {
+                  safeState(() {
+                    cpurpose = val;
+                  });
+                },
+              ),
               const SizedBox(height: psm),
-              buildField(
-                cont: cPriceCont,
-                lbl: cardprice,
-                type: TextInputType.number,
-                suff: MaterialButton(
-                  onPressed: () {},
-                  child: const Text("TZS"),
-                ),
+              bldDrdDwn(
+                lbl: "Card Type",
+                controller: cTypeCont,
+                entries: cardType.entries,
+                onSelected: (val) {
+                  safeState(() {
+                    cCapCont.text = "$val";
+                  });
+                },
               ),
               const SizedBox(height: psm),
               buildField(
@@ -127,16 +141,34 @@ class _CreateCardState extends State<CreateCard> {
       try {
         showProgress(context: context);
         var curl = await cardUploader(file: pic, type: supportedttypes[0]);
-
         if (curl != null) {
           var batch = fstr.batch();
           var cardRef =
               fstr.collection(ecol).doc(widget.eId).collection(cardcol).doc();
           var cblueRef = fstr.collection(cardcol).doc(cardRef.id);
-          cardConfig[tempccurl] = curl;
-          cardConfig[cevId] = widget.eId;
-          cardConfig[tempcid] = cardRef.id;
-          batch.set(cblueRef, cardConfig);
+          // cardConfig[tempccurl] = curl;
+          // cardConfig[cevId] = widget.eId;
+          // cardConfig[tempcid] = cardRef.id;
+          // cardConfig['type'] = cTypeCont.text;
+          // cardConfig['clearAt'] = checkpoints;
+          // cardConfig['createdAt'] = DateTime.now();
+          // cardConfig['updatedAt'] = DateTime.now();
+          // cardConfig['purpose'] = cpurpose ?? "unknown";
+          // cardConfig['capacity'] = int.parse(cleanStr(input: cCapCont.text));
+          CardConfig config = CardConfig(
+            templateUrl: curl,
+            type: cTypeCont.text,
+            purpose: cpurpose ?? "unknown",
+            clearAt: checkpoints,
+            eventId: widget.eId,
+            cardWidth: cardConfig['cardWidth'],
+            cardHeight: cardConfig['cardHeight'],
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            elements: cardConfig['elements'],
+            capacity: int.parse(cleanStr(input: cCapCont.text)),
+          );
+          batch.set(cblueRef, config.toMap());
           Kard kard = Kard(
             id: cardRef.id,
             type: cTypeCont.text,
@@ -144,7 +176,7 @@ class _CreateCardState extends State<CreateCard> {
             eventId: widget.eId,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
-            price: double.parse(cleanStr(input: cPriceCont.text)),
+            purpose: cpurpose ?? "unknown",
             capacity: int.parse(cleanStr(input: cCapCont.text)),
           );
           batch.set(cardRef, kard.toMap());
@@ -161,6 +193,12 @@ class _CreateCardState extends State<CreateCard> {
         showToast(isGood: false, msg: "Failed due to: $e");
       }
     }
+  }
+
+  safeState(runnable) {
+    setState(() {
+      runnable();
+    });
   }
 
   poper() {

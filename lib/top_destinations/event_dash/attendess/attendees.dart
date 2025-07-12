@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:excel/excel.dart' as exl;
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/services/strg_service.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/crtattendees.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -51,7 +52,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
 
   // Attendance status filters
   String _currentFilter = "All";
-  final List<String> _filters = ["All", "Confirmed", "Pending", "Declined"];
+  final List<String> _filters = [
+    "All",
+    "Confirmed",
+    "Pending",
+    "Declined",
+    "Progressive",
+  ];
 
   // Pagination variables
   final int pageSize = 20;
@@ -315,51 +322,70 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        centerTitle: false,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(gradient: primaryGrad),
+      backgroundColor: scaback,
+      appBar: appBar(
+        title: "Invites",
+        leading: buildActionButton(
+          icon: Icons.arrow_back_ios,
+          onTap: () {
+            Navigator.of(context).pop();
+          },
         ),
-        title: const Text("All Invitations"),
-        actions: [
-          buildPop(
-            list: atActnlist,
-            icon: Clarity.ellipsis_vertical_line,
-            onTap: (value) {
-              switch (value) {
-                case atActnCrt:
-                  showCards();
-                  break;
-                case atActnSelAll:
-                  selectAll();
-                  break;
-                case atActnDel:
-                  delSelect();
-                  break;
-                case atActnDwn:
-                  downCards();
-                  break;
-                case atActnImprt:
-                  importNow();
-                  break;
-                default:
-              }
-            },
-          ),
-        ],
+        actions: Row(
+          children: [
+            buildPop(
+              list: atActnlist,
+              icon: Clarity.ellipsis_vertical_line,
+              onTap: (value) async {
+                switch (value) {
+                  case atActnCrt:
+                    await navNormal(
+                      context: context,
+                      widget: CreateAttendees(
+                        event: widget.edata,
+                        cards: lcrds,
+                      ),
+                    );
+                    break;
+                  case atActnSelAll:
+                    selectAll();
+                    break;
+                  case atActnDel:
+                    delSelect();
+                    break;
+                  case atActnDwn:
+                    downCards();
+                    break;
+                  case atActnImprt:
+                    importNow();
+                    break;
+                  default:
+                }
+              },
+            ),
+          ],
+        ),
       ),
-      body:
-          atList.isEmpty && isLoading
-              ? buildLoader()
-              : atList.isEmpty && !isLoading
-              ? BuildNoDt(
-                string: "No Attendees Found",
-                isRefreshed: () async {
-                  await _loadAttendees();
-                },
-              )
-              : buildAtList(_filterAttendees(atList)),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f3460)],
+          ),
+        ),
+        child:
+            atList.isEmpty && isLoading
+                ? buildLoader()
+                : atList.isEmpty && !isLoading
+                ? BuildNoDt(
+                  string: "No Attendees Found",
+                  isRefreshed: () async {
+                    await _loadAttendees();
+                  },
+                )
+                : buildAtList(_filterAttendees(atList)),
+      ),
     );
   }
 
@@ -372,11 +398,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(
-              left: psm,
-              right: psm,
-              top: psm * 0.5,
-            ),
+            padding: const EdgeInsets.only(left: psm, right: psm, top: psm),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -384,6 +406,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   "Total: ${atdata.length} Invitations",
                   style: const TextStyle(
                     fontSize: fsm + 2,
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -956,44 +979,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       }
       setState(() {});
     }
-  }
-
-  showCards() {
-    return showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          content: SingleChildScrollView(
-            child: CupertinoListSection.insetGrouped(
-              header: const Text("Select Primary Card"),
-              margin: EdgeInsets.zero,
-              children: List.generate(lcrds.length, (index) {
-                return GestureDetector(
-                  onTap: () async {
-                    poper();
-                    await navNormal(
-                      context: context,
-                      widget: CreateAttendees(card: lcrds[index]),
-                    );
-                    await _loadAttendees();
-                  },
-                  child: ListTile(
-                    title: Text(
-                      lcrds[index].type,
-                      style: const TextStyle(
-                        fontSize: fsm,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    trailing: const Icon(size: icnmd, Icons.arrow_forward_ios),
-                  ),
-                );
-              }),
-            ),
-          ),
-        );
-      },
-    );
   }
 
   getCards() async {

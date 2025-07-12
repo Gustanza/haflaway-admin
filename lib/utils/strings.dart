@@ -26,3 +26,19 @@ String invrem = "Invitations & Reminders";
 String evRep = "Event Statistics & Report";
 //
 const unidenify = "Unindentified QR code";
+
+//
+Map<String, String> cardPrps = {
+  "invitation": "Invitation Purposes",
+  "contribution": "Contribution Purposes",
+  "save-the-date": "Save The Date Purposes",
+};
+
+Map<int, String> cardType = {
+  1: "SINGLE",
+  2: "DOUBLE",
+  20: "FAMILY",
+  10: "CUSTOM",
+};
+
+//

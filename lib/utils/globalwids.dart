@@ -204,20 +204,33 @@ buildCard(Kard card, Function() tapd) {
             ),
             overflow: TextOverflow.ellipsis,
           ),
-          trailing: TextButton(
-            onPressed: () {},
-            child: Text(
-              "${card.price.toInt()}/= TZS",
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
+          // trailing: TextButton(
+          //   onPressed: () {},
+          //   child: Text(
+          //     "${card.price.toInt()}/= TZS",
+          //     textAlign: TextAlign.center,
+          //     style: const TextStyle(
+          //       color: Colors.white,
+          //       fontWeight: FontWeight.bold,
+          //     ),
+          //   ),
+          // ),
         ),
       ],
     ),
+  );
+}
+
+bldDrdDwn({lbl, entries, controller, onSelected}) {
+  return DropdownMenu(
+    label: Text("$lbl"),
+    controller: controller,
+    width: double.maxFinite,
+    onSelected: onSelected,
+    dropdownMenuEntries:
+        entries.map<DropdownMenuEntry>((e) {
+          return DropdownMenuEntry(value: e.key, label: e.value);
+        }).toList(),
   );
 }
 
@@ -233,35 +246,32 @@ Widget buildField({
   Function? isChanged,
   TextEditingController? cont,
 }) {
-  return ClipRRect(
-    borderRadius: BorderRadius.circular(bsm * 0.5),
-    child: TextFormField(
-      maxLines: null,
-      controller: cont,
-      validator: (value) {
-        return validator(lbl: lbl, value: value);
-      },
-      onTap: () {
-        if (isTapped != null) {
-          isTapped();
-        }
-      },
-      onChanged: (value) {
-        if (isChanged != null) {
-          isChanged();
-        }
-      },
-      readOnly: isReadOnly ?? false,
-      showCursor: showCursor ?? true,
-      decoration: InputDecoration(
-        hintText: lbl,
-        suffixIcon: suff,
-        filled: true,
-        border: InputBorder.none,
-      ),
-      textCapitalization: TextCapitalization.sentences,
-      keyboardType: type,
+  return TextFormField(
+    maxLines: null,
+    controller: cont,
+    validator: (value) {
+      return validator(lbl: lbl, value: value);
+    },
+    onTap: () {
+      if (isTapped != null) {
+        isTapped();
+      }
+    },
+    onChanged: (value) {
+      if (isChanged != null) {
+        isChanged();
+      }
+    },
+    readOnly: isReadOnly ?? false,
+    showCursor: showCursor ?? true,
+    decoration: InputDecoration(
+      hintText: lbl,
+      suffixIcon: suff,
+      // filled: true,
+      border: OutlineInputBorder(),
     ),
+    textCapitalization: TextCapitalization.sentences,
+    keyboardType: type,
   );
 }
 

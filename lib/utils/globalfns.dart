@@ -169,7 +169,7 @@ String generateUniqueSequence() {
 buildPop({list, icon, onTap}) {
   return PopupMenuButton<String>(
     padding: EdgeInsets.zero,
-    icon: Icon(icon),
+    icon: Icon(icon, color: Colors.white),
     onSelected: (value) {
       onTap(value);
     },
