@@ -25,10 +25,9 @@ class CreateAttendees extends StatefulWidget {
 }
 
 class _CreateAttendeesState extends State<CreateAttendees> {
-  dynamic data;
   List chk = [];
-  Kard? selCrds;
   List? dataList;
+  CardConfig? data;
   bool isPhoneValid = false;
   late String phnnumber;
   late List<Map<String, dynamic>> chekstatuses;
@@ -70,8 +69,8 @@ class _CreateAttendeesState extends State<CreateAttendees> {
               if (dataList != null && dataList!.isNotEmpty) {
                 Map<String, String> scrdsMp = Map.fromIterable(
                   dataList as Iterable,
-                  key: (e) => e.id,
-                  value: (e) => e['type'],
+                  key: (e) => e.id ?? "",
+                  value: (e) => e['type'] ?? "unknown",
                 );
                 return SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(
@@ -103,9 +102,10 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                               controller: crdCont,
                               onSelected: (val) {
                                 safeState(() {
-                                  selCrds = widget.cards.firstWhere((t) {
-                                    return t.id == val;
+                                  var dt = dataList?.firstWhere((d) {
+                                    return d.id == val;
                                   });
+                                  data = CardConfig.fromMap(dt.id, dt.data());
                                 });
                               },
                             ),
@@ -156,36 +156,37 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         dataCleaner(passcode: atRef.id);
         var reqRes = await http.post(
           Uri.parse(rendercarl),
-          body: jsonEncode(data),
+          body: jsonEncode(data?.toMap()),
         );
         var res = jsonDecode(reqRes.body);
         if (res["error"]) {
           showToast(isGood: true, msg: genErrMsg);
           return;
         }
-
+        AttCard attCard = AttCard(
+          name: data?.type,
+          url: res['data'],
+          issuedAt: DateTime.now().toIso8601String(),
+        );
         Attendee atdt = Attendee(
-          cardId: selCrds?.id ?? "",
-          cardName: selCrds?.type ?? "unknown",
-          cardUrl: res["data"],
+          email: '',
+          messages: {},
+          fullName: ncont.text,
           checkinStatus: chk,
           createdAt: DateTime.now(),
-          email: crdCont.text,
-          fullName: ncont.text,
           phone: phnnumber.substring(1),
-          messages: {},
+          cards: {data?.purpose: attCard.toMap()},
         );
 
         await atRef.set(atdt.toMap());
         poper();
-
         showToast(isGood: true, msg: "Success");
       } catch (e) {
         poper();
-
+        print("Abject: ${e}");
         showToast(isGood: true, msg: "Failed: $e");
       }
-      poper();
+      // poper();
     }
   }
 
@@ -198,9 +199,9 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   }
 
   dataCleaner({passcode}) {
-    String type = selCrds?.type ?? "unknown";
-    int cap = selCrds?.capacity ?? 1;
-    List clearAt = selCrds?.clearAt ?? [];
+    String type = data?.type ?? "unknown";
+    int cap = data?.capacity ?? 1;
+    List clearAt = data?.clearAt ?? [];
     for (var i = 0; i < cap; i++) {
       var atentry = {
         cattendeename: "Slot: ${i + 1}",
@@ -208,9 +209,9 @@ class _CreateAttendeesState extends State<CreateAttendees> {
       };
       chk.add(atentry);
     }
-    data[crdelements][crdattname][lmntvalue] = ncont.text;
-    data[crdelements][crdtype][lmntvalue] = type;
-    data[crdelements][crdQrCode][lmntvalue] = passcode;
+    data?.elements[crdattname][lmntvalue] = ncont.text;
+    data?.elements[crdtype][lmntvalue] = type;
+    data?.elements[crdQrCode][lmntvalue] = passcode;
   }
 
   safeState(runnable) {

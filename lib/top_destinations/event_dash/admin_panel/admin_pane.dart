@@ -340,17 +340,9 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   Widget _buildGlassCard({required Widget child}) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withOpacity(0.15),
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.08),
-          ],
-        ),
+        gradient: lqassgrad,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.4), width: 0.5),
+        border: lqassbdr,
       ),
       child: child,
     );

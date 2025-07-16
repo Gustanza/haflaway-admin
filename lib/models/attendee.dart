@@ -22,9 +22,10 @@ const atActnImprt = "Import Attendees";
 
 class Attendee {
   String? id;
-  String cardId;
-  String cardName;
-  String cardUrl;
+  // String cardId;
+  // String cardName;
+  // String cardUrl;
+  Map cards;
   List checkinStatus;
   DateTime createdAt;
   String email;
@@ -34,9 +35,10 @@ class Attendee {
   Map messages;
   Attendee({
     this.id,
-    required this.cardId,
-    required this.cardName,
-    required this.cardUrl,
+    required this.cards,
+    // required this.cardId,
+    // required this.cardName,
+    // required this.cardUrl,
     required this.checkinStatus,
     required this.createdAt,
     required this.email,
@@ -47,10 +49,11 @@ class Attendee {
   });
 
   Map<String, dynamic> toMap() => {
-    "id": id,
-    "cardId": cardId,
-    "cardName": cardName,
-    "cardUrl": cardUrl,
+    // "id": id,
+    // "cardId": cardId,
+    // "cardName": cardName,
+    // "cardUrl": cardUrl,
+    "cards": cards,
     "checkinStatus": checkinStatus,
     "createdAt": createdAt.toIso8601String(),
     "email": email,
@@ -63,9 +66,10 @@ class Attendee {
   factory Attendee.fromMap(String id, Map<String, dynamic> map) {
     return Attendee(
       id: id,
-      cardId: map['cardId'] ?? "",
-      cardName: map['cardName'] ?? "",
-      cardUrl: map['cardUrl'] ?? "",
+      cards: map['cards'] ?? {},
+      // cardId: map['cardId'] ?? "",
+      // cardName: map['cardName'] ?? "",
+      // cardUrl: map['cardUrl'] ?? "",
       checkinStatus: map['checkinStatus'] ?? [],
       createdAt:
           map['createdAt'] != null
@@ -76,6 +80,28 @@ class Attendee {
       phone: map['phone'] ?? "",
       messages: map['messages'] ?? {},
       attendanceStatus: map['attendanceStatus'] ?? "Pending",
+    );
+  }
+}
+
+class AttCard {
+  String? name;
+  String? url;
+  String? issuedAt;
+
+  AttCard({required this.name, required this.url, required this.issuedAt});
+
+  Map<String, dynamic> toMap() => {
+    'name': name,
+    'url': url,
+    'issuedAt': issuedAt,
+  };
+
+  factory AttCard.fromMap({id, map}) {
+    return AttCard(
+      name: map['name'] ?? "",
+      url: map['url'] ?? "",
+      issuedAt: map['issuedAt'] ?? "",
     );
   }
 }

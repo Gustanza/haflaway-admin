@@ -174,7 +174,7 @@ class _ScannerState extends State<Scanner> {
                         ),
                         const SizedBox(height: psm * 0.5),
                         Text(
-                          attendee.cardName,
+                          attendee.cards.toString(),
                           style: const TextStyle(
                             fontSize: fsm,
                             fontWeight: FontWeight.bold,

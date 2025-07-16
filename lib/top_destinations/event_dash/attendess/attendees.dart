@@ -252,7 +252,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     // Then filter by Kard if selected
     if (_selectedKardFilter != null) {
       return statusFiltered.where((attendee) {
-        return attendee.cardId == _selectedKardFilter;
+        return attendee.cards.toString() == _selectedKardFilter;
       }).toList();
     }
 
@@ -397,8 +397,15 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: psm * 0.35),
+          _buildKardFilterChips(),
+          _buildStatusFilterChips(),
           Padding(
-            padding: const EdgeInsets.only(left: psm, right: psm, top: psm),
+            padding: const EdgeInsets.only(
+              left: psm,
+              right: psm,
+              top: psm * 0.25,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -419,7 +426,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               padding: const EdgeInsets.only(
                 left: psm,
                 right: psm,
-                top: psm * 0.5,
+                top: psm * 0.15,
               ),
               child: Text(
                 "Selected: ${selectList.length} Invitations",
@@ -430,7 +437,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               ),
             ),
           Padding(
-            padding: const EdgeInsets.only(left: psm, right: psm, top: psm),
+            padding: const EdgeInsets.only(
+              left: psm,
+              right: psm,
+              top: psm,
+              bottom: psm * 0.75,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -446,10 +458,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               ],
             ),
           ),
-          const SizedBox(height: psm * 0.35),
-          _buildKardFilterChips(),
-          _buildStatusFilterChips(),
-          const SizedBox(height: psm * 0.30),
           Expanded(
             child: NotificationListener<ScrollNotification>(
               onNotification: (ScrollNotification scrollInfo) {
@@ -589,28 +597,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   label: Text(filter),
                   selected: isSelected,
                   showCheckmark: false,
-                  backgroundColor: Colors.grey.shade200,
-                  selectedColor:
-                      filter == "Confirmed"
-                          ? Colors.green
-                          : filter == "Declined"
-                          ? Colors.red
-                          : filter == "Pending"
-                          ? Colors.amber
-                          : primaryColor.withOpacity(0.7),
+                  shape: filShape(),
                   onSelected: (selected) {
                     setState(() {
                       _currentFilter = filter;
                     });
                   },
-                  avatar:
-                      filter == "All"
-                          ? const Icon(Icons.people)
-                          : filter == "Confirmed"
-                          ? const Icon(Icons.check_circle)
-                          : filter == "Pending"
-                          ? const Icon(Icons.schedule)
-                          : const Icon(Icons.cancel),
                 ),
               );
             }).toList(),
@@ -622,7 +614,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     if (lcrds.isEmpty) {
       return const SizedBox.shrink();
     }
-
     return Container(
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: psm),
@@ -636,14 +627,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               label: const Text("All Cards"),
               selected: _selectedKardFilter == null,
               showCheckmark: false,
-              backgroundColor: Colors.grey.shade200,
-              selectedColor: primaryColor.withOpacity(0.7),
+              shape: filShape(),
               onSelected: (selected) {
                 setState(() {
                   _selectedKardFilter = null;
                 });
               },
-              avatar: const Icon(Icons.credit_card),
             ),
           ),
           // Individual card filters
@@ -655,14 +644,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 label: Text(kard.type),
                 selected: isSelected,
                 showCheckmark: false,
-                backgroundColor: Colors.grey.shade200,
-                selectedColor: primaryColor.withOpacity(0.7),
+                shape: filShape(),
                 onSelected: (selected) {
                   setState(() {
                     _selectedKardFilter = selected ? kard.id : null;
                   });
                 },
-                avatar: const Icon(Icons.credit_card),
               ),
             );
           }).toList(),
@@ -674,7 +661,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   // Build attendee card
   Widget _buildAttendeeCard(Attendee attendee) {
     var fullname = attendee.fullName;
-    var lcardname = attendee.cardName;
+    var lcardname = "${attendee.cards}";
     String attendanceStatus = attendee.attendanceStatus ?? "Pending";
 
     Color statusColor =
@@ -710,165 +697,167 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         padding: const EdgeInsets.symmetric(horizontal: psm, vertical: 4),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.85),
+            gradient: lqassgrad,
+            border: lqassbdr,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: primaryColor.withOpacity(0.3), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: primaryColor.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: Container(
+            padding: EdgeInsets.all(psm),
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
             child: Column(
               children: [
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  leading: Stack(
-                    children: [
-                      Hero(
-                        tag: "avatar-${attendee.id}",
-                        child: Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: statusColor.withOpacity(0.3),
-                                blurRadius: 4,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.person,
-                              size: 28,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (messageCount > 0)
-                        Positioned(
-                          top: 0,
-                          right: 0,
+                Row(
+                  children: [
+                    // first child
+                    Stack(
+                      children: [
+                        Hero(
+                          tag: "avatar-${attendee.id}",
                           child: Container(
-                            padding: const EdgeInsets.all(4),
+                            width: 50,
+                            height: 50,
                             decoration: BoxDecoration(
-                              color: Colors.red,
+                              color: Colors.grey.shade200,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 2,
-                                  offset: const Offset(0, 1),
+                                  color: statusColor.withOpacity(0.3),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
                                 ),
                               ],
                             ),
-                            constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
                             child: Center(
-                              child: Text(
-                                messageCount > 99 ? "99+" : "$messageCount",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              child: Icon(
+                                size: 28,
+                                Icons.verified_user_sharp,
+                                color: Colors.green,
                               ),
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          fullname,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: fsm + 2,
-                            color: hasKey ? primaryColor : Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Clarity.user_line,
-                            size: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            lcardname,
-                            style: TextStyle(
-                              overflow: TextOverflow.ellipsis,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                          const SizedBox(width: psm * 2),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return ViewCard(cardUrl: attendee.cardUrl);
-                                  },
+                        if (messageCount > 0)
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 2,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  messageCount > 99 ? "99+" : "$messageCount",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              );
-                            },
-                            child: Icon(Clarity.eye_show_line, size: icnmd),
-                          ),
-                        ],
-                      ),
-
-                      Row(
-                        children: [
-                          Icon(
-                            Clarity.mobile_phone_line,
-                            size: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            attendee.phone,
-                            style: TextStyle(
-                              overflow: TextOverflow.ellipsis,
-                              color: Colors.grey.shade700,
+                              ),
                             ),
                           ),
-                          const SizedBox(width: psm * 2),
-                          TextButton(
-                            onPressed: () {
-                              _callAttendee(attendee.phone);
-                            },
-                            child: const Icon(Icons.call, size: icnsm),
+                      ],
+                    ),
+                    // second child
+                    const SizedBox(width: psm),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  fullname,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: fsm + 2,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.card_travel, size: 16),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      lcardname,
+                                      style: TextStyle(
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                  // const SizedBox(width: psm * 2),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) {
+                                            return ViewCard(
+                                              cardUrl:
+                                                  attendee.cards.toString(),
+                                            );
+                                          },
+                                        ),
+                                      );
+                                    },
+                                    child: Icon(
+                                      Clarity.eye_show_line,
+                                      size: icnmd,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              Row(
+                                children: [
+                                  Icon(Clarity.mobile_phone_line, size: 16),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    attendee.phone,
+                                    style: TextStyle(
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: psm * 2),
+                                  Transform.scale(
+                                    scale: 0.75,
+                                    child: IconButton.outlined(
+                                      onPressed: () {
+                                        _callAttendee(attendee.phone);
+                                      },
+                                      icon: const Icon(Icons.call, size: icnsm),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: psm * 0.5),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const Divider(height: 1),
+
                 _buildAttendanceControls(attendee),
               ],
             ),
@@ -883,7 +872,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        gradient: lqassgrad,
+        border: lqassbdr,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(16),
           bottomRight: Radius.circular(16),
@@ -1053,7 +1043,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       poper();
       showToast(isGood: true, msg: "Deleting....");
       for (var sel in selectList) {
-        var cRef = storage.refFromURL(sel.cardUrl);
+        var cRef = storage.refFromURL(sel.cards.toString());
         await cRef.delete();
         await firestore
             .collection(ecol)

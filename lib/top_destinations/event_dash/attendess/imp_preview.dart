@@ -82,9 +82,10 @@ class _ImpPreviewState extends State<ImpPreview> {
         var phonecell = rows[i][atphnidx];
         var phoneItself = transformNumber("${phonecell?.value}");
         Attendee attendee = Attendee(
-          cardId: widget.carddata.id,
-          cardName: widget.carddata.type,
-          cardUrl: "",
+          // cardId: widget.carddata.id,
+          // cardName: widget.carddata.type,
+          // cardUrl: "",
+          cards: {},
           checkinStatus: [],
           createdAt: DateTime.now(),
           email: '',
@@ -235,14 +236,14 @@ class _ImpPreviewState extends State<ImpPreview> {
       }
       try {
         attendee.checkinStatus = chk;
-        attendee.cardUrl = res['data'];
+        // attendee.cardUrl = res['data'];
         attendee.createdAt = DateTime.now();
         await atRef.set(attendee.toMap());
         setState(() {
           attendees.remove(attendee);
         });
       } catch (e) {
-        deleteCrd(url: attendee.cardUrl);
+        // deleteCrd(url: attendee.cardUrl);
         popper();
         showToast(isGood: false, msg: genErrMsg);
         return;

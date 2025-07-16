@@ -17,7 +17,7 @@ class StorageService {
         return;
       }
       for (var oneAt in atList!) {
-        String fileUrl = oneAt.cardUrl;
+        String fileUrl = oneAt.cards.toString();
         // Create a reference to the file in Firebase Storage
         final fileRef = FirebaseStorage.instance.refFromURL(fileUrl);
         // Get the total size of the file

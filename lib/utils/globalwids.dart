@@ -246,6 +246,10 @@ Widget buildField({
   Function? isChanged,
   TextEditingController? cont,
 }) {
+  var border = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(8),
+    borderSide: BorderSide(color: Colors.white.withOpacity(0.4), width: 0.5),
+  );
   return TextFormField(
     maxLines: null,
     controller: cont,
@@ -267,8 +271,12 @@ Widget buildField({
     decoration: InputDecoration(
       hintText: lbl,
       suffixIcon: suff,
-      // filled: true,
-      border: OutlineInputBorder(),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.15),
+      enabledBorder: border,
+      border: border,
+      focusedBorder: border,
+      disabledBorder: border,
     ),
     textCapitalization: TextCapitalization.sentences,
     keyboardType: type,
