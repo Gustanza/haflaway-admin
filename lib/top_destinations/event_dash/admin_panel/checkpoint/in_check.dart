@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:haflaway/components/fab.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/scancheck.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -92,7 +95,6 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
           widget.checkpoint.name,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
-        actions: [_buildScanButton(), const SizedBox(width: psm)],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),
           child: Align(
@@ -129,14 +131,39 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
           ),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.grey[100]!, Colors.white],
+
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          fabb(
+            mini: true,
+            heroTag: 'mini',
+            child: Icon(Icons.pin),
+            onPressed: () {},
           ),
-        ),
+          const SizedBox(height: psm),
+          fabb(
+            mini: false,
+            heroTag: 'main',
+            child: Icon(Icons.qr_code),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return Scanner(
+                      acIds: acIds,
+                      eId: widget.eId,
+                      chckpntId: widget.checkpoint.id,
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(gradient: scagrad),
         child: TabBarView(
           controller: _tabController,
           children: List.generate(acptcrds.length, (index) {

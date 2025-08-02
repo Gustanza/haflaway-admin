@@ -9,3 +9,9 @@ LinearGradient primaryGrad = LinearGradient(
   end: Alignment.bottomRight,
   colors: [primaryColor.withOpacity(1.0), secondaryColor.withOpacity(0.85)],
 );
+
+LinearGradient scagrad = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f3460)],
+);
