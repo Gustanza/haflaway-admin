@@ -22,9 +22,6 @@ const atActnImprt = "Import Attendees";
 
 class Attendee {
   String? id;
-  // String cardId;
-  // String cardName;
-  // String cardUrl;
   Map cards;
   List checkinStatus;
   DateTime createdAt;
@@ -84,12 +81,16 @@ class Attendee {
   }
 }
 
-class AttCard {
+class AttributeCard {
   String? name;
   String? url;
   String? issuedAt;
 
-  AttCard({required this.name, required this.url, required this.issuedAt});
+  AttributeCard({
+    required this.name,
+    required this.url,
+    required this.issuedAt,
+  });
 
   Map<String, dynamic> toMap() => {
     'name': name,
@@ -97,8 +98,8 @@ class AttCard {
     'issuedAt': issuedAt,
   };
 
-  factory AttCard.fromMap({id, map}) {
-    return AttCard(
+  factory AttributeCard.fromMap({map}) {
+    return AttributeCard(
       name: map['name'] ?? "",
       url: map['url'] ?? "",
       issuedAt: map['issuedAt'] ?? "",

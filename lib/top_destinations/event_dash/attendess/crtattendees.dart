@@ -18,7 +18,13 @@ import 'package:haflaway/utils/urls.dart';
 class CreateAttendees extends StatefulWidget {
   final List<Kard> cards;
   final Event event;
-  const CreateAttendees({super.key, required this.cards, required this.event});
+  final KardType kardType;
+  const CreateAttendees({
+    super.key,
+    required this.cards,
+    required this.event,
+    required this.kardType,
+  });
 
   @override
   State<CreateAttendees> createState() => _CreateAttendeesState();
@@ -163,7 +169,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
           showToast(isGood: true, msg: genErrMsg);
           return;
         }
-        AttCard attCard = AttCard(
+        AttributeCard attCard = AttributeCard(
           name: data?.type,
           url: res['data'],
           issuedAt: DateTime.now().toIso8601String(),

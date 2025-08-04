@@ -174,7 +174,10 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                         () => Navigator.of(context).push(
                           MaterialPageRoute(
                             builder:
-                                (context) => Attendees(edata: widget.edata),
+                                (context) => Attendees(
+                                  edata: widget.edata,
+                                  kardType: KardType.invitation,
+                                ),
                           ),
                         ),
                   ),

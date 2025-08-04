@@ -27,7 +27,8 @@ import 'imp_preview.dart';
 
 class Attendees extends StatefulWidget {
   final dynamic edata;
-  const Attendees({super.key, required this.edata});
+  final KardType kardType;
+  const Attendees({super.key, required this.edata, required this.kardType});
 
   @override
   State<Attendees> createState() => _AttendeesState();
@@ -52,13 +53,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
 
   // Attendance status filters
   String _currentFilter = "All";
-  final List<String> _filters = [
-    "All",
-    "Confirmed",
-    "Pending",
-    "Declined",
-    "Progressive",
-  ];
+  final List<String> _filters = ["All", "Confirmed", "Unconfirmed", "Declined"];
 
   // Pagination variables
   final int pageSize = 20;
@@ -244,7 +239,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     if (_currentFilter != "All") {
       statusFiltered =
           attendees.where((attendee) {
-            String status = attendee.attendanceStatus ?? "Pending";
+            String status = attendee.attendanceStatus ?? "Unconfirmed";
             return status == _currentFilter;
           }).toList();
     }
@@ -344,6 +339,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       widget: CreateAttendees(
                         event: widget.edata,
                         cards: lcrds,
+                        kardType: widget.kardType,
                       ),
                     );
                     break;
@@ -517,7 +513,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   Widget _buildAttendanceStats() {
     // Count attendees by status
     String confirmed = "Confirmed";
-    String pending = "Pending";
+    String pending = "Unconfirmed";
     String declined = "Declined";
 
     return Row(
@@ -995,6 +991,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     }
     List<Attendee> lList = selectList;
     await StorageService.fetchFile(
+      kardtype: widget.kardType,
       atList: lList,
       fdbck: (p0) {
         showToast(isGood: true, msg: p0);
@@ -1043,8 +1040,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       poper();
       showToast(isGood: true, msg: "Deleting....");
       for (var sel in selectList) {
-        var cRef = storage.refFromURL(sel.cards.toString());
-        await cRef.delete();
+        var cardsAttr = sel.cards;
+        for (var value in cardsAttr.values) {
+          AttributeCard attributeCard = AttributeCard.fromMap(map: value);
+          var cRef = storage.refFromURL(attributeCard.url!);
+          await cRef.delete();
+        }
         await firestore
             .collection(ecol)
             .doc(widget.edata.id)

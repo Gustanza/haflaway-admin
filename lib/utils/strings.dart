@@ -1,3 +1,5 @@
+import 'package:haflaway/models/card.dart';
+
 String appname = "HAFLAWAY";
 const coverpic = "assets/utils/imagen/cover.png";
 //registration placeholders
@@ -29,9 +31,9 @@ const unidenify = "Unindentified QR code";
 
 //
 Map<String, String> cardPrps = {
-  "invitation": "Invitation Purposes",
-  "contribution": "Contribution Purposes",
-  "save-the-date": "Save The Date Purposes",
+  KardType.invitation.name: "Invitation Purposes",
+  KardType.contribution.name: "Contribution Purposes",
+  KardType.save_the_date.name: "Save The Date Purposes",
 };
 
 Map<int, String> cardType = {
