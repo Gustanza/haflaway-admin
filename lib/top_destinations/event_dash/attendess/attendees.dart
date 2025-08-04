@@ -319,7 +319,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: scaback,
       appBar: appBar(
-        title: "Invites",
+        title: "Invitations",
         leading: buildActionButton(
           icon: Icons.arrow_back_ios,
           onTap: () {
