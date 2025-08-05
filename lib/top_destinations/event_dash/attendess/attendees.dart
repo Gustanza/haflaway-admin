@@ -338,7 +338,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       context: context,
                       widget: CreateAttendees(
                         event: widget.edata,
-                        cards: lcrds,
                         kardType: widget.kardType,
                       ),
                     );
@@ -463,7 +462,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       !isLoading &&
                       hasMore &&
                       scont.text.isEmpty) {
-                    debugPrint("NotificationListener triggering load more");
                     _loadMoreAttendees();
                   }
                 }
@@ -841,6 +839,28 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                         _callAttendee(attendee.phone);
                                       },
                                       icon: const Icon(Icons.call, size: icnsm),
+                                    ),
+                                  ),
+                                  Transform.scale(
+                                    scale: 0.75,
+                                    child: IconButton.outlined(
+                                      onPressed: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) {
+                                              return CreateAttendees(
+                                                event: widget.edata,
+                                                kardType: widget.kardType,
+                                                attendee: attendee,
+                                              );
+                                            },
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(
+                                        Icons.edit_document,
+                                        size: icnsm,
+                                      ),
                                     ),
                                   ),
                                 ],

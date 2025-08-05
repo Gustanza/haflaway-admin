@@ -16,12 +16,12 @@ import 'package:haflaway/utils/styles.dart';
 import 'package:haflaway/utils/urls.dart';
 
 class CreateAttendees extends StatefulWidget {
-  final List<Kard> cards;
   final Event event;
   final KardType kardType;
+  final Attendee? attendee;
   const CreateAttendees({
     super.key,
-    required this.cards,
+    this.attendee,
     required this.event,
     required this.kardType,
   });
@@ -37,29 +37,30 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   bool isPhoneValid = false;
   late String phnnumber;
   late List<Map<String, dynamic>> chekstatuses;
-  late TextEditingController ncont;
-  late TextEditingController phncont;
-  late TextEditingController crdCont;
+  TextEditingController ncont = TextEditingController();
+  TextEditingController phncont = TextEditingController();
+  TextEditingController crdCont = TextEditingController();
   GlobalKey<FormState> fkey = GlobalKey<FormState>();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
-    ncont = TextEditingController();
-    phncont = TextEditingController();
-    crdCont = TextEditingController();
     super.initState();
+    Attendee? attendee = widget.attendee;
+    if (attendee != null) {
+      ncont.text = attendee.fullName;
+      phnnumber = attendee.phone;
+      phncont.text = attendee.phone.substring(3);
+    }
+    safeState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    Attendee? attendee = widget.attendee;
     return Scaffold(
       backgroundColor: scaback,
       appBar: AppBar(title: const Text("Create Attendees")),
-      floatingActionButton: FloatingActionButton(
-        onPressed: submitForm,
-        child: const Icon(Clarity.upload_cloud_line),
-      ),
       body: Container(
         height: double.maxFinite,
         decoration: BoxDecoration(gradient: scagrad),
@@ -115,6 +116,19 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                                 });
                               },
                             ),
+                            const SizedBox(height: psm * 1.5),
+                            SizedBox(
+                              width: double.maxFinite,
+                              child: MaterialButton(
+                                color: Colors.blue,
+                                height: kToolbarHeight * 0.8,
+                                onPressed:
+                                    attendee == null ? submitForm : () {},
+                                child: Text(
+                                  attendee == null ? "Create" : "Update",
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -152,6 +166,10 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   submitForm() async {
     var isValid = fkey.currentState?.validate() ?? false;
     if (isValid && validatePhone()) {
+      if (data == null) {
+        showToast(isGood: false, msg: "Select Card Type");
+        return;
+      }
       try {
         showProgress(context: context);
         var atRef = firestore
