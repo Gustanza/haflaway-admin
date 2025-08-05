@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:http/http.dart' as http;
-import 'package:icons_plus/icons_plus.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/event.dart';
@@ -44,18 +43,6 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   @override
-  void initState() {
-    super.initState();
-    Attendee? attendee = widget.attendee;
-    if (attendee != null) {
-      ncont.text = attendee.fullName;
-      phnnumber = attendee.phone;
-      phncont.text = attendee.phone.substring(3);
-    }
-    safeState(() {});
-  }
-
-  @override
   Widget build(BuildContext context) {
     Attendee? attendee = widget.attendee;
     return Scaffold(
@@ -79,6 +66,21 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                   key: (e) => e.id ?? "",
                   value: (e) => e['type'] ?? "unknown",
                 );
+                if (attendee != null) {
+                  ncont.text = attendee.fullName;
+                  phnnumber = attendee.phone;
+                  phncont.text = attendee.phone.substring(3);
+                  for (var atcard in attendee.cards.entries) {
+                    AttributeCard attrCrd = AttributeCard.fromMap(
+                      map: atcard.value,
+                    );
+                    var dt = dataList?.firstWhere((d) {
+                      debugPrint("Abject: ${d.data()}");
+                      return d.id == "val";
+                    }, orElse: () => dataList?[0]);
+                    // data = CardConfig.fromMap(dt.id, dt.data());
+                  }
+                }
                 return SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(
                     horizontal: psm,
