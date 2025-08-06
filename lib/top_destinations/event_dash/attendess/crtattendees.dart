@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl_phone_field/intl_phone_field.dart';
@@ -32,9 +33,12 @@ class CreateAttendees extends StatefulWidget {
 class _CreateAttendeesState extends State<CreateAttendees> {
   List chk = [];
   List? dataList;
+  bool isLoading = false;
+  bool hasError = false;
   CardConfig? data;
   bool isPhoneValid = false;
   late String phnnumber;
+  Map<String, String> scrdsMp = {};
   late List<Map<String, dynamic>> chekstatuses;
   TextEditingController ncont = TextEditingController();
   TextEditingController phncont = TextEditingController();
@@ -42,110 +46,128 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   GlobalKey<FormState> fkey = GlobalKey<FormState>();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
+  fetch() async {
+    safeState(() {
+      isLoading = true;
+      hasError = false;
+    });
+    try {
+      var source =
+          await firestore
+              .collection(cardcol)
+              .where('eventId', isEqualTo: widget.event.id)
+              .get();
+      dataList = source.docs;
+
+      scrdsMp = Map.fromIterable(
+        dataList as Iterable,
+        key: (e) => e.id ?? "",
+        value: (e) => e['type'] ?? "unknown",
+      );
+      Attendee? attendee = widget.attendee;
+      if (attendee != null) {
+        ncont.text = attendee.fullName;
+        phnnumber = attendee.phone;
+        phncont.text = attendee.phone.replaceFirst(RegExp(r'^255'), '');
+        for (var atcard in attendee.cards.entries) {
+          if (atcard.key == widget.kardType.name) {
+            AttributeCard attrCrd = AttributeCard.fromMap(map: atcard.value);
+            for (var dItem in dataList ?? []) {
+              var dItemMap = dItem.data();
+              CardConfig crdConfig = CardConfig.fromMap(dItem.id, dItemMap);
+              if (crdConfig.type == attrCrd.name) {
+                data = crdConfig;
+                crdCont.text = crdConfig.type;
+                break;
+              }
+            }
+            break;
+          }
+        }
+      }
+      safeState(() {
+        isLoading = false;
+        hasError = false;
+      });
+    } catch (e) {
+      safeState(() {
+        isLoading = false;
+        hasError = true;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetch();
+  }
+
   @override
   Widget build(BuildContext context) {
     Attendee? attendee = widget.attendee;
+    if (isLoading) {
+      return Ccafold(child: buildLoader());
+    }
+    if (hasError) {
+      return Ccafold(child: buildErr());
+    }
     return Scaffold(
       backgroundColor: scaback,
       appBar: AppBar(title: const Text("Create Attendees")),
-      body: Container(
-        height: double.maxFinite,
-        decoration: BoxDecoration(gradient: scagrad),
-        child: FutureBuilder(
-          future:
-              firestore
-                  .collection(cardcol)
-                  .where('eventId', isEqualTo: widget.event.id)
-                  .get(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              dataList = (snapshot.data as dynamic).docs;
-              if (dataList != null && dataList!.isNotEmpty) {
-                Map<String, String> scrdsMp = Map.fromIterable(
-                  dataList as Iterable,
-                  key: (e) => e.id ?? "",
-                  value: (e) => e['type'] ?? "unknown",
-                );
-                if (attendee != null) {
-                  ncont.text = attendee.fullName;
-                  phnnumber = attendee.phone;
-                  phncont.text = attendee.phone.substring(3);
-                  for (var atcard in attendee.cards.entries) {
-                    AttributeCard attrCrd = AttributeCard.fromMap(
-                      map: atcard.value,
-                    );
-                    var dt = dataList?.firstWhere((d) {
-                      debugPrint("Abject: ${d.data()}");
-                      return d.id == "val";
-                    }, orElse: () => dataList?[0]);
-                    // data = CardConfig.fromMap(dt.id, dt.data());
-                  }
-                }
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: psm,
-                    vertical: psm * 0.5,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Form(
-                        key: fkey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: psm * 0.5),
-                            Text("Attendee Details", style: normal()),
-                            const SizedBox(height: psm * 0.5),
-                            buildField(
-                              filled: true,
-                              lbl: atlblname,
-                              cont: ncont,
-                            ),
-                            const SizedBox(height: psm),
-                            buildPhone(mobileCont: phncont),
-                            const SizedBox(height: psm * 0.5),
-                            bldDrdDwn(
-                              lbl: "Card Type",
-                              entries: scrdsMp.entries,
-                              controller: crdCont,
-                              onSelected: (val) {
-                                safeState(() {
-                                  var dt = dataList?.firstWhere((d) {
-                                    return d.id == val;
-                                  });
-                                  data = CardConfig.fromMap(dt.id, dt.data());
-                                });
-                              },
-                            ),
-                            const SizedBox(height: psm * 1.5),
-                            SizedBox(
-                              width: double.maxFinite,
-                              child: MaterialButton(
-                                color: Colors.blue,
-                                height: kToolbarHeight * 0.8,
-                                onPressed:
-                                    attendee == null ? submitForm : () {},
-                                child: Text(
-                                  attendee == null ? "Create" : "Update",
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+      body: Ccafold(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: psm,
+            vertical: psm * 0.5,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Form(
+                key: fkey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: psm * 0.5),
+                    Text("Attendee Details", style: normal()),
+                    const SizedBox(height: psm * 0.5),
+                    buildField(filled: true, lbl: atlblname, cont: ncont),
+                    const SizedBox(height: psm),
+                    buildPhone(mobileCont: phncont),
+                    const SizedBox(height: psm * 0.5),
+                    bldDrdDwn(
+                      lbl: "Card Type",
+                      entries: scrdsMp.entries,
+                      controller: crdCont,
+                      onSelected: (val) {
+                        safeState(() {
+                          var dt = dataList?.firstWhere((d) {
+                            return d.id == val;
+                          });
+                          data = CardConfig.fromMap(dt.id, dt.data());
+                        });
+                      },
+                    ),
+                    const SizedBox(height: psm * 2),
+                    SizedBox(
+                      width: double.maxFinite,
+                      child: MaterialButton(
+                        color: Colors.blue,
+                        height: kToolbarHeight * 0.8,
+                        onPressed: () {
+                          attendee == null
+                              ? submitForm()
+                              : submitForm(attendeeId: attendee.id);
+                        },
+                        child: Text(attendee == null ? "Create" : "Update"),
                       ),
-                    ],
-                  ),
-                );
-              } else {
-                return buildErr();
-              }
-            } else if (snapshot.hasError) {
-              return buildErr();
-            } else {
-              return buildLoader();
-            }
-          },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -165,7 +187,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
     );
   }
 
-  submitForm() async {
+  submitForm({attendeeId}) async {
     var isValid = fkey.currentState?.validate() ?? false;
     if (isValid && validatePhone()) {
       if (data == null) {
@@ -178,7 +200,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
             .collection(ecol)
             .doc(widget.event.id)
             .collection(atcol)
-            .doc(generateUniqueSequence());
+            .doc(attendeeId ?? generateUniqueSequence());
         dataCleaner(passcode: atRef.id);
         var reqRes = await http.post(
           Uri.parse(rendercarl),
@@ -200,11 +222,10 @@ class _CreateAttendeesState extends State<CreateAttendees> {
           fullName: ncont.text,
           checkinStatus: chk,
           createdAt: DateTime.now(),
-          phone: phnnumber.substring(1),
+          phone: phnnumber.replaceAll('+', ''),
           cards: {data?.purpose: attCard.toMap()},
         );
-
-        await atRef.set(atdt.toMap());
+        await atRef.set(atdt.toMap(), SetOptions(merge: true));
         poper();
         showToast(isGood: true, msg: "Success");
       } catch (e) {
@@ -212,7 +233,6 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         print("Abject: ${e}");
         showToast(isGood: true, msg: "Failed: $e");
       }
-      // poper();
     }
   }
 
@@ -243,6 +263,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   safeState(runnable) {
     if (mounted) {
       setState(() {
+        debugPrint("Abject: Just Ran");
         runnable();
       });
     }

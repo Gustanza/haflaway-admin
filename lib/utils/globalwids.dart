@@ -204,24 +204,19 @@ buildCard(Kard card, Function() tapd) {
             ),
             overflow: TextOverflow.ellipsis,
           ),
-          // trailing: TextButton(
-          //   onPressed: () {},
-          //   child: Text(
-          //     "${card.price.toInt()}/= TZS",
-          //     textAlign: TextAlign.center,
-          //     style: const TextStyle(
-          //       color: Colors.white,
-          //       fontWeight: FontWeight.bold,
-          //     ),
-          //   ),
-          // ),
         ),
       ],
     ),
   );
 }
 
-bldDrdDwn({lbl, entries, controller, onSelected}) {
+bldDrdDwn({
+  lbl,
+  entries,
+  controller,
+  onSelected,
+  DropdownMenuEntry? initialSelection,
+}) {
   return DropdownMenu(
     label: Text("$lbl"),
     controller: controller,

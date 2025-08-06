@@ -29,7 +29,6 @@ class Attendees extends StatefulWidget {
   final dynamic edata;
   final KardType kardType;
   const Attendees({super.key, required this.edata, required this.kardType});
-
   @override
   State<Attendees> createState() => _AttendeesState();
 }
@@ -126,9 +125,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       lastDocument = snapshot.docs.last;
       setState(() {
         atList =
-            snapshot.docs.map<Attendee>((doc) {
-              return Attendee.fromMap(doc.id, doc.data());
-            }).toList();
+            snapshot.docs
+                .where((doc) => doc['cards'][widget.kardType.name] != null)
+                .map<Attendee>((doc) {
+                  return Attendee.fromMap(doc.id, doc.data());
+                })
+                .toList();
 
         isLoading = false;
       });
@@ -168,9 +170,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       lastDocument = snapshot.docs.last;
 
       final newAttendees =
-          snapshot.docs.map<Attendee>((doc) {
-            return Attendee.fromMap(doc.id, doc.data());
-          }).toList();
+          snapshot.docs
+              .where((doc) => doc['cards'][widget.kardType.name] != null)
+              .map<Attendee>((doc) {
+                return Attendee.fromMap(doc.id, doc.data());
+              })
+              .toList();
 
       setState(() {
         atList.addAll(newAttendees);
@@ -209,9 +214,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               .get();
 
       var allAttendees =
-          snapshot.docs.map<Attendee>((doc) {
-            return Attendee.fromMap(doc.id, doc.data());
-          }).toList();
+          snapshot.docs
+              .where((doc) => doc['cards'][widget.kardType.name] != null)
+              .map<Attendee>((doc) {
+                return Attendee.fromMap(doc.id, doc.data());
+              })
+              .toList();
 
       // Sort by similarity
       allAttendees.sort((a, b) {
@@ -545,7 +553,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 .where(
                   Filter.or(
                     Filter('attendanceStatus', isNull: true),
-                    Filter('attendanceStatus', isEqualTo: 'Pending'),
+                    Filter('attendanceStatus', isEqualTo: 'Unconfirmed'),
                   ),
                 );
     return Container(
@@ -655,9 +663,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   // Build attendee card
   Widget _buildAttendeeCard(Attendee attendee) {
     var fullname = attendee.fullName;
-    var lcardname = "${attendee.cards}";
-    String attendanceStatus = attendee.attendanceStatus ?? "Pending";
-
+    var attrCrdMap = attendee.cards[widget.kardType.name];
+    AttributeCard? attributeCard;
+    attributeCard =
+        attrCrdMap != null ? AttributeCard.fromMap(map: attrCrdMap) : null;
+    String crdnm =
+        attributeCard != null ? attributeCard.name ?? "Not set" : "Not set";
+    String attendanceStatus = attendee.attendanceStatus ?? "Unconfirmed";
     Color statusColor =
         attendanceStatus == "Confirmed"
             ? Colors.green
@@ -724,7 +736,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             child: Center(
                               child: Icon(
                                 size: 28,
-                                Icons.verified_user_sharp,
+                                Icons.account_circle,
                                 color: Colors.green,
                               ),
                             ),
@@ -789,11 +801,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.card_travel, size: 16),
+                                  Icon(Icons.event, size: 16),
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      lcardname,
+                                      crdnm,
                                       style: TextStyle(
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -802,16 +814,26 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                   // const SizedBox(width: psm * 2),
                                   TextButton(
                                     onPressed: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) {
-                                            return ViewCard(
-                                              cardUrl:
-                                                  attendee.cards.toString(),
-                                            );
-                                          },
-                                        ),
-                                      );
+                                      var vcrd =
+                                          attendee.cards[widget.kardType.name];
+                                      if (vcrd != null) {
+                                        AttributeCard attrCrd =
+                                            AttributeCard.fromMap(map: vcrd);
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) {
+                                              return ViewCard(
+                                                cardUrl: attrCrd.url ?? "",
+                                              );
+                                            },
+                                          ),
+                                        );
+                                      } else {
+                                        showToast(
+                                          isGood: false,
+                                          msg: "Unable to View",
+                                        );
+                                      }
                                     },
                                     child: Icon(
                                       Clarity.eye_show_line,
@@ -914,10 +936,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               const SizedBox(width: 8),
               _buildStatusButton(
                 attendee,
-                "Pending",
+                "Unconfirmed",
                 Icons.schedule,
                 Colors.amber,
-                attendee.attendanceStatus == "Pending" ||
+                attendee.attendanceStatus == "Unconfirmed" ||
                     attendee.attendanceStatus == null,
               ),
               const SizedBox(width: 8),

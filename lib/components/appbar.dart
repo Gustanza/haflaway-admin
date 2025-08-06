@@ -4,7 +4,7 @@ import 'package:haflaway/utils/dimensions.dart';
 
 appBar({leading, title, actions}) {
   return PreferredSize(
-    preferredSize: const Size.fromHeight(100),
+    preferredSize: const Size.fromHeight(kToolbarHeight * 1.5),
     child: ClipRRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
