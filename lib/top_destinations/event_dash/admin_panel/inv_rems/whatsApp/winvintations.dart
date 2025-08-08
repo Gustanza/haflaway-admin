@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/attendee_message.dart';
+import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/services/plan_service.dart';
 import 'package:haflaway/components/templates.dart';
@@ -14,11 +15,13 @@ class WInvSender extends StatefulWidget {
   final Event event;
   final EventPlan eventPlan;
   final String campaignId;
+  final KardType kardType;
   final Function(List<Attendee>) onChanged;
 
   const WInvSender({
     super.key,
     required this.event,
+    required this.kardType,
     required this.eventPlan,
     required this.campaignId,
     required this.onChanged,
@@ -109,9 +112,14 @@ class _WInvSenderState extends State<WInvSender> {
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   List<Attendee> docs =
-                      (snapshot.data as dynamic).docs.map<Attendee>((doc) {
-                        return Attendee.fromMap(doc.id, doc.data());
-                      }).toList();
+                      (snapshot.data as dynamic).docs
+                          .where(
+                            (doc) => doc['cards'][widget.kardType.name] != null,
+                          )
+                          .map<Attendee>((doc) {
+                            return Attendee.fromMap(doc.id, doc.data());
+                          })
+                          .toList();
                   if (docs.isEmpty) {
                     return const BuildNoDt(string: "No Attendees Found");
                   } else {
@@ -235,6 +243,7 @@ class _WInvSenderState extends State<WInvSender> {
                         return buildInvite(
                           containz: containz,
                           rdata: rdata,
+                          kardType: widget.kardType,
                           onTap: () {
                             onCheckTap(rdata: rdata, containz: containz);
                           },

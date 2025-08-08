@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/components/Ccafold.dart';
+import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl_phone_field/intl_phone_field.dart';
@@ -19,10 +20,12 @@ class CreateAttendees extends StatefulWidget {
   final Event event;
   final KardType kardType;
   final Attendee? attendee;
+  final String title;
   const CreateAttendees({
     super.key,
     this.attendee,
     required this.event,
+    this.title = "New Invitation",
     required this.kardType,
   });
 
@@ -114,7 +117,15 @@ class _CreateAttendeesState extends State<CreateAttendees> {
     }
     return Scaffold(
       backgroundColor: scaback,
-      appBar: AppBar(title: const Text("Create Attendees")),
+      appBar: appBar(
+        title: "${widget.title}",
+        leading: buildActionButton(
+          icon: Icons.arrow_back_ios,
+          onTap: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
       body: Ccafold(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
@@ -214,6 +225,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         AttributeCard attCard = AttributeCard(
           name: data?.type,
           url: res['data'],
+          templateCardId: data?.id,
           issuedAt: DateTime.now().toIso8601String(),
         );
         Attendee atdt = Attendee(
@@ -223,11 +235,12 @@ class _CreateAttendeesState extends State<CreateAttendees> {
           checkinStatus: chk,
           createdAt: DateTime.now(),
           phone: phnnumber.replaceAll('+', ''),
-          cards: {data?.purpose: attCard.toMap()},
+          cards: {widget.kardType.name: attCard.toMap()},
         );
         await atRef.set(atdt.toMap(), SetOptions(merge: true));
         poper();
         showToast(isGood: true, msg: "Success");
+        poper();
       } catch (e) {
         poper();
         print("Abject: ${e}");

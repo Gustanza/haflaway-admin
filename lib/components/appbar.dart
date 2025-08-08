@@ -29,7 +29,7 @@ appBar({leading, title, actions}) {
                         title,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 34,
+                          fontSize: 30,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -0.5,
                         ),
@@ -59,8 +59,8 @@ Widget buildActionButton({
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          width: 40,
-          height: 40,
+          width: 35,
+          height: 35,
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.15),
             borderRadius: BorderRadius.circular(20),

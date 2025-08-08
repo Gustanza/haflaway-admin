@@ -85,23 +85,26 @@ class AttributeCard {
   String? name;
   String? url;
   String? issuedAt;
-
+  String? templateCardId;
   AttributeCard({
     required this.name,
     required this.url,
     required this.issuedAt,
+    required this.templateCardId,
   });
 
   Map<String, dynamic> toMap() => {
     'name': name,
     'url': url,
     'issuedAt': issuedAt,
+    'templateCardId': templateCardId,
   };
 
   factory AttributeCard.fromMap({map}) {
     return AttributeCard(
       name: map['name'] ?? "",
       url: map['url'] ?? "",
+      templateCardId: map['templateCardId'] ?? "",
       issuedAt: map['issuedAt'] ?? "",
     );
   }

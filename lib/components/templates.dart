@@ -1,21 +1,32 @@
 import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/models/attendee.dart';
+import 'package:haflaway/models/card.dart';
+import 'package:haflaway/models/checkpoint.dart';
+import 'package:haflaway/models/event.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/in_check.dart';
 import 'package:haflaway/utils/colors.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/styles.dart';
 
-buildInvite({containz, rdata, onChanged, onTap}) {
+buildInvite({
+  containz,
+  Attendee? rdata,
+  KardType kardType = KardType.invitation,
+  onChanged,
+  onTap,
+}) {
   return Container(
     margin: EdgeInsets.only(bottom: psm * 0.5),
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.85),
+      color: Colors.white.withOpacity(opacgen),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: primaryColor.withOpacity(0.3), width: 1),
+      border: Border.all(color: primaryWhite.withOpacity(0.3), width: 1),
       boxShadow: [
         BoxShadow(
-          color: primaryColor.withOpacity(0.1),
+          color: primaryWhite.withOpacity(0.1),
           blurRadius: 8,
           offset: const Offset(0, 4),
         ),
@@ -23,9 +34,11 @@ buildInvite({containz, rdata, onChanged, onTap}) {
     ),
     child: ListTile(
       leading: CupertinoCheckbox(value: containz, onChanged: onChanged),
-      title: Text(rdata.fullName, style: TextStyle(fontSize: fsm - 1)),
-      subtitle: Text(rdata.phone),
-      trailing: Container(child: Text(rdata.cardName)),
+      title: Text("${rdata?.fullName}", style: TextStyle(fontSize: fsm - 1)),
+      subtitle: Text("${rdata?.phone}"),
+      trailing: Container(
+        child: Text("${rdata?.cards[kardType.name]['name']}"),
+      ),
       onTap: onTap,
     ),
   );
@@ -63,7 +76,6 @@ Widget buildSectionHeader(String title, IconData icon, Widget? action) {
               style: const TextStyle(
                 fontSize: fsm + 2,
                 fontWeight: FontWeight.w800,
-                color: Colors.black87,
                 letterSpacing: 0.5,
               ),
             ),
@@ -98,8 +110,8 @@ Widget buildListItemCard({
           transform: Matrix4.identity()..scale(isHovered ? 1.02 : 1.0),
           margin: const EdgeInsets.only(bottom: psm),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(16),
+            color: Colors.white.withOpacity(opacgen),
+            borderRadius: BorderRadius.circular(bsm),
             border: Border.all(color: color.withOpacity(0.3), width: 1),
             boxShadow: [
               BoxShadow(
@@ -136,7 +148,10 @@ Widget buildListItemCard({
                       const SizedBox(height: 6),
                       Text(
                         subtitle,
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.6),
+                        ),
                       ),
                     ],
                   ),
@@ -182,3 +197,410 @@ Widget buildActionButton({
     ),
   );
 }
+
+// Glass Wids in the Admin Pane
+
+Widget buildDivider() {
+  return Container(
+    height: 0.5,
+    margin: const EdgeInsets.symmetric(horizontal: 16),
+    color: Colors.white.withOpacity(0.1),
+  );
+}
+
+Widget buildGlassSectionHeader(
+  String title,
+  IconData icon, {
+  bool showAddButton = false,
+}) {
+  return Row(
+    children: [
+      Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.2), width: 0.5),
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+      const SizedBox(width: 12),
+      Text(
+        title,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.5,
+        ),
+      ),
+      const Spacer(),
+      if (showAddButton) buildGlassAddButton(),
+    ],
+  );
+}
+
+Widget buildGlassAddButton() {
+  return GestureDetector(
+    onTap: () {
+      // Navigator.of(
+      //   context,
+      // ).push(MaterialPageRoute(builder: (context) => PlayGround()));
+    }, // showCrtChkpn,
+    child: Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            primaryColor.withOpacity(0.8),
+            primaryColor.withOpacity(0.6),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 0.5),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+    ),
+  );
+}
+
+Widget buildGlassCard({required Widget child}) {
+  return Container(
+    decoration: BoxDecoration(
+      gradient: lqassgrad,
+      borderRadius: BorderRadius.circular(24),
+      border: lqassbdr,
+    ),
+    child: child,
+  );
+}
+
+Widget buildGlassListItem({
+  required String title,
+  required String subtitle,
+  required IconData icon,
+  required List<Color> gradient,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.all(p20),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: gradient),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: gradient[0].withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.arrow_forward_ios_rounded,
+            color: Colors.white.withOpacity(0.5),
+            size: 16,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget buildGlassCheckpointItem(
+  BuildContext context,
+  Event edata,
+  CheckPoint checkpoint,
+) {
+  return GestureDetector(
+    onTap:
+        () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder:
+                (context) => InCheck(checkpoint: checkpoint, eId: edata.id),
+          ),
+        ),
+    child: Container(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.green.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.green,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  checkpoint.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "ID: ${checkpoint.id}",
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.arrow_forward_ios_rounded,
+            color: Colors.white.withOpacity(0.5),
+            size: 16,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget buildGlassEmptyState() {
+  return buildGlassCard(
+    child: Padding(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              Icons.check_circle_outline_rounded,
+              size: 48,
+              color: Colors.white.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            "No Checkpoints Available",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.white.withOpacity(0.9),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            "Create a checkpoint to start managing check-ins",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white.withOpacity(0.6),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+          buildGlassButton(
+            text: "Create First Checkpoint",
+            icon: Icons.add_circle_outline,
+            onPressed: null, // showCrtChkpn,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget buildGlassErrorView() {
+  return buildGlassCard(
+    child: Padding(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.2),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.red.withOpacity(0.3), width: 1),
+            ),
+            child: const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            "Something Went Wrong",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.red,
+            ),
+          ),
+          const SizedBox(height: 24),
+          buildGlassButton(
+            text: "Try Again",
+            icon: Icons.refresh,
+            onPressed: () {},
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget buildGlassButton({
+  required String text,
+  required IconData icon,
+  required VoidCallback? onPressed,
+}) {
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(16),
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              primaryColor.withOpacity(0.8),
+              primaryColor.withOpacity(0.6),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 0.5),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+Widget buildGlassShimmerLoader() {
+  return buildGlassCard(
+    child: Column(
+      children: List.generate(3, (index) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 16,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 12,
+                      width: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+    ),
+  );
+}
+
+// End Glass Wids in the Admin Pamen

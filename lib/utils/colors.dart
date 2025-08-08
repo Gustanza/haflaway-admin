@@ -4,6 +4,7 @@ const primaryColor = Colors.indigo;
 const secondaryColor = Colors.blue;
 const destructiveColor = Colors.red;
 const scaback = const Color(0xFF1a1a2e);
+const primaryWhite = Colors.white;
 
 LinearGradient primaryGrad = LinearGradient(
   begin: Alignment.topLeft,

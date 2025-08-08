@@ -109,6 +109,12 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
+              onTap: (value) {
+                setState(() {
+                  _tabController.animateTo(value);
+                  debugPrint("Abject: Namor");
+                });
+              },
               unselectedLabelStyle: const TextStyle(
                 fontWeight: FontWeight.normal,
               ),
@@ -184,19 +190,7 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
 
   Widget _buildCardTypeIcon(String type) {
     IconData iconData;
-
-    // Map card types to appropriate icons
-    switch (type.toLowerCase()) {
-      case 'vip':
-        iconData = Icons.star;
-        break;
-      case 'standard':
-        iconData = Icons.card_membership;
-        break;
-      default:
-        iconData = Icons.badge;
-    }
-
+    iconData = Icons.badge;
     return Icon(iconData, size: 16);
   }
 
@@ -207,7 +201,7 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
               .collection(ecol)
               .doc(widget.eId)
               .collection(atcol)
-              .where('cardId', isEqualTo: lcrdId)
+              .where('cards.invitation.templateCardId', isEqualTo: lcrdId)
               .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
@@ -544,129 +538,6 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
             ],
           ),
         ),
-        // ExpansionTile(
-        //   initiallyExpanded: true,
-        //   tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        //   childrenPadding: EdgeInsets.zero,
-        //   leading: CircleAvatar(
-        //     backgroundColor: _getProgressColor(progress).withOpacity(0.2),
-        //     child: Stack(
-        //       alignment: Alignment.center,
-        //       children: [
-        //         CircularProgressIndicator(
-        //           value: progress,
-        //           backgroundColor: Colors.grey.withOpacity(0.2),
-        //           valueColor: AlwaysStoppedAnimation<Color>(
-        //             _getProgressColor(progress),
-        //           ),
-        //           strokeWidth: 2.5,
-        //         ),
-        //         Text(
-        //           checkedInCount.toString(),
-        //           style: TextStyle(
-        //             fontWeight: FontWeight.bold,
-        //             color: _getProgressColor(progress),
-        //           ),
-        //         ),
-        //       ],
-        //     ),
-        //   ),
-        //   title: Text(
-        //     attendee.fullName,
-        //     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        //   ),
-        //   subtitle: Column(
-        //     crossAxisAlignment: CrossAxisAlignment.start,
-        //     children: [
-        //       const SizedBox(height: 4),
-        //       Text(
-        //         "$checkedInCount/${statuses.length} slots checked in",
-        //         style: TextStyle(
-        //           color: _getProgressColor(progress),
-        //           fontWeight: FontWeight.w500,
-        //         ),
-        //       ),
-        //       const SizedBox(height: 6),
-        //       ClipRRect(
-        //         borderRadius: BorderRadius.circular(4),
-        //         child: LinearProgressIndicator(
-        //           value: progress,
-        //           backgroundColor: Colors.grey.withOpacity(0.2),
-        //           valueColor: AlwaysStoppedAnimation<Color>(
-        //             _getProgressColor(progress),
-        //           ),
-        //           minHeight: 4,
-        //         ),
-        //       ),
-        //     ],
-        //   ),
-        //   children: [
-        //     Container(
-        //       decoration: BoxDecoration(
-        //         color: Colors.grey[50],
-        //         borderRadius: const BorderRadius.only(
-        //           bottomLeft: Radius.circular(12),
-        //           bottomRight: Radius.circular(12),
-        //         ),
-        //       ),
-        //       child: Column(
-        //         children: List.generate(statuses.length, (index) {
-        //           var status = statuses[index];
-        //           bool isCheckedIn =
-        //               status['checkpoints'][widget.checkpoint.id] ?? false;
-
-        //           return ListTile(
-        //             dense: true,
-        //             leading: Container(
-        //               width: 32,
-        //               height: 32,
-        //               decoration: BoxDecoration(
-        //                 color:
-        //                     isCheckedIn
-        //                         ? Colors.green.withOpacity(0.1)
-        //                         : Colors.red.withOpacity(0.1),
-        //                 borderRadius: BorderRadius.circular(8),
-        //               ),
-        //               child: Icon(
-        //                 isCheckedIn ? Icons.check_circle : Icons.cancel,
-        //                 color: isCheckedIn ? Colors.green : Colors.red,
-        //                 size: 18,
-        //               ),
-        //             ),
-        //             title: Text(
-        //               status['attendee_name'] ?? "Guest",
-        //               style: const TextStyle(
-        //                 fontWeight: FontWeight.w500,
-        //                 fontSize: 14,
-        //               ),
-        //             ),
-        //             trailing: Container(
-        //               padding: const EdgeInsets.symmetric(
-        //                 horizontal: 12,
-        //                 vertical: 6,
-        //               ),
-        //               decoration: BoxDecoration(
-        //                 color:
-        //                     isCheckedIn
-        //                         ? Colors.green.withOpacity(0.1)
-        //                         : Colors.red.withOpacity(0.1),
-        //                 borderRadius: BorderRadius.circular(20),
-        //               ),
-        //               child: Text(
-        //                 isCheckedIn ? "Checked in" : "Not checked",
-        //                 style: TextStyle(
-        //                   color: isCheckedIn ? Colors.green : Colors.red,
-        //                   fontWeight: FontWeight.w500,
-        //                   fontSize: 12,
-        //                 ),
-        //               ),
-        //             ),
-        //           );
-        //         }),
-        //       ),
-        //     ),
-        //   ],
-        // ),
       ),
     );
   }

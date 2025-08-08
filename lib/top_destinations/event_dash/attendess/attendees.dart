@@ -28,7 +28,13 @@ import 'imp_preview.dart';
 class Attendees extends StatefulWidget {
   final dynamic edata;
   final KardType kardType;
-  const Attendees({super.key, required this.edata, required this.kardType});
+  final String title;
+  const Attendees({
+    super.key,
+    required this.edata,
+    required this.kardType,
+    this.title = "Invitations",
+  });
   @override
   State<Attendees> createState() => _AttendeesState();
 }
@@ -52,7 +58,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
 
   // Attendance status filters
   String _currentFilter = "All";
-  final List<String> _filters = ["All", "Confirmed", "Unconfirmed", "Declined"];
+  final List<String> _filters = [
+    "All",
+    "Confirmed",
+    "Not Confirmed",
+    "Declined",
+  ];
 
   // Pagination variables
   final int pageSize = 20;
@@ -247,7 +258,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     if (_currentFilter != "All") {
       statusFiltered =
           attendees.where((attendee) {
-            String status = attendee.attendanceStatus ?? "Unconfirmed";
+            String status = attendee.attendanceStatus ?? "Not Confirmed";
             return status == _currentFilter;
           }).toList();
     }
@@ -317,9 +328,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // if (atList.isEmpty) {
     _loadAttendees();
-    // }
   }
 
   @override
@@ -327,7 +336,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: scaback,
       appBar: appBar(
-        title: "Invitations",
+        title: "${widget.title}",
         leading: buildActionButton(
           icon: Icons.arrow_back_ios,
           onTap: () {
@@ -342,10 +351,15 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               onTap: (value) async {
                 switch (value) {
                   case atActnCrt:
+                    String title =
+                        widget.kardType == KardType.invitation
+                            ? "Invitation"
+                            : "Contributor";
                     await navNormal(
                       context: context,
                       widget: CreateAttendees(
                         event: widget.edata,
+                        title: title,
                         kardType: widget.kardType,
                       ),
                     );
@@ -519,7 +533,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   Widget _buildAttendanceStats() {
     // Count attendees by status
     String confirmed = "Confirmed";
-    String pending = "Unconfirmed";
+    String pending = "Not Confirmed";
     String declined = "Declined";
 
     return Row(
@@ -553,7 +567,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 .where(
                   Filter.or(
                     Filter('attendanceStatus', isNull: true),
-                    Filter('attendanceStatus', isEqualTo: 'Unconfirmed'),
+                    Filter('attendanceStatus', isEqualTo: 'Not Confirmed'),
                   ),
                 );
     return Container(
@@ -668,8 +682,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     attributeCard =
         attrCrdMap != null ? AttributeCard.fromMap(map: attrCrdMap) : null;
     String crdnm =
-        attributeCard != null ? attributeCard.name ?? "Not set" : "Not set";
-    String attendanceStatus = attendee.attendanceStatus ?? "Unconfirmed";
+        attributeCard != null ? attributeCard.name ?? "Not Set" : "Not Set";
+    String attendanceStatus = attendee.attendanceStatus ?? "Not Confirmed";
     Color statusColor =
         attendanceStatus == "Confirmed"
             ? Colors.green
@@ -936,10 +950,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               const SizedBox(width: 8),
               _buildStatusButton(
                 attendee,
-                "Unconfirmed",
+                "Not Confirmed",
                 Icons.schedule,
                 Colors.amber,
-                attendee.attendanceStatus == "Unconfirmed" ||
+                attendee.attendanceStatus == "Not Confirmed" ||
                     attendee.attendanceStatus == null,
               ),
               const SizedBox(width: 8),

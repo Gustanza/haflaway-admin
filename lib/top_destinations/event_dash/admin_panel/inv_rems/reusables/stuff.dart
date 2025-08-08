@@ -4,6 +4,7 @@ enum SMSDStates { unsent, delivered, undelivered, pending }
 
 enum SenderChannels { all, whatsapp, sms }
 
-String campaignId = "haflaway-invitation-campaign";
-String remCampaignId = "haflaway-reminder-campaign";
-String gratCampaignId = "haflaway-gratitude-campaign";
+const invCampId = "haflaway-invitation-campaign";
+const contrCampId = "haflaway-contribution-campaign";
+const invRemCampId = "haflaway-reminder-campaign";
+const gratCampaignId = "haflaway-gratitude-campaign";

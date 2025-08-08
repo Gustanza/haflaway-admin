@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/models/attendee.dart';
+import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/wsap_templates.dart';
 import 'package:haflaway/services/plan_service.dart';
@@ -19,13 +20,15 @@ class SelectTemplate extends StatefulWidget {
   final EventPlan eventPlan;
   final String campaignId;
   final bool isWhatsApp;
+  final KardType? kardType;
   final List<Attendee> senderList;
-  const SelectTemplate({
+  SelectTemplate({
     super.key,
     required this.event,
     this.isWhatsApp = true,
     required this.eventPlan,
     required this.senderList,
+    this.kardType = KardType.invitation,
     required this.campaignId,
   });
 
@@ -149,7 +152,15 @@ class SelectTemplateState extends State<SelectTemplate> {
               isDefaultAction: true,
               onPressed: () async {
                 List invitees =
-                    widget.senderList.map((e) => e.toMap()).toList();
+                    widget.senderList.map((e) {
+                      AttributeCard attrCrd = AttributeCard.fromMap(
+                        map: e.cards[widget.kardType?.name],
+                      );
+                      var map = e.toMap();
+                      map['cardUrl'] = attrCrd.url;
+                      map['id'] = e.id;
+                      return map;
+                    }).toList();
                 showProgress(context: context);
                 try {
                   dynamic response;
