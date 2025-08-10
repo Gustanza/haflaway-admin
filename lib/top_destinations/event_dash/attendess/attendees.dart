@@ -338,7 +338,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       appBar: appBar(
         title: "${widget.title}",
         leading: buildActionButton(
-          icon: Icons.arrow_back_ios,
+          icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
           },
@@ -380,6 +380,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 }
               },
             ),
+            buildActionButton(icon: Icons.bar_chart, onTap: () {}),
           ],
         ),
       ),
@@ -417,27 +418,27 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           const SizedBox(height: psm * 0.35),
           _buildKardFilterChips(),
           _buildStatusFilterChips(),
-          Padding(
-            padding: const EdgeInsets.only(
-              left: psm,
-              right: psm,
-              top: psm * 0.25,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Total: ${atdata.length} Invitations",
-                  style: const TextStyle(
-                    fontSize: fsm + 2,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                _buildAttendanceStats(),
-              ],
-            ),
-          ),
+          // Padding(
+          //   padding: const EdgeInsets.only(
+          //     left: psm,
+          //     right: psm,
+          //     top: psm * 0.25,
+          //   ),
+          //   child: Row(
+          //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          //     children: [
+          //       Text(
+          //         "Total: ${atdata.length} Invitations",
+          //         style: const TextStyle(
+          //           fontSize: fsm + 2,
+          //           color: Colors.white,
+          //           fontWeight: FontWeight.bold,
+          //         ),
+          //       ),
+          //       _buildAttendanceStats(),
+          //     ],
+          //   ),
+          // ),
           if (selectList.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(
@@ -530,7 +531,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   }
 
   // Build attendance stats widget
-  Widget _buildAttendanceStats() {
+  Widget buildAttendanceStats() {
     // Count attendees by status
     String confirmed = "Confirmed";
     String pending = "Not Confirmed";
@@ -683,13 +684,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         attrCrdMap != null ? AttributeCard.fromMap(map: attrCrdMap) : null;
     String crdnm =
         attributeCard != null ? attributeCard.name ?? "Not Set" : "Not Set";
-    String attendanceStatus = attendee.attendanceStatus ?? "Not Confirmed";
-    Color statusColor =
-        attendanceStatus == "Confirmed"
-            ? Colors.green
-            : attendanceStatus == "Declined"
-            ? Colors.red
-            : Colors.orange;
 
     var hasKey = selectList.any((test) {
       return test.id == attendee.id;
@@ -737,21 +731,21 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             width: 50,
                             height: 50,
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
+                              color: Colors.white.withOpacity(0.25),
                               shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: statusColor.withOpacity(0.3),
-                                  blurRadius: 4,
-                                  spreadRadius: 1,
-                                ),
-                              ],
+                              // boxShadow: [
+                              //   BoxShadow(
+                              //     color: statusColor.withOpacity(0.3),
+                              //     blurRadius: 4,
+                              //     spreadRadius: 1,
+                              //   ),
+                              // ],
                             ),
                             child: Center(
                               child: Icon(
                                 size: 28,
                                 Icons.account_circle,
-                                color: Colors.green,
+                                color: Colors.white.withOpacity(0.5),
                               ),
                             ),
                           ),
@@ -934,37 +928,29 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            "Invite Status:",
-            style: TextStyle(fontWeight: FontWeight.w500),
+          _buildStatusButton(
+            attendee,
+            "Confirmed",
+            Icons.check_circle,
+            Colors.green,
+            attendee.attendanceStatus == "Confirmed",
           ),
-          Row(
-            children: [
-              _buildStatusButton(
-                attendee,
-                "Confirmed",
-                Icons.check_circle,
-                Colors.green,
-                attendee.attendanceStatus == "Confirmed",
-              ),
-              const SizedBox(width: 8),
-              _buildStatusButton(
-                attendee,
-                "Not Confirmed",
-                Icons.schedule,
-                Colors.amber,
-                attendee.attendanceStatus == "Not Confirmed" ||
-                    attendee.attendanceStatus == null,
-              ),
-              const SizedBox(width: 8),
-              _buildStatusButton(
-                attendee,
-                "Declined",
-                Icons.cancel,
-                Colors.red,
-                attendee.attendanceStatus == "Declined",
-              ),
-            ],
+          const SizedBox(width: 8),
+          _buildStatusButton(
+            attendee,
+            "Not Confirmed",
+            Icons.schedule,
+            Colors.blue,
+            attendee.attendanceStatus == "Not Confirmed" ||
+                attendee.attendanceStatus == null,
+          ),
+          const SizedBox(width: 8),
+          _buildStatusButton(
+            attendee,
+            "Declined",
+            Icons.cancel,
+            Colors.red,
+            attendee.attendanceStatus == "Declined",
           ),
         ],
       ),
@@ -983,7 +969,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       onTap: () {
         // Vibrate for haptic feedback
         HapticFeedback.mediumImpact();
-
         _updateAttendanceStatus(attendee, status);
       },
       borderRadius: BorderRadius.circular(20),

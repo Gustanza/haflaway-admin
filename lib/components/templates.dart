@@ -274,9 +274,9 @@ Widget buildGlassAddButton() {
 Widget buildGlassCard({required Widget child}) {
   return Container(
     decoration: BoxDecoration(
-      gradient: lqassgrad,
-      borderRadius: BorderRadius.circular(24),
-      border: lqassbdr,
+      // gradient: lqassgrad,
+      // borderRadius: BorderRadius.circular(24),
+      // border: lqassbdr,
     ),
     child: child,
   );
@@ -352,13 +352,13 @@ Widget buildGlassCheckpointItem(
   CheckPoint checkpoint,
 ) {
   return GestureDetector(
-    onTap:
-        () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder:
-                (context) => InCheck(checkpoint: checkpoint, eId: edata.id),
-          ),
+    onTap: () {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => InCheck(checkpoint: checkpoint, eId: edata.id),
         ),
+      );
+    },
     child: Container(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -604,3 +604,26 @@ Widget buildGlassShimmerLoader() {
 }
 
 // End Glass Wids in the Admin Pamen
+
+// Global Buttons
+buildFloatingBtn({
+  required bool mini,
+  required String heroTag,
+  onPressed,
+  required IconData iconData,
+}) {
+  return FloatingActionButton(
+    elevation: 20,
+    heroTag: heroTag,
+    mini: mini,
+    onPressed: onPressed,
+    backgroundColor: Colors.white.withOpacity(0.1),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadiusGeometry.circular(40),
+      side: BorderSide(color: lqassbdrColor, width: 0.5),
+    ),
+    child: Icon(iconData, color: mWhite),
+  );
+}
+
+// End of Global Button

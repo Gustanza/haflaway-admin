@@ -1,7 +1,10 @@
+import 'package:haflaway/components/Ccafold.dart';
+import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/scancheck.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:intl/intl.dart';
@@ -71,6 +74,7 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
 
   Widget _buildMainContent() {
     return Scaffold(
+      backgroundColor: scaback,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -92,7 +96,6 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
           widget.checkpoint.name,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
-        actions: [_buildScanButton(), const SizedBox(width: psm)],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),
           child: Align(
@@ -112,7 +115,6 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
               onTap: (value) {
                 setState(() {
                   _tabController.animateTo(value);
-                  debugPrint("Abject: Namor");
                 });
               },
               unselectedLabelStyle: const TextStyle(
@@ -135,54 +137,42 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
           ),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.grey[100]!, Colors.white],
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          buildFloatingBtn(
+            mini: true,
+            heroTag: "mini",
+            iconData: Icons.pin,
+            onPressed: () {},
           ),
-        ),
+          SizedBox(height: psm * 0.5),
+          buildFloatingBtn(
+            mini: false,
+            heroTag: "major",
+            iconData: Icons.qr_code,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return Scanner(
+                      acIds: acIds,
+                      eId: widget.eId,
+                      chckpntId: widget.checkpoint.id,
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Ccafold(
         child: TabBarView(
           controller: _tabController,
           children: List.generate(acptcrds.length, (index) {
             return buildAttendees(lcrdId: acptcrds[index].id);
           }),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScanButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-      child: ElevatedButton.icon(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) {
-                return Scanner(
-                  acIds: acIds,
-                  eId: widget.eId,
-                  chckpntId: widget.checkpoint.id,
-                );
-              },
-            ),
-          );
-        },
-        icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
-        label: const Text(
-          "Scan",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: secondaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
         ),
       ),
     );

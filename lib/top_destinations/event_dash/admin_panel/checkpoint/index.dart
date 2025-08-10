@@ -38,58 +38,54 @@ class _CheckPointsState extends State<CheckPoints> {
         ),
       ),
       body: Ccafold(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: p20),
-              StreamBuilder(
-                stream:
-                    firestore
-                        .collection(ecol)
-                        .doc(widget.edata.id)
-                        .collection(echecksub)
-                        .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    List<CheckPoint> docs =
-                        (snapshot.data as dynamic).docs.map<CheckPoint>((doc) {
-                          return CheckPoint.fromMap(
-                            doc.id,
-                            doc.data() as Map<String, dynamic>,
-                          );
-                        }).toList();
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: p20),
+            StreamBuilder(
+              stream:
+                  firestore
+                      .collection(ecol)
+                      .doc(widget.edata.id)
+                      .collection(echecksub)
+                      .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  List<CheckPoint> docs =
+                      (snapshot.data as dynamic).docs.map<CheckPoint>((doc) {
+                        return CheckPoint.fromMap(
+                          doc.id,
+                          doc.data() as Map<String, dynamic>,
+                        );
+                      }).toList();
 
-                    if (docs.isEmpty) {
-                      return buildGlassEmptyState();
-                    }
-
-                    return buildGlassCard(
-                      child: Column(
-                        children: List.generate(docs.length, (index) {
-                          final isLast = index == docs.length - 1;
-                          return Column(
-                            children: [
-                              buildGlassCheckpointItem(
-                                context,
-                                widget.edata,
-                                docs[index],
-                              ),
-                              if (!isLast) buildDivider(),
-                            ],
-                          );
-                        }),
-                      ),
-                    );
-                  } else if (snapshot.hasError) {
-                    return buildGlassErrorView();
+                  if (docs.isEmpty) {
+                    return buildGlassEmptyState();
                   }
-                  return buildGlassShimmerLoader();
-                },
-              ),
-            ],
-          ),
+
+                  return buildGlassCard(
+                    child: Column(
+                      children: List.generate(docs.length, (index) {
+                        return Column(
+                          children: [
+                            buildGlassCheckpointItem(
+                              context,
+                              widget.edata,
+                              docs[index],
+                            ),
+                            buildDivider(),
+                          ],
+                        );
+                      }),
+                    ),
+                  );
+                } else if (snapshot.hasError) {
+                  return buildGlassErrorView();
+                }
+                return buildGlassShimmerLoader();
+              },
+            ),
+          ],
         ),
       ),
     );

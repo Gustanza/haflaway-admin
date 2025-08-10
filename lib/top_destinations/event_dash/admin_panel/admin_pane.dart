@@ -73,7 +73,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
       appBar: appBar(
         title: "Dashboard",
         leading: buildActionButton(
-          icon: Icons.arrow_back_ios,
+          icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
           },
@@ -136,11 +136,10 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     );
   }
 
-  // Removing unused _buildEventHeader method to fix lint warning
   Widget _buildAdminToolsSection() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: p20),
+        padding: const EdgeInsets.symmetric(horizontal: 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -171,16 +170,17 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                       const Color(0xFF2196F3),
                       const Color(0xFF1976D2),
                     ],
-                    onTap:
-                        () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder:
-                                (context) => Attendees(
-                                  edata: widget.edata,
-                                  kardType: KardType.invitation,
-                                ),
-                          ),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder:
+                              (context) => Attendees(
+                                edata: widget.edata,
+                                kardType: KardType.invitation,
+                              ),
                         ),
+                      );
+                    },
                   ),
                   buildDivider(),
 
@@ -190,7 +190,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                     icon: Clarity.coin_bag_solid,
                     gradient: [
                       const Color.fromARGB(255, 243, 33, 100),
-                      const Color.fromARGB(255, 226, 7, 230),
+                      const Color.fromARGB(255, 243, 33, 100),
                     ],
                     onTap: () {
                       Navigator.of(context).push(
@@ -210,10 +210,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                     title: "Scan & Verify Cards",
                     subtitle: "Ensure Authenticity of Cards being Showed",
                     icon: Clarity.shield_check_solid,
-                    gradient: [
-                      const Color.fromARGB(255, 62, 233, 5),
-                      const Color.fromARGB(255, 4, 190, 187),
-                    ],
+                    gradient: [Colors.teal, Colors.teal],
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
