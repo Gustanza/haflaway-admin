@@ -355,7 +355,9 @@ Widget buildGlassCheckpointItem(
     onTap: () {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => InCheck(checkpoint: checkpoint, eId: edata.id),
+          builder: (context) {
+            return InCheckWrapper(checkpoint: checkpoint, eId: edata.id);
+          },
         ),
       );
     },

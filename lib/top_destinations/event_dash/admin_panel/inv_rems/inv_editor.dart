@@ -122,7 +122,7 @@ class _InvEditorState extends State<InvEditor> {
           actions: [
             MaterialButton(
               elevation: 0,
-              color: primaryColor.shade100,
+              color: primaryColor.withValues(alpha: 0.2),
               child: Text("Cancel"),
               onPressed: () {
                 popper();
@@ -174,7 +174,7 @@ class _InvEditorState extends State<InvEditor> {
           actions: [
             MaterialButton(
               elevation: 0,
-              color: primaryColor.shade100,
+              color: primaryColor.withValues(alpha: 0.2),
               child: Text("Cancel"),
               onPressed: () {
                 popper();

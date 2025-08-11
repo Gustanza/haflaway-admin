@@ -38,9 +38,9 @@ class _AttendeeCheckInViewState extends State<AttendeeCheckInView>
       height: height,
       width: double.maxFinite,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(bsm),
         gradient: lqassgrad,
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+        border: Border.all(color: lqassbdrColor, width: 0.5),
       ),
       child: ClipRRect(borderRadius: BorderRadius.circular(24), child: child),
     );
@@ -209,16 +209,7 @@ class _AttendeeCheckInViewState extends State<AttendeeCheckInView>
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  gradient:
-                      !actlStatus
-                          ? LinearGradient(
-                            colors: [
-                              Colors.blue.shade400,
-                              Colors.purple.shade400,
-                            ],
-                          )
-                          : null,
-                  color: actlStatus ? Colors.white.withOpacity(0.1) : null,
+                  color: Colors.white.withOpacity(0.1),
                   border: Border.all(
                     color: Colors.white.withOpacity(0.2),
                     width: 1,
@@ -277,6 +268,7 @@ class _AttendeeCheckInViewState extends State<AttendeeCheckInView>
           content: const Text("Are you sure you want to checkout?"),
           actions: [
             CupertinoButton(
+              borderRadius: BorderRadius.zero,
               color: primaryColor,
               onPressed: () {
                 attendee.checkinStatus[idx][crdChkpns][widget.chckpntId] =
@@ -364,7 +356,10 @@ class _AttendeeCheckInViewState extends State<AttendeeCheckInView>
                               borderRadius: BorderRadiusGeometry.circular(bsm),
                             ),
                             onPressed: widget.onPressed,
-                            child: Text("SCAN NEXT!"),
+                            child: Text(
+                              "SCAN NEXT",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ],

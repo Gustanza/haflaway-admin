@@ -1,6 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-const primaryColor = Colors.indigo;
+const primaryColor = CupertinoColors.systemBlue;
 const secondaryColor = Colors.blue;
 const destructiveColor = Colors.red;
 const scaback = const Color(0xFF1a1a2e);
