@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/resolver.dart';
