@@ -37,7 +37,7 @@ class _LoginState extends State<Login> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               decoration: BoxDecoration(
                 color: primaryColor,
-                borderRadius: BorderRadius.circular(bsm),
+                borderRadius: BorderRadius.circular(bmd),
               ),
               child: ListView(
                 shrinkWrap: true,
@@ -235,7 +235,7 @@ class _MsajiliState extends State<Msajili> {
               ),
               decoration: BoxDecoration(
                 color: primaryColor,
-                borderRadius: BorderRadius.circular(bsm),
+                borderRadius: BorderRadius.circular(bmd),
               ),
               child: ListView(
                 shrinkWrap: true,
@@ -432,7 +432,7 @@ class _KuresetNenoSiriState extends State<KuresetNenoSiri> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               decoration: BoxDecoration(
                 color: primaryColor,
-                borderRadius: BorderRadius.circular(bsm),
+                borderRadius: BorderRadius.circular(bmd),
               ),
               child: ListView(
                 shrinkWrap: true,

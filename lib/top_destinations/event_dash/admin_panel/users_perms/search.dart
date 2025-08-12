@@ -139,7 +139,7 @@ class _SearchResultsState extends State<SearchResults> {
                       child: MaterialButton(
                         shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(bsm),
+                            bottomLeft: Radius.circular(bmd),
                           ),
                         ),
                         color: primaryColor,
@@ -164,7 +164,7 @@ class _SearchResultsState extends State<SearchResults> {
                         color: primaryColor,
                         shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
-                            bottomRight: Radius.circular(bsm),
+                            bottomRight: Radius.circular(bmd),
                           ),
                         ),
                         onPressed: () {

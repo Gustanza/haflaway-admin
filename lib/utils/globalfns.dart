@@ -153,17 +153,8 @@ String cleanStr({String? input}) {
 
 String generateUniqueSequence() {
   final random = Random();
-  final now = DateTime.now();
-
-  // Combine timestamp components with random numbers
-  String sequence =
-      now.millisecondsSinceEpoch.toString().substring(
-        7,
-      ) + // Last 6 digits of timestamp
-      random.nextInt(10).toString() + // Random digit
-      (now.microsecond % 10).toString(); // Last digit of microseconds
-
-  return sequence;
+  // Generate random 4-digit number (1000-9999)
+  return (1000 + random.nextInt(9000)).toString();
 }
 
 buildPop({list, icon, onTap}) {

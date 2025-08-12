@@ -92,7 +92,7 @@ class _CreateEventState extends State<CreateEvent> {
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: CupertinoColors.systemGrey4,
-                      borderRadius: BorderRadius.circular(bsm),
+                      borderRadius: BorderRadius.circular(bmd),
                       image:
                           picha != null
                               ? DecorationImage(

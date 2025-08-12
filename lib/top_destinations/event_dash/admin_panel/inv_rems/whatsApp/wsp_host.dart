@@ -96,8 +96,8 @@ class _WInvHostState extends State<WInvHost> {
                       width: 1,
                     ),
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(bsm),
-                      topRight: Radius.circular(bsm),
+                      topLeft: Radius.circular(bmd),
+                      topRight: Radius.circular(bmd),
                     ),
                   ),
                   padding: EdgeInsets.symmetric(

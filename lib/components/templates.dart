@@ -111,7 +111,7 @@ Widget buildListItemCard({
           margin: const EdgeInsets.only(bottom: psm),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(opacgen),
-            borderRadius: BorderRadius.circular(bsm),
+            borderRadius: BorderRadius.circular(bmd),
             border: Border.all(color: color.withOpacity(0.3), width: 1),
             boxShadow: [
               BoxShadow(

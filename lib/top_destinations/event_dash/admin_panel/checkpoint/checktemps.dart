@@ -1,6 +1,13 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/buttons.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/resolver.dart';
 import 'package:haflaway/utils/colors.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
+import 'package:haflaway/utils/styles.dart';
+import 'package:pinput/pinput.dart';
 import 'package:shimmer/shimmer.dart';
 
 Widget buildEmptyState({onPressed}) {
@@ -149,4 +156,101 @@ Widget buildShimmerLoader() {
       ],
     ),
   );
+}
+
+class PinPutty extends StatelessWidget {
+  final String chckpntId;
+  final String eId;
+  const PinPutty({super.key, required this.chckpntId, required this.eId});
+
+  @override
+  Widget build(BuildContext context) {
+    GlobalKey<FormState> gkey = GlobalKey<FormState>();
+    TextEditingController controller = TextEditingController();
+    return Center(
+      child: Form(
+        key: gkey,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: psm * 2),
+          child: ClipRRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Card(
+                color: lqassgradBaseColor,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: psm,
+                    vertical: psm * 2,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Enter Access Code",
+                        style: TextStyle(
+                          fontSize: fsm + 4,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: psm),
+                      Pinput(
+                        length: 4,
+                        controller: controller,
+                        defaultPinTheme: PinTheme(
+                          height: kToolbarHeight,
+                          width: kToolbarHeight,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(bxsm),
+                            color: lqassgradBaseColor,
+                            border: Border.all(
+                              color: lqassbdrColor,
+                              width: bdrWidthGen,
+                            ),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null) {
+                            return "Key-in Figures";
+                          } else if (value.length < 4) {
+                            return "Key-in All Figures";
+                          } else {
+                            return null;
+                          }
+                        },
+                      ),
+                      SizedBox(height: psm * 1.4),
+                      buildLqAssButton(
+                        label: "Continue",
+                        onPressed: () {
+                          bool isGreen = gkey.currentState?.validate() ?? false;
+                          if (isGreen) {
+                            String attId = controller.text;
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return AttendeeCheckInView(
+                                    attId: attId,
+                                    chckpntId: chckpntId,
+                                    eId: eId,
+                                    showAppBar: true,
+                                    onPressed: () async {},
+                                  );
+                                },
+                              ),
+                            );
+                          } else {
+                            debugPrint("Come out here");
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

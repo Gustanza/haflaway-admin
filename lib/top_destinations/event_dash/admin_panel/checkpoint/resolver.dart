@@ -1,16 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'dart:ui';
-
 import 'package:haflaway/utils/globalwids.dart';
 
 class AttendeeCheckInView extends StatefulWidget {
+  final bool showAppBar;
   final String attId;
   final String eId;
   final String chckpntId;
@@ -21,6 +22,7 @@ class AttendeeCheckInView extends StatefulWidget {
     Key? key,
     required this.attId,
     required this.eId,
+    this.showAppBar = false,
     required this.onPressed,
     required this.chckpntId,
   }) : super(key: key);
@@ -38,7 +40,7 @@ class _AttendeeCheckInViewState extends State<AttendeeCheckInView>
       height: height,
       width: double.maxFinite,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(bsm),
+        borderRadius: BorderRadius.circular(bmd),
         gradient: lqassgrad,
         border: Border.all(color: lqassbdrColor, width: 0.5),
       ),
@@ -297,6 +299,18 @@ class _AttendeeCheckInViewState extends State<AttendeeCheckInView>
 
     return Scaffold(
       extendBodyBehindAppBar: true,
+      appBar:
+          widget.showAppBar
+              ? appBar(
+                title: "",
+                leading: buildActionButton(
+                  icon: Icons.arrow_back,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              )
+              : null,
       body: Container(
         height: double.maxFinite,
         decoration: const BoxDecoration(
@@ -347,21 +361,24 @@ class _AttendeeCheckInViewState extends State<AttendeeCheckInView>
                           ),
                         ),
                         const SizedBox(height: p20),
-                        SizedBox(
-                          width: double.maxFinite,
-                          child: MaterialButton(
-                            color: primaryColor,
-                            height: kToolbarHeight * 0.9,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadiusGeometry.circular(bsm),
-                            ),
-                            onPressed: widget.onPressed,
-                            child: Text(
-                              "SCAN NEXT",
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                        if (!widget.showAppBar)
+                          SizedBox(
+                            width: double.maxFinite,
+                            child: MaterialButton(
+                              color: primaryColor,
+                              height: kToolbarHeight * 0.9,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadiusGeometry.circular(
+                                  bmd,
+                                ),
+                              ),
+                              onPressed: widget.onPressed,
+                              child: Text(
+                                "SCAN NEXT",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   );

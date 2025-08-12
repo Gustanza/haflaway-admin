@@ -51,7 +51,7 @@ colorPreviewer({color}) {
     height: psm * 1.35,
     decoration: BoxDecoration(
       color: color,
-      borderRadius: BorderRadius.circular(bsm * 10),
+      borderRadius: BorderRadius.circular(bmd * 10),
       border: Border.all(width: 1, color: Colors.grey),
     ),
   );
@@ -67,7 +67,7 @@ customSmBtn(Function() callback) {
       ),
       decoration: BoxDecoration(
         color: secondaryColor,
-        borderRadius: BorderRadius.circular(bsm * 2),
+        borderRadius: BorderRadius.circular(bmd * 2),
       ),
       child: const Text("Edit", style: TextStyle()),
     ),

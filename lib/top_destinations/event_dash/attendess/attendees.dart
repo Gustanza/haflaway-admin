@@ -1202,8 +1202,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   color: primaryColor,
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(bsm),
-                      bottomRight: Radius.circular(bsm),
+                      bottomLeft: Radius.circular(bmd),
+                      bottomRight: Radius.circular(bmd),
                     ),
                   ),
                   height: kToolbarHeight * 0.75,

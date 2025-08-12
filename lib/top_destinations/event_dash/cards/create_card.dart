@@ -612,8 +612,8 @@ class _CardCustomizerState extends State<CardCustomizer> {
             Card(
               shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(bsm),
-                  topRight: Radius.circular(bsm),
+                  topLeft: Radius.circular(bmd),
+                  topRight: Radius.circular(bmd),
                 ),
               ),
               child: Center(
@@ -623,7 +623,7 @@ class _CardCustomizerState extends State<CardCustomizer> {
                   margin: const EdgeInsets.all(psm),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade500,
-                    borderRadius: BorderRadius.circular(bsm),
+                    borderRadius: BorderRadius.circular(bmd),
                   ),
                 ),
               ),

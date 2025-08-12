@@ -111,7 +111,17 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
               mini: true,
               heroTag: "mini",
               iconData: Icons.pin,
-              onPressed: () {},
+              onPressed: () async {
+                await showDialog(
+                  context: context,
+                  builder: (context) {
+                    return PinPutty(
+                      eId: widget.eId,
+                      chckpntId: widget.checkpoint.id,
+                    );
+                  },
+                );
+              },
             ),
             SizedBox(height: psm * 0.5),
             buildFloatingBtn(
