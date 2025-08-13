@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:excel/excel.dart' as exl;
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:haflaway/components/appbar.dart';
+import 'package:haflaway/components/buttons.dart';
+import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/services/strg_service.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/crtattendees.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -418,27 +421,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           const SizedBox(height: psm * 0.35),
           _buildKardFilterChips(),
           _buildStatusFilterChips(),
-          // Padding(
-          //   padding: const EdgeInsets.only(
-          //     left: psm,
-          //     right: psm,
-          //     top: psm * 0.25,
-          //   ),
-          //   child: Row(
-          //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //     children: [
-          //       Text(
-          //         "Total: ${atdata.length} Invitations",
-          //         style: const TextStyle(
-          //           fontSize: fsm + 2,
-          //           color: Colors.white,
-          //           fontWeight: FontWeight.bold,
-          //         ),
-          //       ),
-          //       _buildAttendanceStats(),
-          //     ],
-          //   ),
-          // ),
           if (selectList.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(
@@ -1136,85 +1118,79 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     }
     // ends here
     return showModalBottomSheet(
-      showDragHandle: true,
+      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadiusGeometry.only(
+          topLeft: Radius.circular(bmd),
+          topRight: Radius.circular(bmd),
+        ),
+      ),
       context: context,
       builder: (context) {
-        return SingleChildScrollView(
-          child: CupertinoListSection.insetGrouped(
-            margin: const EdgeInsets.only(
-              left: psm * 0.5,
-              right: psm * 0.5,
-              bottom: psm * 1.5,
-            ),
-            header: const Text("Map Excel Data"),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(psm),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Name",
-                      style: TextStyle(
-                        fontSize: fsm + 2,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    buildDrop(sels, mpname),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(psm),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Phone",
-                      style: TextStyle(
-                        fontSize: fsm + 2,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    buildDrop(sels, mpphone),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(psm),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Card",
-                      style: TextStyle(
-                        fontSize: fsm + 2,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    buildDrop(synCrdmap, mpcard),
-                  ],
-                ),
-              ),
-              SizedBox(
-                width: double.maxFinite,
-                child: MaterialButton(
-                  color: primaryColor,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(bmd),
-                      bottomRight: Radius.circular(bmd),
-                    ),
+        return modalBtmSheet(
+          bdrdm: bmd,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: psm),
+                Text(
+                  "Import from File",
+                  style: TextStyle(
+                    fontSize: fsm + 4,
+                    fontWeight: FontWeight.bold,
                   ),
-                  height: kToolbarHeight * 0.75,
-                  child: const Text(
-                    "Continue",
-                    style: TextStyle(
-                      fontSize: fsm,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(psm),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Name",
+                        style: TextStyle(
+                          fontSize: fsm + 2,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      buildDrop(sels, mpname),
+                    ],
                   ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(psm),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Phone",
+                        style: TextStyle(
+                          fontSize: fsm + 2,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      buildDrop(sels, mpphone),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(psm),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Card",
+                        style: TextStyle(
+                          fontSize: fsm + 2,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      buildDrop(synCrdmap, mpcard),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: psm),
+                lqAssButton(
+                  label: "Continue",
                   onPressed: () async {
                     if (isGreen()) {
                       poper();
@@ -1233,6 +1209,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                               xcelFile: file!,
                               carddata: carddata,
                               eId: widget.edata.id,
+                              kardType: widget.kardType,
                             );
                           },
                         ),
@@ -1241,8 +1218,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     }
                   },
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

@@ -218,7 +218,7 @@ class PinPutty extends StatelessWidget {
                         },
                       ),
                       SizedBox(height: psm * 1.4),
-                      buildLqAssButton(
+                      lqAssButton(
                         label: "Continue",
                         onPressed: () {
                           bool isGreen = gkey.currentState?.validate() ?? false;

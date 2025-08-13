@@ -4,7 +4,7 @@ import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/styles.dart';
 
-buildLqAssButton({onPressed, label}) {
+lqAssButton({onPressed, label}) {
   return GestureDetector(
     onTap: onPressed ?? () {},
     child: Container(
