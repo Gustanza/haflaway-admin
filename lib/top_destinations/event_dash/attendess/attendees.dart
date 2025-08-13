@@ -7,6 +7,7 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/services/strg_service.dart';
+import 'package:haflaway/top_destinations/event_dash/attendess/components/importcontr.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/crtattendees.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
@@ -29,7 +30,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'imp_preview.dart';
 
 class Attendees extends StatefulWidget {
-  final dynamic edata;
+  final Event edata;
   final KardType kardType;
   final String title;
   const Attendees({
@@ -376,8 +377,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   case atActnDwn:
                     downCards();
                     break;
-                  case atActnImprt:
-                    importNow();
+                  case atActnImprtFile:
+                    importFile();
+                    break;
+                  case atActnImprtCont:
+                    showImportContributor();
                     break;
                   default:
                 }
@@ -1083,7 +1087,26 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     }
   }
 
-  importNow() async {
+  showImportContributor() {
+    return showModalBottomSheet(
+      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadiusGeometry.only(
+          topLeft: Radius.circular(bmd),
+          topRight: Radius.circular(bmd),
+        ),
+      ),
+      context: context,
+      builder: (context) {
+        return modalBtmSheet(
+          bdrdm: bmd,
+          child: ImportContributor(evId: widget.edata.id),
+        );
+      },
+    );
+  }
+
+  importFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['xls', 'xlsx', 'xlsm', 'xlsb'],

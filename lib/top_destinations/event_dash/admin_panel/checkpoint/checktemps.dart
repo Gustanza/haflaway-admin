@@ -17,17 +17,17 @@ Widget buildEmptyState({onPressed}) {
         Icon(Icons.credit_card_off, size: 80, color: Colors.grey[400]),
         const SizedBox(height: 16),
         Text(
-          "No Cards Available",
+          "No Data Available",
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
+            // color: Colors.grey[800],
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          "There are no cards assigned to this checkpoint",
-          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          "There is no data available at this point",
+          style: TextStyle(fontSize: 16),
         ),
         const SizedBox(height: 24),
         ElevatedButton.icon(

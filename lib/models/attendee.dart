@@ -12,13 +12,21 @@ const atlblemail = "Email of Attendee (Optional)";
 /* labels */
 
 /* pop-options */
-List atActnlist = [atActnDwn, atActnSelAll, atActnCrt, atActnImprt, atActnDel];
+List atActnlist = [
+  atActnDwn,
+  atActnSelAll,
+  atActnCrt,
+  atActnImprtFile,
+  atActnImprtCont,
+  atActnDel,
+];
 const atppsend = "Send Invitation";
 const atActnSelAll = "Select All / Unselect All";
-const atActnDwn = "Download Attendee Card(s)";
+const atActnDwn = "Download Cards";
 const atActnCrt = "Create Attendee";
 const atActnDel = "Delete Attendee";
-const atActnImprt = "Import Attendees";
+const atActnImprtFile = "Import from file";
+const atActnImprtCont = "Import from contributors";
 
 class Attendee {
   String? id;
@@ -64,9 +72,6 @@ class Attendee {
     return Attendee(
       id: id,
       cards: map['cards'] ?? {},
-      // cardId: map['cardId'] ?? "",
-      // cardName: map['cardName'] ?? "",
-      // cardUrl: map['cardUrl'] ?? "",
       checkinStatus: map['checkinStatus'] ?? [],
       createdAt:
           map['createdAt'] != null
