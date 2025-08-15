@@ -20,18 +20,20 @@ import 'package:haflaway/utils/styles.dart';
 import 'package:haflaway/utils/urls.dart';
 
 class ImpPreview extends StatefulWidget {
-  final dynamic eId;
+  final String eId;
   final Kard carddata;
   final KardType kardType;
-  final Map<String, dynamic> mapp;
-  final File xcelFile;
+  final List<Attendee>? atList;
+  final Map<String, dynamic>? mapp;
+  final File? xcelFile;
   const ImpPreview({
     super.key,
+    this.mapp,
+    this.atList,
+    this.xcelFile,
     required this.eId,
-    required this.mapp,
-    required this.carddata,
-    required this.xcelFile,
     required this.kardType,
+    required this.carddata,
   });
 
   @override
@@ -52,7 +54,27 @@ class _ImpPreviewState extends State<ImpPreview> {
   @override
   void initState() {
     super.initState();
-    prcsXcel();
+    if (widget.xcelFile != null) {
+      prcsXcel();
+    } else {
+      setAtList();
+    }
+  }
+
+  setAtList() {
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        hasError = false;
+      });
+    }
+    attendees = widget.atList ?? [];
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+        hasError = false;
+      });
+    }
   }
 
   prcsXcel() async {
@@ -64,12 +86,12 @@ class _ImpPreviewState extends State<ImpPreview> {
         });
       }
       //
-      int atnidx = widget.mapp['fullName']!;
-      int atphnidx = widget.mapp['phone']!;
+      int atnidx = widget.mapp!['fullName']!;
+      int atphnidx = widget.mapp!['phone']!;
       //
-      File file = widget.xcelFile;
-      var bytes = file.readAsBytesSync();
-      excel = Excel.decodeBytes(bytes);
+      File? file = widget.xcelFile;
+      var bytes = file?.readAsBytesSync();
+      excel = Excel.decodeBytes(bytes!);
       var tblKey = excel?.tables.keys.firstOrNull;
       var table = excel?.tables[tblKey];
       List<List<Data?>>? rows = table?.rows;
@@ -101,7 +123,6 @@ class _ImpPreviewState extends State<ImpPreview> {
         });
       }
     } catch (e) {
-      debugPrint("Error is: $e");
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -127,7 +148,11 @@ class _ImpPreviewState extends State<ImpPreview> {
           icon: Clarity.import_solid,
           onTap: () {
             if (attendees.isNotEmpty) {
-              crtEm();
+              if (widget.atList == null) {
+                crtEm();
+              } else {
+                editEm();
+              }
             } else {
               showToast(isGood: false, msg: "Nothing to import");
             }
@@ -172,6 +197,7 @@ class _ImpPreviewState extends State<ImpPreview> {
   buildAtList({required List<Attendee> atList}) {
     return Container(
       height: double.maxFinite,
+      width: double.maxFinite,
       decoration: BoxDecoration(gradient: scagrad),
       child: SingleChildScrollView(
         padding: const EdgeInsets.only(left: psm, right: psm),
@@ -248,6 +274,58 @@ class _ImpPreviewState extends State<ImpPreview> {
         attendee.createdAt = DateTime.now();
         attendee.cards = {widget.kardType.name: attCard.toMap()};
         await atRef.set(attendee.toMap());
+        setState(() {
+          attendees.remove(attendee);
+        });
+      } catch (e) {
+        popper();
+        showToast(isGood: false, msg: genErrMsg);
+        return;
+      }
+    }
+    popper();
+    showToast(isGood: true, msg: genScsMsg);
+    return;
+  }
+
+  editEm() async {
+    showProgress(context: context);
+    List<Attendee> attendeesCpy = List.from(attendees);
+    for (var attendee in attendeesCpy) {
+      dynamic res;
+      dynamic reqRes;
+      var atRef = firestore
+          .collection(ecol)
+          .doc(widget.eId)
+          .collection(atcol)
+          .doc(attendee.id);
+      try {
+        dataCleaner(passcode: atRef.id, lfname: attendee.fullName);
+        reqRes = await http.post(
+          Uri.parse(rendercarl),
+          body: jsonEncode(data?.toMap()),
+        );
+        res = jsonDecode(reqRes.body);
+        if (res["error"]) {
+          popper();
+          showToast(isGood: false, msg: genErrMsg);
+          continue;
+        }
+      } catch (e) {
+        popper();
+        showToast(isGood: false, msg: genErrMsg);
+        continue;
+      }
+      try {
+        AttributeCard attCard = AttributeCard(
+          name: data?.type,
+          url: res['data'],
+          templateCardId: data?.id,
+          issuedAt: DateTime.now().toIso8601String(),
+        );
+        attendee.checkinStatus = chk;
+        attendee.cards = {widget.kardType.name: attCard.toMap()};
+        await atRef.set(attendee.toMap(), SetOptions(merge: true));
         setState(() {
           attendees.remove(attendee);
         });

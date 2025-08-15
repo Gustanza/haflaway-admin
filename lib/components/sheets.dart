@@ -31,3 +31,21 @@ modalBtmSheet({required Widget child, required double bdrdm}) {
     ),
   );
 }
+
+glassDialog({required Widget child}) {
+  return Dialog(
+    elevation: 32,
+    backgroundColor: Colors.transparent,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadiusGeometry.circular(bmd),
+      side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadiusGeometry.circular(bmd),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+        child: child,
+      ),
+    ),
+  );
+}

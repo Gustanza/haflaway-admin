@@ -265,6 +265,7 @@ Widget buildField({
     showCursor: showCursor ?? true,
     decoration: InputDecoration(
       hintText: lbl,
+      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
       suffixIcon: suff,
       filled: true,
       enabledBorder: border,

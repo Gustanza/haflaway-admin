@@ -381,7 +381,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     importFile();
                     break;
                   case atActnImprtCont:
-                    showImportContributor();
+                    showSelectCard();
+                    // showImportContributor();
                     break;
                   default:
                 }
@@ -719,13 +720,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.25),
                               shape: BoxShape.circle,
-                              // boxShadow: [
-                              //   BoxShadow(
-                              //     color: statusColor.withOpacity(0.3),
-                              //     blurRadius: 4,
-                              //     spreadRadius: 1,
-                              //   ),
-                              // ],
                             ),
                             child: Center(
                               child: Icon(
@@ -1087,8 +1081,53 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     }
   }
 
-  showImportContributor() {
+  showSelectCard() {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return glassDialog(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: psm,
+              vertical: psm * 2,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Designate Card",
+                  style: TextStyle(
+                    fontSize: fsm + 4,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: psm),
+                ...List.generate(lcrds.length, (idx) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      lqAssButton(
+                        label: lcrds[idx].type,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          showImportContributor(kard: lcrds[idx]);
+                        },
+                      ),
+                      if (idx < lcrds.length - 1) SizedBox(height: psm * 0.5),
+                    ],
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  showImportContributor({required Kard kard}) {
     return showModalBottomSheet(
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadiusGeometry.only(
@@ -1098,9 +1137,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       ),
       context: context,
       builder: (context) {
-        return modalBtmSheet(
-          bdrdm: bmd,
-          child: ImportContributor(evId: widget.edata.id),
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.9,
+          child: modalBtmSheet(
+            bdrdm: bmd,
+            child: ImportContributor(kard: kard, evId: widget.edata.id),
+          ),
         );
       },
     );
