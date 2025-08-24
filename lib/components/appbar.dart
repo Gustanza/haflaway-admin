@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:haflaway/utils/dimensions.dart';
+import 'package:haflaway/utils/styles.dart';
 
 appBar({leading, title, actions}) {
   return PreferredSize(
@@ -27,9 +28,10 @@ appBar({leading, title, actions}) {
                       if (leading != null) const SizedBox(width: psm),
                       Text(
                         title,
+                        maxLines: 1,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 30,
+                          fontSize: fsm + 4,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -0.5,
                         ),

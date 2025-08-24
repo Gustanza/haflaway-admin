@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
@@ -7,34 +6,32 @@ import 'package:haflaway/models/event.dart';
 import 'package:haflaway/providers/balance_provider.dart';
 // import 'package:haflaway/services/balance_service.dart';
 import 'package:haflaway/services/plan_service.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/reusables/stuff.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/whatsApp/select_template.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/whatsApp/winvintations.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/sms_invitations.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/whatsApp/select_template.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:provider/provider.dart';
 
-class WInvHost extends StatefulWidget {
+class SMSsenderHost extends StatefulWidget {
   final Event event;
-  final KardType kardType;
   final String title;
   final String campaignId;
-  const WInvHost({
+  final KardType kardType;
+  const SMSsenderHost({
     super.key,
     required this.event,
+    required this.title,
     required this.kardType,
-    this.campaignId = invCampId,
-    this.title = "Issue Invitations",
+    required this.campaignId,
   });
 
   @override
-  State<WInvHost> createState() => _WInvHostState();
+  State<SMSsenderHost> createState() => _SMSsenderHostState();
 }
 
-class _WInvHostState extends State<WInvHost> {
+class _SMSsenderHostState extends State<SMSsenderHost> {
   int currentStep = 0;
-  bool isWhatsApp = true;
   late EventPlan eventPlan;
   List<Attendee> senderList = [];
   PageController pageController = PageController();
@@ -48,15 +45,16 @@ class _WInvHostState extends State<WInvHost> {
         return Scaffold(
           backgroundColor: scaback,
           appBar: appBar(
-            title: "${widget.title}",
+            title: widget.title,
             leading: buildActionButton(
-              icon: Icons.arrow_back_ios,
+              icon: Icons.arrow_back,
               onTap: () {
                 Navigator.of(context).pop();
               },
             ),
           ),
-          body: Ccafold(
+          body: Container(
+            decoration: BoxDecoration(gradient: scagrad),
             child: Column(
               children: [
                 Expanded(
@@ -64,45 +62,38 @@ class _WInvHostState extends State<WInvHost> {
                     controller: pageController,
                     physics: NeverScrollableScrollPhysics(),
                     children: [
-                      WInvSender(
+                      SMSArtieSender(
                         event: widget.event,
                         eventPlan: eventPlan,
+                        karddType: widget.kardType,
                         onChanged: (p0) {
                           setState(() {
                             senderList = p0;
                           });
                         },
-
-                        kardType: widget.kardType,
                         campaignId: widget.campaignId,
                       ),
                       SelectTemplate(
                         key: someKey,
+                        isWhatsApp: false,
                         event: widget.event,
                         eventPlan: eventPlan,
                         senderList: senderList,
-                        kardType: widget.kardType,
-                        isWhatsApp: isWhatsApp,
                         campaignId: widget.campaignId,
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(opacgen),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(bmd),
-                      topRight: Radius.circular(bmd),
-                    ),
-                  ),
                   padding: EdgeInsets.symmetric(
                     horizontal: psm,
                     vertical: psm * 0.5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: lqassgradBaseColor,
+                    border: BoxBorder.fromLTRB(
+                      top: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -110,7 +101,8 @@ class _WInvHostState extends State<WInvHost> {
                         onPressed:
                             currentStep > 0
                                 ? () {
-                                  safeState(() {
+                                  setState(() {
+                                    senderList = [];
                                     currentStep -= 1;
                                     pageController.jumpToPage(currentStep);
                                   });
@@ -124,7 +116,7 @@ class _WInvHostState extends State<WInvHost> {
                             senderList.isNotEmpty
                                 ? () async {
                                   if (currentStep < 1) {
-                                    safeState(() {
+                                    setState(() {
                                       currentStep += 1;
                                       pageController.jumpToPage(currentStep);
                                     });
@@ -135,24 +127,6 @@ class _WInvHostState extends State<WInvHost> {
                                 : null,
                         child: Text(currentStep < 1 ? "Next" : "Send"),
                       ),
-                      Expanded(
-                        child: SwitchListTile(
-                          contentPadding: EdgeInsets.only(left: psm * 2),
-                          value: isWhatsApp,
-                          title: Text(
-                            "WhatsApp",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          onChanged:
-                              currentStep < 1
-                                  ? (val) {
-                                    safeState(() {
-                                      isWhatsApp = val;
-                                    });
-                                  }
-                                  : null,
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -162,13 +136,5 @@ class _WInvHostState extends State<WInvHost> {
         );
       },
     );
-  }
-
-  safeState(Function runnable) {
-    if (mounted) {
-      setState(() {
-        runnable();
-      });
-    }
   }
 }

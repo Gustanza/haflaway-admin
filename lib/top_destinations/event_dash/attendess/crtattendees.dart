@@ -59,6 +59,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
           await firestore
               .collection(cardcol)
               .where('eventId', isEqualTo: widget.event.id)
+              .where("purpose", isEqualTo: widget.kardType.name)
               .get();
       dataList = source.docs;
 

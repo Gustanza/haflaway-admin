@@ -21,23 +21,16 @@ buildInvite({
   return Container(
     margin: EdgeInsets.only(bottom: psm * 0.5),
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(opacgen),
+      color: lqassgradBaseColor,
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: primaryWhite.withOpacity(0.3), width: 1),
-      boxShadow: [
-        BoxShadow(
-          color: primaryWhite.withOpacity(0.1),
-          blurRadius: 8,
-          offset: const Offset(0, 4),
-        ),
-      ],
+      border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
     ),
     child: ListTile(
       leading: CupertinoCheckbox(value: containz, onChanged: onChanged),
       title: Text("${rdata?.fullName}", style: TextStyle(fontSize: fsm - 1)),
       subtitle: Text("${rdata?.phone}"),
       trailing: Container(
-        child: Text("${rdata?.cards[kardType.name]['name']}"),
+        child: Text("${rdata?.cards[kardType.name]?['name']}"),
       ),
       onTap: onTap,
     ),
@@ -55,22 +48,6 @@ Widget buildSectionHeader(String title, IconData icon, Widget? action) {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(psm * 0.5),
-              decoration: BoxDecoration(
-                gradient: primaryGrad,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(icon, color: Colors.white, size: 28),
-            ),
-            const SizedBox(width: 16),
             Text(
               title,
               style: const TextStyle(
@@ -92,7 +69,6 @@ Widget buildListItemCard({
   required String title,
   required String subtitle,
   required IconData icon,
-  required Color color,
   required VoidCallback onTap,
 }) {
   bool isHovered = false;
@@ -110,16 +86,9 @@ Widget buildListItemCard({
           transform: Matrix4.identity()..scale(isHovered ? 1.02 : 1.0),
           margin: const EdgeInsets.only(bottom: psm),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(opacgen),
+            gradient: lqassgrad,
             borderRadius: BorderRadius.circular(bmd),
-            border: Border.all(color: color.withOpacity(0.3), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(isHovered ? 0.2 : 0.1),
-                blurRadius: isHovered ? 12 : 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
           ),
           child: Padding(
             padding: const EdgeInsets.all(psm),
@@ -128,10 +97,10 @@ Widget buildListItemCard({
                 Container(
                   padding: const EdgeInsets.all(psm * 0.5),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: lqassgradBaseColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: color, size: 28),
+                  child: Icon(icon, color: primaryWhite, size: 28),
                 ),
                 const SizedBox(width: 20),
                 Expanded(

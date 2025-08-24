@@ -1,3 +1,5 @@
+import 'package:haflaway/models/card.dart';
+
 const gid = 'id';
 const gevent = 'event';
 const gdate = 'event_date';
@@ -12,14 +14,17 @@ const atlblemail = "Email of Attendee (Optional)";
 /* labels */
 
 /* pop-options */
-List atActnlist = [
-  atActnDwn,
-  atActnSelAll,
-  atActnCrt,
-  atActnImprtFile,
-  atActnImprtCont,
-  atActnDel,
-];
+List atActnlist({required KardType kardType}) {
+  return [
+    atActnDwn,
+    atActnSelAll,
+    atActnCrt,
+    atActnImprtFile,
+    if (kardType == KardType.invitation) atActnImprtCont,
+    atActnDel,
+  ];
+}
+
 const atppsend = "Send Invitation";
 const atActnSelAll = "Select All / Unselect All";
 const atActnDwn = "Download Cards";

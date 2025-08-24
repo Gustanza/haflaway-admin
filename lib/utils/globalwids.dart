@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/utils/colors.dart';
@@ -229,6 +230,11 @@ bldDrdDwn({
   );
 }
 
+var inputBorder = OutlineInputBorder(
+  borderRadius: BorderRadius.circular(8),
+  borderSide: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+);
+
 Widget buildField({
   String? lbl,
   double? brad,
@@ -241,10 +247,6 @@ Widget buildField({
   Function? isChanged,
   TextEditingController? cont,
 }) {
-  var border = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(8),
-    borderSide: BorderSide(color: Colors.white.withOpacity(0.4), width: 0.5),
-  );
   return TextFormField(
     maxLines: null,
     controller: cont,
@@ -268,10 +270,10 @@ Widget buildField({
       hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
       suffixIcon: suff,
       filled: true,
-      enabledBorder: border,
-      border: border,
-      focusedBorder: border,
-      disabledBorder: border,
+      enabledBorder: inputBorder,
+      border: inputBorder,
+      focusedBorder: inputBorder,
+      disabledBorder: inputBorder,
       fillColor: lqassgradBaseColor,
     ),
     textCapitalization: TextCapitalization.sentences,

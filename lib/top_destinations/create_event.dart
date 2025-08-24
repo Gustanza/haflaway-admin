@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/appbar.dart';
+import 'package:haflaway/components/sheets.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -57,203 +60,209 @@ class _CreateEventState extends State<CreateEvent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        elevation: psm,
-        titleSpacing: 0,
-        title: const Text('Create Event'),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(gradient: primaryGrad),
+      backgroundColor: scaback,
+      appBar: appBar(
+        title: 'Create Event',
+        leading: buildActionButton(
+          onTap: () {
+            Navigator.of(context).pop();
+          },
+          icon: Icons.arrow_back,
         ),
-        actions: [
-          TextButton(
-            onPressed: saver,
-            child: const Text("Publish", style: TextStyle(color: Colors.white)),
-          ),
-        ],
+        actions: Row(
+          children: [buildActionButton(onTap: saver, icon: Icons.save)],
+        ),
       ),
       body: Form(
         key: globalKey,
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.all(psm),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  const Text(
-                    'Add thumbnail',
-                    style: TextStyle(
-                      fontSize: fsm,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: psm * 0.3),
-                  Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: CupertinoColors.systemGrey4,
-                      borderRadius: BorderRadius.circular(bmd),
-                      image:
-                          picha != null
-                              ? DecorationImage(
-                                image: FileImage(File(picha!.path)),
-                                fit: BoxFit.cover,
-                              )
-                              : null,
-                    ),
-                    child: IconButton(
-                      onPressed: () async {
-                        picha = await ImagePicker().pickImage(
-                          source: ImageSource.gallery,
-                        );
-                        if (picha != null) {
-                          setState(() {});
-                        }
-                      },
-                      icon: const Icon(Clarity.plus_circle_solid),
-                    ),
-                  ),
-                  const SizedBox(height: psm),
-                  const Text(
-                    'Add event title',
-                    style: TextStyle(
-                      fontSize: fsm,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: psm * 0.3),
-                  buildField(lbl: eptitle, cont: fEventTitleCon),
-                  const SizedBox(height: psm),
-                  const Text(
-                    'Add event category',
-                    style: TextStyle(
-                      fontSize: fsm,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: psm * 0.3),
-                  buildField(
-                    isReadOnly: true,
-                    showCursor: false,
-                    cont: fEventCatCon,
-                    lbl: epcategory,
-                    isTapped: () {
-                      showModalBottomSheet(
-                        showDragHandle: true,
-                        context: context,
-                        builder: (context) {
-                          return buildBottomSheet();
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(height: psm),
-                  const Text(
-                    'Add event description',
-                    style: TextStyle(
-                      fontSize: fsm,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: psm * 0.3),
-                  buildField(lbl: epdescription, cont: fEventDescCon),
-                  const SizedBox(height: psm),
-                  const Text(
-                    'Add event location',
-                    style: TextStyle(
-                      fontSize: fsm,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: psm * 0.3),
-                  buildField(lbl: eplocation, cont: fEventLocationCon),
-                  const SizedBox(height: psm),
-                  const Text(
-                    'Select event plan',
-                    style: TextStyle(
-                      fontSize: fsm,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: psm * 0.3),
-                  buildField(
-                    isReadOnly: true,
-                    showCursor: false,
-                    cont: fEventBillCon,
-                    lbl: epbilolan,
-                    isTapped: () async {
-                      plan = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BillScreen(),
-                        ),
-                      );
-                      if (plan != null) {
-                        setState(() {
-                          fEventBillCon.text = plan!.name;
-                        });
-                      }
-                    },
-                  ),
-                  const SizedBox(height: psm * 0.70),
-                  const Text(
-                    'Phone number',
-                    style: TextStyle(
-                      fontSize: fsm,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: psm * 0.3),
-
-                  buildPhone(mobileCont: phncont),
-                  ListTile(
-                    contentPadding: const EdgeInsets.only(left: 0, right: 0),
-                    title: const Text(
-                      'Add days of event',
+        child: Container(
+          decoration: BoxDecoration(gradient: scagrad),
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.all(psm),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    const Text(
+                      'Add thumbnail',
                       style: TextStyle(
                         fontSize: fsm,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    trailing: IconButton(
-                      onPressed: () async {
-                        EventCalendar? evd = await dtPicky(context: context);
-                        if (evd != null) {
+                    const SizedBox(height: psm * 0.3),
+                    Container(
+                      height: 200,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: lqassgrad,
+                        border: Border.all(
+                          color: lqassbdrColor,
+                          width: bdrWidthGen,
+                        ),
+                        borderRadius: BorderRadius.circular(bmd),
+                        image:
+                            picha != null
+                                ? DecorationImage(
+                                  image: FileImage(File(picha!.path)),
+                                  fit: BoxFit.cover,
+                                )
+                                : null,
+                      ),
+                      child: IconButton(
+                        onPressed: () async {
+                          picha = await ImagePicker().pickImage(
+                            source: ImageSource.gallery,
+                          );
+                          if (picha != null) {
+                            setState(() {});
+                          }
+                        },
+                        icon: const Icon(Clarity.plus_circle_solid),
+                      ),
+                    ),
+                    const SizedBox(height: psm),
+                    const Text(
+                      'Add event title',
+                      style: TextStyle(
+                        fontSize: fsm,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: psm * 0.3),
+                    buildField(lbl: eptitle, cont: fEventTitleCon),
+                    const SizedBox(height: psm),
+                    const Text(
+                      'Add event category',
+                      style: TextStyle(
+                        fontSize: fsm,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: psm * 0.3),
+                    buildField(
+                      isReadOnly: true,
+                      showCursor: false,
+                      cont: fEventCatCon,
+                      lbl: epcategory,
+                      isTapped: () {
+                        showSelectCats();
+                      },
+                    ),
+                    const SizedBox(height: psm),
+                    const Text(
+                      'Add event description',
+                      style: TextStyle(
+                        fontSize: fsm,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: psm * 0.3),
+                    buildField(lbl: epdescription, cont: fEventDescCon),
+                    const SizedBox(height: psm),
+                    const Text(
+                      'Add event location',
+                      style: TextStyle(
+                        fontSize: fsm,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: psm * 0.3),
+                    buildField(lbl: eplocation, cont: fEventLocationCon),
+                    const SizedBox(height: psm),
+                    const Text(
+                      'Select event plan',
+                      style: TextStyle(
+                        fontSize: fsm,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: psm * 0.3),
+                    buildField(
+                      isReadOnly: true,
+                      showCursor: false,
+                      cont: fEventBillCon,
+                      lbl: epbilolan,
+                      isTapped: () async {
+                        plan = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const BillScreen(),
+                          ),
+                        );
+                        if (plan != null) {
                           setState(() {
-                            eventDays.add(evd);
+                            fEventBillCon.text = plan!.name;
                           });
                         }
                       },
-                      icon: const Icon(Clarity.plus_circle_line),
                     ),
-                  ),
-                  eventDays.isNotEmpty
-                      ? CupertinoListSection.insetGrouped(
-                        margin: EdgeInsets.zero,
-                        children: List.generate(eventDays.length, (idx) {
-                          var edt = dformtr.format(eventDays[idx].eventDate);
-                          var est = tformtr.format(eventDays[idx].startTime);
-                          var eet = tformtr.format(eventDays[idx].endTime);
-                          return CupertinoListTile(
-                            leading: const Icon(Clarity.clock_line),
-                            title: Text(edt),
-                            subtitle: Text("$est - $eet"),
-                            trailing: IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  eventDays.removeAt(idx);
-                                });
-                              },
-                              icon: const Icon(Icons.close),
-                            ),
-                          );
-                        }),
-                      )
-                      : const SizedBox(),
-                ]),
+                    const SizedBox(height: psm * 0.70),
+                    const Text(
+                      'Phone number',
+                      style: TextStyle(
+                        fontSize: fsm,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: psm * 0.3),
+                    buildPhone(mobileCont: phncont),
+                    ListTile(
+                      contentPadding: const EdgeInsets.only(left: 0, right: 0),
+                      title: const Text(
+                        'Add days of event',
+                        style: TextStyle(
+                          fontSize: fsm,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      trailing: IconButton(
+                        onPressed: () async {
+                          EventCalendar? evd = await dtPicky(context: context);
+                          if (evd != null) {
+                            setState(() {
+                              eventDays.add(evd);
+                            });
+                          }
+                        },
+                        icon: const Icon(Clarity.plus_circle_line),
+                      ),
+                    ),
+                    eventDays.isNotEmpty
+                        ? Column(
+                          children: List.generate(eventDays.length, (idx) {
+                            var edt = dformtr.format(eventDays[idx].eventDate);
+                            var est = tformtr.format(eventDays[idx].startTime);
+                            var eet = tformtr.format(eventDays[idx].endTime);
+                            return ListTile(
+                              title: Text(edt),
+                              contentPadding: EdgeInsets.zero,
+                              tileColor: lqassgradBaseColor,
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(color: lqassgradBaseColor),
+                                borderRadius: BorderRadiusGeometry.circular(
+                                  bmd,
+                                ),
+                              ),
+                              leading: const Icon(Clarity.clock_line),
+                              subtitle: Text("$est - $eet"),
+                              trailing: IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    eventDays.removeAt(idx);
+                                  });
+                                },
+                                icon: const Icon(Icons.close),
+                              ),
+                            );
+                          }),
+                        )
+                        : const SizedBox(),
+                  ]),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -265,10 +274,14 @@ class _CreateEventState extends State<CreateEvent> {
       children: [
         IntlPhoneField(
           controller: mobileCont,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: 'Phone Number',
             filled: true,
-            border: InputBorder.none,
+            fillColor: lqassgradBaseColor,
+            border: inputBorder,
+            focusedBorder: inputBorder,
+            enabledBorder: inputBorder,
+            disabledBorder: inputBorder,
           ),
           initialCountryCode: 'TZ',
           onChanged: (phone) {
@@ -279,7 +292,27 @@ class _CreateEventState extends State<CreateEvent> {
     );
   }
 
-  buildBottomSheet() {
+  showSelectCats() {
+    return showModalBottomSheet(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadiusGeometry.only(
+          topLeft: Radius.circular(bmd),
+          topRight: Radius.circular(bmd),
+        ),
+      ),
+      context: context,
+      builder: (context) {
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.9,
+          child: modalBtmSheet(bdrdm: bmd, child: buildSheetBody()),
+        );
+      },
+    );
+  }
+
+  buildSheetBody() {
     return StreamBuilder(
       stream: FirebaseFirestore.instance.collection(ecatcol).snapshots(),
       builder: (context, snapshot) {
@@ -293,25 +326,39 @@ class _CreateEventState extends State<CreateEvent> {
           }
           return SingleChildScrollView(
             padding: const EdgeInsets.all(psm),
-            child: CupertinoListSection.insetGrouped(
-              margin: EdgeInsets.zero,
-              children: List.generate(data.length, (index) {
-                return CupertinoListTile(
-                  onTap: () {
-                    setState(() {
-                      fEventCatId = data[index].id;
-                      fEventCatLevel = data[index].level;
-                      fEventCatCon.text = data[index].name;
-                    });
-                    popper();
-                  },
-                  title: Text(
-                    data[index].name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(height: psm),
+                Text(
+                  "Select Category",
+                  style: TextStyle(
+                    fontSize: fsm + 6,
+                    fontWeight: FontWeight.bold,
                   ),
-                  trailing: const Icon(Icons.add, color: primaryColor),
-                );
-              }),
+                ),
+                SizedBox(height: psm * 1.5),
+                Divider(color: lqassbdrColor, height: 0),
+                SizedBox(height: psm),
+                ...List.generate(data.length, (index) {
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    onTap: () {
+                      setState(() {
+                        fEventCatId = data[index].id;
+                        fEventCatLevel = data[index].level;
+                        fEventCatCon.text = data[index].name;
+                      });
+                      popper();
+                    },
+                    title: Text(
+                      data[index].name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    trailing: Icon(Icons.add, color: primaryWhite),
+                  );
+                }),
+              ],
             ),
           );
         }

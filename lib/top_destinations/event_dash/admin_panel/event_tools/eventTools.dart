@@ -4,15 +4,14 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/components/templates.dart' hide buildActionButton;
-import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/reusables/stuff.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/sms/sms_host.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/whatsApp/wsp_host.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/custom_camps/ccampsmain.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/whatsApp/wsp_host.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/constants.dart';
-import 'package:haflaway/utils/globalfns.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/cards/cards.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/inv_editor.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/strings.dart';
 
@@ -33,7 +32,7 @@ class _InRemState extends State<InRem> {
       appBar: appBar(
         title: "Handy Tools",
         leading: buildActionButton(
-          icon: Icons.arrow_back_ios,
+          icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
           },
@@ -46,9 +45,8 @@ class _InRemState extends State<InRem> {
             buildSectionHeader("Editor tools", Icons.edit_document, null),
             const SizedBox(height: psm),
             buildListItemCard(
-              title: dsninv,
-              subtitle: "Get your invitation cards on the go",
-              color: primaryWhite,
+              title: "Design & Configure Cards ",
+              subtitle: "Set your invitation & other cards",
               icon: Clarity.design_line,
               onTap: () {
                 Navigator.of(context).push(
@@ -63,8 +61,8 @@ class _InRemState extends State<InRem> {
 
             buildListItemCard(
               title: "Compose SMS Templates",
-              subtitle: "Customize SMS contents",
-              color: primaryWhite,
+              subtitle: "Easy customization of messages",
+
               icon: Clarity.chat_bubble_line,
               onTap: () {
                 Navigator.of(context).push(
@@ -81,7 +79,7 @@ class _InRemState extends State<InRem> {
             buildListItemCard(
               title: sendwinv,
               subtitle: "Invite people via WhatsApp protocol",
-              color: primaryWhite,
+
               icon: Clarity.chat_bubble_outline_badged,
               onTap: () {
                 Navigator.of(context).push(
@@ -100,7 +98,7 @@ class _InRemState extends State<InRem> {
             buildListItemCard(
               title: "Ask people for contributions",
               subtitle: "Send instant contribution messages",
-              color: primaryWhite,
+
               icon: Clarity.chat_bubble_outline_badged,
               onTap: () {
                 Navigator.of(context).push(
@@ -121,57 +119,36 @@ class _InRemState extends State<InRem> {
             buildSectionHeader("SMS tools", Icons.wechat_sharp, null),
             const SizedBox(height: psm),
             buildListItemCard(
-              title: "Send Invitation Message",
-              subtitle: "Invite people via SMS protocol",
-              color: primaryWhite,
-              icon: Clarity.chat_bubble_outline_badged,
+              title: "Custom Invitation Campaigns",
+              subtitle: "Enhance your event with campaings",
+              icon: Clarity.users_outline_badged,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) {
-                      return SMSsenderHost(
+                      return AdminCampaigns(
                         event: widget.event,
-                        title: "SMS Invitations",
-                        campaignId: invCampId,
+                        title: "Invitation Campaigns",
+                        kardType: KardType.invitation,
                       );
                     },
                   ),
                 );
               },
             ),
-
+            // const SizedBox(height: psm),
             buildListItemCard(
-              title: "Send Reminder Message",
-              subtitle: "Keep invitees on the heartbeat",
-              color: primaryWhite,
-              icon: Clarity.chat_bubble_outline_badged,
+              title: "Custom Contribution Campaigns",
+              subtitle: "Enhance your event with campaings",
+              icon: Clarity.users_outline_badged,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) {
-                      return SMSsenderHost(
+                      return AdminCampaigns(
                         event: widget.event,
-                        title: "SMS Reminder",
-                        campaignId: invRemCampId,
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-            buildListItemCard(
-              title: "Send Gratitude Message",
-              subtitle: "Thank invitees after the event.",
-              color: primaryWhite,
-              icon: Clarity.chat_bubble_outline_badged,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return SMSsenderHost(
-                        event: widget.event,
-                        title: "SMS Gratitude",
-                        campaignId: gratCampaignId,
+                        title: "Contribution Campaigns",
+                        kardType: KardType.contribution,
                       );
                     },
                   ),

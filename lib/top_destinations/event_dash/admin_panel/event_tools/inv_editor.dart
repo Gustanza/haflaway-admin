@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/logs.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalwids.dart';
-import 'package:haflaway/utils/strings.dart';
 import 'package:icons_plus/icons_plus.dart';
 
 class InvEditor extends StatefulWidget {
@@ -25,43 +25,55 @@ class _InvEditorState extends State<InvEditor> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(compinv),
-        actions: [
-          IconButton(
-            onPressed: () async {
-              await showCreate();
-            },
-            icon: Icon(Clarity.plus_line),
-          ),
-        ],
+      backgroundColor: scaback,
+      appBar: appBar(
+        title: "Messages",
+        leading: buildActionButton(
+          icon: Icons.arrow_back,
+          onTap: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        actions: Row(
+          children: [
+            buildActionButton(
+              onTap: () async {
+                await showCreate();
+              },
+              icon: Clarity.plus_line,
+            ),
+          ],
+        ),
       ),
-      body: StreamBuilder(
-        stream:
-            firestore
-                .collection(ecol)
-                .doc(widget.eId)
-                .collection(eMsgTmpCol)
-                .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            if (snapshot.data!.docs.isNotEmpty) {
-              var docs = (snapshot.data as dynamic).docs;
-              List<MessageTemplate> messageLogs =
-                  docs.map<MessageTemplate>((e) {
-                    return MessageTemplate.fromMap(e.id, e.data());
-                  }).toList();
-              return buildBody(messageLogs);
-            } else {
-              return const BuildNoDt(string: "Data not found");
+      body: Container(
+        decoration: BoxDecoration(gradient: scagrad),
+        child: StreamBuilder(
+          stream:
+              firestore
+                  .collection(ecol)
+                  .doc(widget.eId)
+                  .collection(eMsgTmpCol)
+                  .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              if (snapshot.data!.docs.isNotEmpty) {
+                var docs = (snapshot.data as dynamic).docs;
+                List<MessageTemplate> messageLogs =
+                    docs.map<MessageTemplate>((e) {
+                      return MessageTemplate.fromMap(e.id, e.data());
+                    }).toList();
+                return buildBody(messageLogs);
+              } else {
+                return const BuildNoDt(string: "Data not found");
+              }
             }
-          }
-          if (snapshot.hasError) {
-            return buildErr();
-          } else {
-            return buildLoader();
-          }
-        },
+            if (snapshot.hasError) {
+              return buildErr();
+            } else {
+              return buildLoader();
+            }
+          },
+        ),
       ),
     );
   }

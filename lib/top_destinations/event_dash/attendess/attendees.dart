@@ -8,6 +8,7 @@ import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/services/strg_service.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/components/importcontr.dart';
+import 'package:haflaway/top_destinations/event_dash/attendess/components/stats.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/crtattendees.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
@@ -350,7 +351,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         actions: Row(
           children: [
             buildPop(
-              list: atActnlist,
+              list: atActnlist(kardType: widget.kardType),
               icon: Clarity.ellipsis_vertical_line,
               onTap: (value) async {
                 switch (value) {
@@ -388,7 +389,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 }
               },
             ),
-            buildActionButton(icon: Icons.bar_chart, onTap: () {}),
+            buildActionButton(
+              icon: Icons.bar_chart,
+              onTap: () {
+                showQuickStats();
+              },
+            ),
           ],
         ),
       ),
@@ -718,14 +724,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             width: 50,
                             height: 50,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.25),
+                              color: Colors.white.withValues(alpha: 0.25),
                               shape: BoxShape.circle,
                             ),
                             child: Center(
                               child: Icon(
                                 size: 28,
                                 Icons.account_circle,
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.white.withValues(alpha: 0.5),
                               ),
                             ),
                           ),
@@ -741,7 +747,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
+                                    color: Colors.black.withValues(alpha: 0.2),
                                     blurRadius: 2,
                                     offset: const Offset(0, 1),
                                   ),
@@ -995,6 +1001,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               .collection(ecol)
               .doc(widget.edata.id)
               .collection(cardcol)
+              .where("purpose", isEqualTo: widget.kardType.name)
               .get();
       lcrds =
           res.docs.map<Kard>((doc) {
@@ -1003,6 +1010,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     } catch (e) {
       debugPrint("shida: $e");
     }
+    safeState(() {});
   }
 
   downCards() async {
@@ -1079,6 +1087,21 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     } catch (e) {
       showToast(isGood: false, msg: "$e");
     }
+  }
+
+  showQuickStats() {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return glassDialog(
+          child: quickStats(
+            eventId: widget.edata.id,
+            kardType: widget.kardType,
+            kards: lcrds,
+          ),
+        );
+      },
+    );
   }
 
   showSelectCard() {
@@ -1318,6 +1341,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       return false;
     } else {
       return true;
+    }
+  }
+
+  safeState(runnable) {
+    if (mounted) {
+      setState(() {
+        runnable();
+      });
     }
   }
 

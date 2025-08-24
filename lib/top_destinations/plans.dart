@@ -1,6 +1,11 @@
+import 'dart:ui';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/appbar.dart';
+import 'package:haflaway/components/buttons.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/services/plan_service.dart';
@@ -22,27 +27,39 @@ class _BillScreenState extends State<BillScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(elevation: 0, title: const Text("Select Plan")),
-      body: FutureBuilder(
-        future:
-            firestore
-                .collection(eplancol)
-                .orderBy('rank', descending: false)
-                .get(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            var docs = (snapshot.data as dynamic).docs;
-            if (docs.isEmpty) {
-              return const BuildNoDt(string: "no data");
+      backgroundColor: scaback,
+      appBar: appBar(
+        leading: buildActionButton(
+          icon: Icons.arrow_back,
+          onTap: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        title: "Select Plan",
+      ),
+      body: Container(
+        decoration: BoxDecoration(gradient: scagrad),
+        child: FutureBuilder(
+          future:
+              firestore
+                  .collection(eplancol)
+                  .orderBy('rank', descending: false)
+                  .get(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              var docs = (snapshot.data as dynamic).docs;
+              if (docs.isEmpty) {
+                return const BuildNoDt(string: "no data");
+              } else {
+                return buildBody(rawData: docs);
+              }
+            } else if (snapshot.hasError) {
+              return buildErr();
             } else {
-              return buildBody(rawData: docs);
+              return buildLoader();
             }
-          } else if (snapshot.hasError) {
-            return buildErr();
-          } else {
-            return buildLoader();
-          }
-        },
+          },
+        ),
       ),
     );
   }
@@ -108,74 +125,70 @@ class _BillScreenState extends State<BillScreen> {
   Widget buildPlanCard(EventPlan plan) {
     double dprice = plan.winvmsgprice + plan.wremmsgprice + plan.wgratmsgprice;
     int intprice = dprice.toInt();
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Center(
-              child: Icon(Icons.wifi, size: 40, color: primaryColor),
-            ),
-            const SizedBox(height: 10),
-            Center(
-              child: Text(
-                plan.name,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(bmd),
+        border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(bmd),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Center(child: Icon(Icons.wifi, size: 40)),
+                const SizedBox(height: 10),
+                Center(
+                  child: Text(
+                    plan.name,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Column(
-              children:
-                  plan.services.map<Widget>((feature) {
-                    return Row(
-                      children: [
-                        const Icon(
-                          Clarity.shield_check_line,
-                          color: primaryColor,
-                          size: 20,
-                        ),
-                        const SizedBox(width: psm),
-                        Expanded(
-                          child: Text(
-                            feature,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: Text(
-                '@ $intprice/=TZS',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: primaryColor,
+                const SizedBox(height: 10),
+                Column(
+                  children:
+                      plan.services.map<Widget>((feature) {
+                        return Row(
+                          children: [
+                            const Icon(Clarity.shield_check_line, size: 20),
+                            const SizedBox(width: psm),
+                            Expanded(
+                              child: Text(
+                                feature,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
                 ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.maxFinite,
-              child: MaterialButton(
-                onPressed: () {
-                  Navigator.of(context).pop(plan);
-                },
-                color: primaryColor,
-                child: const Text(
-                  "Select",
-                  style: TextStyle(color: Colors.white),
+                const SizedBox(height: 20),
+                Text(
+                  'Each Attendee: $intprice/=TZS',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.maxFinite,
+                  child: lqAssButton(
+                    label: "Select",
+                    onPressed: () {
+                      Navigator.of(context).pop(plan);
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

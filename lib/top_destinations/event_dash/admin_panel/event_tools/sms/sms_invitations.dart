@@ -2,10 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/attendee_message.dart';
+import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/services/plan_service.dart';
 import 'package:haflaway/components/templates.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/reusables/stuff.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:string_similarity/string_similarity.dart';
@@ -14,6 +15,7 @@ class SMSArtieSender extends StatefulWidget {
   final Event event;
   final EventPlan eventPlan;
   final String campaignId;
+  final KardType karddType;
   final Function(List<Attendee>) onChanged;
 
   const SMSArtieSender({
@@ -21,6 +23,7 @@ class SMSArtieSender extends StatefulWidget {
     required this.event,
     required this.eventPlan,
     required this.campaignId,
+    required this.karddType,
     required this.onChanged,
   });
 
@@ -85,12 +88,25 @@ class _SMSArtieSenderState extends State<SMSArtieSender> {
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   List<Attendee> docs =
-                      (snapshot.data as dynamic).docs.map<Attendee>((doc) {
-                        return Attendee.fromMap(
-                          doc.id,
-                          doc.data() as Map<String, dynamic>,
-                        );
-                      }).toList();
+                      (snapshot.data as dynamic).docs
+                          .where((dc) {
+                            try {
+                              var crd = dc['cards'][widget.karddType.name];
+                              if (crd == null) {
+                                return false;
+                              }
+                              return true;
+                            } catch (e) {
+                              return false;
+                            }
+                          })
+                          .map<Attendee>((doc) {
+                            return Attendee.fromMap(
+                              doc.id,
+                              doc.data() as Map<String, dynamic>,
+                            );
+                          })
+                          .toList();
                   if (docs.isEmpty) {
                     return const BuildNoDt(string: "No Attendees Found");
                   } else {
@@ -201,6 +217,7 @@ class _SMSArtieSenderState extends State<SMSArtieSender> {
                         return buildInvite(
                           containz: containz,
                           rdata: rdata,
+                          kardType: widget.karddType,
                           onChanged: (change) {
                             onCheckTap(rdata: rdata, containz: containz);
                           },

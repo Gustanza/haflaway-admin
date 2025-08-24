@@ -6,7 +6,7 @@ import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/services/plan_service.dart';
 import 'package:haflaway/components/templates.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/inv_rems/reusables/stuff.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:string_similarity/string_similarity.dart';
@@ -113,9 +113,13 @@ class _WInvSenderState extends State<WInvSender> {
                 if (snapshot.hasData) {
                   List<Attendee> docs =
                       (snapshot.data as dynamic).docs
-                          .where(
-                            (doc) => doc['cards'][widget.kardType.name] != null,
-                          )
+                          .where((doc) {
+                            try {
+                              return doc['cards'][widget.kardType.name] != null;
+                            } catch (e) {
+                              return false;
+                            }
+                          })
                           .map<Attendee>((doc) {
                             return Attendee.fromMap(doc.id, doc.data());
                           })

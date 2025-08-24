@@ -17,7 +17,7 @@ String transformNumber(String input) {
   return input;
 }
 
-formatDate({dtime}) {
+formatDate({required DateTime dtime}) {
   final DateFormat dftr = DateFormat('EEEE, d\'th\', MMMM, yyyy');
   return dftr.format(dtime);
 }
