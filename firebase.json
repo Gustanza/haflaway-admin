@@ -12,8 +12,7 @@
         "lib/firebase_options.dart": {
           "projectId": "haflaway-f14aa",
           "configurations": {
-            "android": "1:556877909874:android:0b7efe0eeea88f5073d7eb",
-            "ios": "1:556877909874:ios:9a38fb1f960702e473d7eb"
+            "web": "1:556877909874:web:be367633d966bddb73d7eb"
           }
         }
       }
@@ -56,5 +55,19 @@
       "enabled": true
     },
     "singleProjectMode": true
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }

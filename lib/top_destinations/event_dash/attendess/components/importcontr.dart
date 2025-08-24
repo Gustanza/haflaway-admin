@@ -52,7 +52,7 @@ class _ImportContributorState extends State<ImportContributor> {
             );
           }
         } else if (snapshot.hasError) {
-          return buildErrorView();
+          return buildErrorState();
         } else {
           return Center(child: CircularProgressIndicator(color: primaryWhite));
         }

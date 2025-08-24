@@ -16,12 +16,12 @@ const atlblemail = "Email of Attendee (Optional)";
 /* pop-options */
 List atActnlist({required KardType kardType}) {
   return [
-    atActnDwn,
-    atActnSelAll,
+    // atActnDwn,
+    // atActnSelAll,
     atActnCrt,
-    atActnImprtFile,
-    if (kardType == KardType.invitation) atActnImprtCont,
-    atActnDel,
+    // atActnImprtFile,
+    // if (kardType == KardType.invitation) atActnImprtCont,
+    // atActnDel,
   ];
 }
 

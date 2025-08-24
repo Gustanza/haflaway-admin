@@ -40,7 +40,7 @@ quickStats({
           kardType: kardType,
         );
       } else if (snapshot.hasError) {
-        return buildErrorView();
+        return buildErrorState();
       } else {
         return ListTile(
           title: Text("Loading..."),

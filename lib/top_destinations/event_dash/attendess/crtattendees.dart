@@ -121,7 +121,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
       appBar: appBar(
         title: "${widget.title}",
         leading: buildActionButton(
-          icon: Icons.arrow_back_ios,
+          icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
           },

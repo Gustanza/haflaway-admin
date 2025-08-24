@@ -65,7 +65,7 @@ Widget buildNoDataView(String message) {
   );
 }
 
-Widget buildErrorView({onPressed}) {
+Widget buildErrorState({onPressed}) {
   return Center(
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,

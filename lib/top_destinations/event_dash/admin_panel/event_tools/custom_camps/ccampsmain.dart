@@ -84,7 +84,7 @@ class _AdminCampaignsState extends State<AdminCampaigns> {
               return buildBody(campList: campList);
             }
             if (snapshot.hasError) {
-              return buildErrorView();
+              return buildErrorState();
             } else {
               return buildLoader();
             }

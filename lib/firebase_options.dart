@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -64,6 +61,16 @@ class DefaultFirebaseOptions {
     projectId: 'haflaway-f14aa',
     storageBucket: 'haflaway-f14aa.firebasestorage.app',
     iosBundleId: 'com.haflaway.adminapp',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyAOUx0L5nWrBb6-mld6g0SLm7-BgelxyKY',
+    appId: '1:556877909874:web:be367633d966bddb73d7eb',
+    messagingSenderId: '556877909874',
+    projectId: 'haflaway-f14aa',
+    authDomain: 'haflaway-f14aa.firebaseapp.com',
+    storageBucket: 'haflaway-f14aa.firebasestorage.app',
+    measurementId: 'G-T25SRX978W',
   );
 
 }

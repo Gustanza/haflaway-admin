@@ -342,12 +342,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       backgroundColor: scaback,
       appBar: appBar(
         title: "${widget.title}",
-        leading: buildActionButton(
-          icon: Icons.arrow_back,
-          onTap: () {
-            Navigator.of(context).pop();
-          },
-        ),
+
         actions: Row(
           children: [
             buildPop(
@@ -368,22 +363,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                         kardType: widget.kardType,
                       ),
                     );
-                    break;
-                  case atActnSelAll:
-                    selectAll();
-                    break;
-                  case atActnDel:
-                    delSelect();
-                    break;
-                  case atActnDwn:
-                    downCards();
-                    break;
-                  case atActnImprtFile:
-                    importFile();
-                    break;
-                  case atActnImprtCont:
-                    showSelectCard();
-                    // showImportContributor();
                     break;
                   default:
                 }
@@ -813,15 +792,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                       if (vcrd != null) {
                                         AttributeCard attrCrd =
                                             AttributeCard.fromMap(map: vcrd);
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) {
-                                              return ViewCard(
-                                                cardUrl: attrCrd.url ?? "",
-                                              );
-                                            },
-                                          ),
+                                        final Uri _url = Uri.parse(
+                                          attrCrd.url ?? "",
                                         );
+                                        try {
+                                          launchUrl(_url);
+                                        } catch (e) {
+                                          showToast(isGood: false, msg: "$e");
+                                        }
                                       } else {
                                         showToast(
                                           isGood: false,
@@ -889,7 +867,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     ),
                   ],
                 ),
-
                 _buildAttendanceControls(attendee),
               ],
             ),

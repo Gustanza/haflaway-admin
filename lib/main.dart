@@ -1,8 +1,16 @@
 // import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:go_router/go_router.dart';
 // import 'package:flutter/services.dart';
 import 'package:haflaway/firebase_options.dart';
+import 'package:haflaway/models/card.dart';
+import 'package:haflaway/models/event.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
+import 'package:haflaway/top_destinations/event_dash/attendess/attendees.dart';
+import 'package:haflaway/top_destinations/landing/landing.dart';
 // import 'package:firebase_storage/firebase_storage.dart';
 // import 'package:flutter/foundation.dart';
 // import 'package:haflaway/utils/urls.dart';
@@ -19,51 +27,60 @@ void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('sw', null);
-  // SystemChrome.setSystemUIOverlayStyle(
-  //   const SystemUiOverlayStyle(
-  //     statusBarColor: Colors.black, // or your dark color
-  //     statusBarIconBrightness: Brightness.light, // For Android
-  //     statusBarBrightness: Brightness.dark, // For iOS
-  //   ),
-  // );
-  // if (kDebugMode) {
-  //   try {
-  //     FirebaseFirestore.instance.settings = const Settings(
-  //       host: "$lokol:8080",
-  //       sslEnabled: false,
-  //       persistenceEnabled: false,
-  //     );
-  //     await FirebaseStorage.instance.useStorageEmulator(lokol, 9199);
-  //   } catch (e) {
-  //     debugPrint("abject: $e");
-  //   }
-  // }
+
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(
-          create: (_) => BalanceProvider(BalanceService(), EventPlanService()),
-        ),
-      ],
-      child: const HfApp(),
+    MaterialApp.router(
+      routerConfig: router,
+      themeMode: ThemeMode.dark,
+      theme: ThemeData(colorScheme: ColorScheme.dark()),
+      debugShowCheckedModeBanner: false,
     ),
   );
 }
 
-class HfApp extends StatelessWidget {
-  const HfApp({super.key});
+final router = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) {
+        return const LandingPage();
+      },
+    ),
+    GoRoute(
+      path: '/hfnte/:eId/invites',
+      builder: (context, state) {
+        return HfApp(eId: state.pathParameters['eId'] ?? "");
+      },
+    ),
+  ],
+);
 
+class HfApp extends StatelessWidget {
+  final String eId;
+  const HfApp({super.key, required this.eId});
   @override
   Widget build(BuildContext context) {
-    // sfinal provider = Provider.of<ThemeProvider>(context);
-    return MaterialApp(
-      home: const SpScr(),
-      debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
-      theme: ThemeData(colorScheme: ColorScheme.dark()),
-      // theme: MyThemes.darkTheme,
-      // darkTheme: MyThemes.darkTheme,
+    return FutureBuilder(
+      future: FirebaseFirestore.instance.collection(ecol).doc(eId).get(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          var source = (snapshot.data as dynamic);
+          if (source == null && source.data() == null) {
+            return buildEmptyState();
+          }
+          Event edata = Event.fromMap(source.id, source.data());
+          return Attendees(
+            edata: edata,
+            kardType: KardType.invitation,
+            title: "Invitations",
+          );
+        } else if (snapshot.hasError) {
+          return buildErrorState();
+        } else {
+          return Center(child: CupertinoActivityIndicator());
+        }
+      },
     );
   }
 }

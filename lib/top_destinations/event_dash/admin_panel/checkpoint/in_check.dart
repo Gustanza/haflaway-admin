@@ -56,7 +56,7 @@ class InCheckWrapper extends StatelessWidget {
             acIds: acIds,
           );
         } else if (snapshots.hasError) {
-          return buildErrorView();
+          return buildErrorState();
         } else {
           return buildShimmerLoader();
         }
@@ -239,7 +239,7 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
         }
 
         if (snapshot.hasError) {
-          return buildErrorView();
+          return buildErrorState();
         } else {
           return buildListShimmer();
         }
