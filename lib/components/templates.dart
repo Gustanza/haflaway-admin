@@ -261,7 +261,13 @@ Widget buildGlassListItem({
   return GestureDetector(
     onTap: onTap,
     child: Container(
-      padding: const EdgeInsets.all(p20),
+      padding: const EdgeInsets.symmetric(horizontal: p20, vertical: psm),
+      margin: EdgeInsets.only(bottom: psm * 0.5),
+      decoration: BoxDecoration(
+        gradient: lqassgrad,
+        borderRadius: BorderRadius.circular(bmd),
+        border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+      ),
       child: Row(
         children: [
           Container(

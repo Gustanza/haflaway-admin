@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:haflaway/components/appbar.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:excel/excel.dart';
+import 'package:excel/excel.dart' as xcl;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
@@ -42,11 +44,12 @@ class ImpPreview extends StatefulWidget {
 
 class _ImpPreviewState extends State<ImpPreview> {
   CardConfig? data;
-  Excel? excel;
+  xcl.Excel? excel;
   List chk = [];
   List<Attendee> attendees = [];
   bool isLoading = false;
   bool hasError = false;
+  bool isWritting = false;
 
   FirebaseStorage storage = FirebaseStorage.instance;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -91,10 +94,10 @@ class _ImpPreviewState extends State<ImpPreview> {
       //
       File? file = widget.xcelFile;
       var bytes = file?.readAsBytesSync();
-      excel = Excel.decodeBytes(bytes!);
+      excel = xcl.Excel.decodeBytes(bytes!);
       var tblKey = excel?.tables.keys.firstOrNull;
       var table = excel?.tables[tblKey];
-      List<List<Data?>>? rows = table?.rows;
+      List<List<xcl.Data?>>? rows = table?.rows;
       if (rows == null || rows.isEmpty) {
         return;
       }
@@ -137,27 +140,26 @@ class _ImpPreviewState extends State<ImpPreview> {
     return Scaffold(
       backgroundColor: scaback,
       appBar: appBar(
-        title: 'Import Preview',
+        title: 'Import Previewer',
         leading: buildActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
           },
         ),
-        actions: buildActionButton(
-          icon: Clarity.import_solid,
-          onTap: () {
-            if (attendees.isNotEmpty) {
-              if (widget.atList == null) {
-                crtEm();
-              } else {
-                editEm();
-              }
-            } else {
-              showToast(isGood: false, msg: "Nothing to import");
-            }
-          },
-        ),
+        actions:
+            !isWritting
+                ? buildActionButton(
+                  icon: Clarity.import_solid,
+                  onTap: () {
+                    if (attendees.isNotEmpty) {
+                      crtEm();
+                    } else {
+                      showToast(isGood: false, msg: "Nothing to import");
+                    }
+                  },
+                )
+                : CupertinoActivityIndicator(),
       ),
 
       body: FutureBuilder(
@@ -202,147 +204,125 @@ class _ImpPreviewState extends State<ImpPreview> {
       child: SingleChildScrollView(
         padding: const EdgeInsets.only(left: psm, right: psm),
         child: Column(
-          children: List.generate(atList.length, (index) {
-            var fullname = atList[index].fullName;
-            return ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: psm * 0.7),
-              leading: CircleAvatar(
-                backgroundColor: lqassgradBaseColor,
-                child: Text(
-                  "${index + 1}",
-                  style: const TextStyle(color: Colors.white),
+          children: [
+            Container(
+              width: double.maxFinite,
+              padding: EdgeInsets.only(top: psm, left: psm, bottom: psm * 0.65),
+              child: Text(
+                "Total Count: ${atList.length}",
+                style: TextStyle(
+                  fontSize: fsm + 4,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              title: Text(fullname),
-              subtitle: Text(
-                atList[index].phone,
-                style: const TextStyle(fontSize: fsm - 2),
-              ),
-              trailing: IconButton(
-                onPressed: () {
-                  if (mounted) {
-                    setState(() {
-                      attendees.removeAt(index);
-                    });
-                  }
-                },
-                icon: const Icon(Clarity.close_line),
-              ),
-            );
-          }),
+            ),
+            ...List.generate(atList.length, (index) {
+              var fullname = atList[index].fullName;
+              return Container(
+                margin: EdgeInsets.only(bottom: psm * 0.5),
+                decoration: BoxDecoration(
+                  gradient: lqassgrad,
+                  borderRadius: BorderRadius.circular(bsm),
+                  border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: psm * 0.7,
+                  ),
+
+                  leading: CircleAvatar(
+                    backgroundColor: lqassgradBaseColor,
+                    child: Text(
+                      "${index + 1}",
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  title: Text(fullname),
+                  subtitle: Text(
+                    atList[index].phone,
+                    style: const TextStyle(fontSize: fsm - 2),
+                  ),
+                  trailing: IconButton(
+                    onPressed: () {
+                      if (mounted) {
+                        setState(() {
+                          attendees.removeAt(index);
+                        });
+                      }
+                    },
+                    icon: const Icon(Clarity.close_line),
+                  ),
+                ),
+              );
+            }),
+          ],
         ),
       ),
     );
   }
 
   crtEm() async {
-    showProgress(context: context);
+    safeState(() {
+      isWritting = true;
+    });
     List<Attendee> attendeesCpy = List.from(attendees);
     for (var attendee in attendeesCpy) {
-      dynamic res;
-      dynamic reqRes;
+      var atId = attendee.id ?? generateUniqueSequence();
       var atRef = firestore
           .collection(ecol)
           .doc(widget.eId)
           .collection(atcol)
-          .doc(generateUniqueSequence());
+          .doc(atId);
+      dataCleaner(passcode: atRef.id, lfname: attendee.fullName);
       try {
-        dataCleaner(passcode: atRef.id, lfname: attendee.fullName);
-        reqRes = await http.post(
-          Uri.parse(rendercarl),
-          body: jsonEncode(data?.toMap()),
-        );
-        res = jsonDecode(reqRes.body);
-        if (res["error"]) {
-          popper();
-          showToast(isGood: false, msg: genErrMsg);
-          return;
-        }
-      } catch (e) {
-        popper();
-        showToast(isGood: false, msg: genErrMsg);
-        return;
-      }
-      try {
-        AttributeCard attCard = AttributeCard(
-          name: data?.type,
-          url: res['data'],
-          templateCardId: data?.id,
-          issuedAt: DateTime.now().toIso8601String(),
-        );
+        attendee.cards = {};
         attendee.checkinStatus = chk;
+        attendee.id = attendee.id ?? atId;
         attendee.createdAt = DateTime.now();
-        attendee.cards = {widget.kardType.name: attCard.toMap()};
-        await atRef.set(attendee.toMap());
-        setState(() {
-          attendees.remove(attendee);
-        });
-      } catch (e) {
-        popper();
-        showToast(isGood: false, msg: genErrMsg);
-        return;
-      }
-    }
-    popper();
-    showToast(isGood: true, msg: genScsMsg);
-    return;
-  }
-
-  editEm() async {
-    showProgress(context: context);
-    List<Attendee> attendeesCpy = List.from(attendees);
-    for (var attendee in attendeesCpy) {
-      dynamic res;
-      dynamic reqRes;
-      var atRef = firestore
-          .collection(ecol)
-          .doc(widget.eId)
-          .collection(atcol)
-          .doc(attendee.id);
-      try {
-        dataCleaner(passcode: atRef.id, lfname: attendee.fullName);
-        reqRes = await http.post(
-          Uri.parse(rendercarl),
-          body: jsonEncode(data?.toMap()),
+        var payload = {
+          "eventId": widget.eId,
+          "attendees": [attendee.toMap()],
+          "templateCard": data?.toMap(),
+          "kardType": widget.kardType.name,
+        };
+        var source = await http.post(
+          Uri.parse(crtAtCloudUrl),
+          body: jsonEncode(payload),
         );
-        res = jsonDecode(reqRes.body);
-        if (res["error"]) {
-          popper();
-          showToast(isGood: false, msg: genErrMsg);
-          continue;
+        var message = "Failed";
+        var body = jsonDecode(source.body);
+        if (body == null || !body['status']) {
+          message = body != null ? body['message'] : "Failed";
+          showToast(isGood: false, msg: "$message");
+        } else {
+          message = body['message'] ?? "Success";
+          showToast(isGood: true, msg: "$message");
+          safeState(() {
+            try {
+              var atte = body['data'][0];
+              if (atte['status']) {
+                attendees.removeWhere((test) {
+                  return test.id == atte['attendeeId'];
+                });
+              }
+            } catch (e) {}
+          });
         }
       } catch (e) {
-        popper();
         showToast(isGood: false, msg: genErrMsg);
-        continue;
-      }
-      try {
-        AttributeCard attCard = AttributeCard(
-          name: data?.type,
-          url: res['data'],
-          templateCardId: data?.id,
-          issuedAt: DateTime.now().toIso8601String(),
-        );
-        attendee.checkinStatus = chk;
-        attendee.cards = {widget.kardType.name: attCard.toMap()};
-        await atRef.set(attendee.toMap(), SetOptions(merge: true));
-        setState(() {
-          attendees.remove(attendee);
-        });
-      } catch (e) {
-        popper();
-        showToast(isGood: false, msg: genErrMsg);
-        return;
       }
     }
-    popper();
-    showToast(isGood: true, msg: genScsMsg);
-    return;
+    safeState(() {
+      isWritting = false;
+    });
   }
 
-  deleteCrd({url}) {
-    var ref = storage.refFromURL(url);
-    ref.delete();
+  safeState(runnable) {
+    if (mounted) {
+      setState(() {
+        runnable();
+      });
+    }
   }
 
   dataCleaner({passcode, lfname}) {

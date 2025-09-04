@@ -4,7 +4,7 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/components/templates.dart' hide buildActionButton;
-import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/custom_camps/ccampsmain.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/custom_camps/ccampsmain.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/whatsApp/wsp_host.dart';
 import 'package:haflaway/utils/colors.dart';

@@ -70,7 +70,14 @@ class _CreateEventState extends State<CreateEvent> {
           icon: Icons.arrow_back,
         ),
         actions: Row(
-          children: [buildActionButton(onTap: saver, icon: Icons.save)],
+          children: [
+            buildActionButton(
+              onTap: () {
+                saver();
+              },
+              icon: Icons.save,
+            ),
+          ],
         ),
       ),
       body: Form(
@@ -378,7 +385,6 @@ class _CreateEventState extends State<CreateEvent> {
 
       try {
         var p0 = await eventImagesRef.putFile(File(picha!.path));
-
         WriteBatch batch = firestore.batch();
         var evRef = firestore.collection(ecol).doc();
         var chkpnRef =
@@ -416,6 +422,7 @@ class _CreateEventState extends State<CreateEvent> {
         popper();
         popper();
       } catch (e) {
+        debugPrint("Comes 3st$e");
         popper();
         showToast(isGood: false, msg: gErrMsg);
       }

@@ -59,10 +59,7 @@ class Attendee {
   });
 
   Map<String, dynamic> toMap() => {
-    // "id": id,
-    // "cardId": cardId,
-    // "cardName": cardName,
-    // "cardUrl": cardUrl,
+    if (id != null) "id": id,
     "cards": cards,
     "checkinStatus": checkinStatus,
     "createdAt": createdAt.toIso8601String(),

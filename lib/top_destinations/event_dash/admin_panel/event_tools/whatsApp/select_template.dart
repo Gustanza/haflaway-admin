@@ -8,6 +8,7 @@ import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/wsap_templates.dart';
 import 'package:haflaway/services/plan_service.dart';
+import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
@@ -42,35 +43,48 @@ class SelectTemplateState extends State<SelectTemplate> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   @override
   Widget build(BuildContext context) {
+    var path =
+        widget.kardType == KardType.contribution
+            ? firestore
+                .collection("messageTemplates")
+                .where('category', isEqualTo: "matrimony-contributions")
+                .get()
+            : firestore.collection("messageTemplates").get();
     return Scaffold(
-      body: FutureBuilder(
-        future:
-            widget.isWhatsApp
-                ? firestore.collection("messageTemplates").get()
-                : firestore
-                    .collection('events')
-                    .doc(widget.event.id)
-                    .collection("messageTemplates")
-                    .get(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            var dt = (snapshot.data as dynamic).docs;
-            if (dt != null && dt.isNotEmpty) {
-              List<WsapTemplate> wtemps =
-                  dt.map<WsapTemplate>((tdt) {
-                    return WsapTemplate.fromMap(id: tdt.id, map: tdt);
-                  }).toList();
-              return buildTemplates(wtemps);
-            } else {
-              return BuildNoDt(string: "no data");
+      backgroundColor: scaback,
+      body: Container(
+        width: double.maxFinite,
+        height: double.maxFinite,
+        decoration: BoxDecoration(gradient: scagrad),
+        child: FutureBuilder(
+          future:
+              widget.isWhatsApp
+                  ? path
+                  : firestore
+                      .collection('events')
+                      .doc(widget.event.id)
+                      .collection("messageTemplates")
+                      .get(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              var dt = (snapshot.data as dynamic).docs;
+              if (dt != null && dt.isNotEmpty) {
+                List<WsapTemplate> wtemps =
+                    dt.map<WsapTemplate>((tdt) {
+                      return WsapTemplate.fromMap(id: tdt.id, map: tdt);
+                    }).toList();
+                return buildTemplates(wtemps);
+              } else {
+                return BuildNoDt(string: "no data");
+              }
             }
-          }
-          if (snapshot.hasError) {
-            return buildErr();
-          } else {
-            return Center(child: CircularProgressIndicator());
-          }
-        },
+            if (snapshot.hasError) {
+              return buildErr();
+            } else {
+              return Center(child: CircularProgressIndicator());
+            }
+          },
+        ),
       ),
     );
   }
@@ -92,20 +106,11 @@ class SelectTemplateState extends State<SelectTemplate> {
             ),
           ),
           Text(
-            "Resulting costs: (${widget.senderList.length * widget.eventPlan.winvmsgprice})",
-            style: TextStyle(
-              fontSize: fsm + 2,
-              color: Colors.green,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: psm),
-          Text(
             "Select a template to use in this campaign",
             textAlign: TextAlign.left,
             style: TextStyle(fontSize: fsm + 2, fontWeight: FontWeight.w400),
           ),
-          const SizedBox(height: psm * 1.65),
+          const SizedBox(height: psm),
           Column(
             children: List.generate(temps.length, (index) {
               return Container(
@@ -151,27 +156,26 @@ class SelectTemplateState extends State<SelectTemplate> {
             CupertinoActionSheetAction(
               isDefaultAction: true,
               onPressed: () async {
-                List invitees =
+                List inviteesIds =
                     widget.senderList.map((e) {
-                      AttributeCard attrCrd = AttributeCard.fromMap(
-                        map: e.cards[widget.kardType?.name],
-                      );
-                      var map = e.toMap();
-                      map['cardUrl'] = attrCrd.url;
-                      map['id'] = e.id;
-                      return map;
+                      return e.id;
                     }).toList();
                 showProgress(context: context);
                 try {
                   dynamic response;
                   if (widget.isWhatsApp && groupValue != null) {
+                    var _url =
+                        widget.kardType == KardType.contribution
+                            ? sendWspContr
+                            : sendWspInv;
                     response = await http.post(
-                      Uri.parse(sendWsAprl),
+                      Uri.parse(_url),
                       body: jsonEncode({
                         "templateId": groupValue,
                         "type": widget.campaignId,
-                        "event": widget.event.toMap(),
-                        "attendees": invitees,
+                        "eventId": widget.event.id,
+                        "attendeesIds": inviteesIds,
+                        "kardType": widget.kardType?.name,
                       }),
                     );
                   } else if (wsapTemplate != null) {
@@ -180,19 +184,21 @@ class SelectTemplateState extends State<SelectTemplate> {
                       body: jsonEncode({
                         "content": wsapTemplate?.content,
                         "type": widget.campaignId,
-                        "event": widget.event.toMap(),
-                        "attendees": invitees,
+                        "eventId": widget.event.id,
+                        "attendeesIds": inviteesIds,
+                        "kardType": widget.kardType?.name,
                       }),
                     );
                   }
                   if (response != null) {
                     var res = jsonDecode(response.body);
-                    showToast(isGood: true, msg: res['data']);
+                    showToast(isGood: true, msg: "${res['message']}");
                   }
+                  popper();
                 } catch (e) {
+                  popper();
                   showToast(isGood: false, msg: "$e");
                 }
-                popper();
                 popper();
               },
               child: Text("Complete Action"),

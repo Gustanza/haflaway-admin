@@ -79,6 +79,7 @@ class _SMSsenderHostState extends State<SMSsenderHost> {
                         event: widget.event,
                         eventPlan: eventPlan,
                         senderList: senderList,
+                        kardType: widget.kardType,
                         campaignId: widget.campaignId,
                       ),
                     ],

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
+import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl_phone_field/intl_phone_field.dart';
@@ -10,7 +11,6 @@ import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/utils/dimensions.dart';
-import 'package:haflaway/utils/errorstrs.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/styles.dart';
@@ -41,6 +41,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   CardConfig? data;
   bool isPhoneValid = false;
   late String phnnumber;
+  bool isWritting = false;
   Map<String, String> scrdsMp = {};
   late List<Map<String, dynamic>> chekstatuses;
   TextEditingController ncont = TextEditingController();
@@ -119,9 +120,9 @@ class _CreateAttendeesState extends State<CreateAttendees> {
     return Scaffold(
       backgroundColor: scaback,
       appBar: appBar(
-        title: "${widget.title}",
+        title: "Write ${widget.title}",
         leading: buildActionButton(
-          icon: Icons.arrow_back_ios,
+          icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
           },
@@ -164,15 +165,22 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                     const SizedBox(height: psm * 2),
                     SizedBox(
                       width: double.maxFinite,
-                      child: MaterialButton(
-                        color: Colors.blue,
-                        height: kToolbarHeight * 0.8,
+                      child: lqAssButton(
                         onPressed: () {
-                          attendee == null
-                              ? submitForm()
-                              : submitForm(attendeeId: attendee.id);
+                          if (!isWritting) {
+                            attendee == null
+                                ? submitForm()
+                                : submitForm(attendeeId: attendee.id);
+                          }
                         },
-                        child: Text(attendee == null ? "Create" : "Update"),
+                        label:
+                            attendee == null
+                                ? !isWritting
+                                    ? "Create"
+                                    : "Loading..."
+                                : !isWritting
+                                ? "Update"
+                                : "Loading...",
                       ),
                     ),
                   ],
@@ -206,46 +214,50 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         showToast(isGood: false, msg: "Select Card Type");
         return;
       }
+      safeState(() {
+        isWritting = true;
+      });
       try {
-        showProgress(context: context);
-        var atRef = firestore
-            .collection(ecol)
-            .doc(widget.event.id)
-            .collection(atcol)
-            .doc(attendeeId ?? generateUniqueSequence());
-        dataCleaner(passcode: atRef.id);
-        var reqRes = await http.post(
-          Uri.parse(rendercarl),
-          body: jsonEncode(data?.toMap()),
-        );
-        var res = jsonDecode(reqRes.body);
-        if (res["error"]) {
-          showToast(isGood: true, msg: genErrMsg);
-          return;
-        }
-        AttributeCard attCard = AttributeCard(
-          name: data?.type,
-          url: res['data'],
-          templateCardId: data?.id,
-          issuedAt: DateTime.now().toIso8601String(),
-        );
+        var atId = attendeeId ?? generateUniqueSequence();
+        dataCleaner(passcode: atId);
         Attendee atdt = Attendee(
+          id: atId,
           email: '',
           messages: {},
-          fullName: ncont.text,
           checkinStatus: chk,
           createdAt: DateTime.now(),
+          fullName: ncont.text.trim(),
           phone: phnnumber.replaceAll('+', ''),
-          cards: {widget.kardType.name: attCard.toMap()},
+          cards: {},
         );
-        await atRef.set(atdt.toMap(), SetOptions(merge: true));
-        poper();
+        var payload = {
+          "eventId": widget.event.id,
+          "attendees": [atdt.toMap()],
+          "templateCard": data?.toMap(),
+          "kardType": widget.kardType.name,
+        };
+        var source = await http.post(
+          Uri.parse(crtAtCloudUrl),
+          body: jsonEncode(payload),
+        );
+        var body = jsonDecode(source.body);
+        if (body == null || !body['status']) {
+          var message = body != null ? body['message'] : "Failed";
+          showToast(isGood: true, msg: "$message");
+          return safeState(() {
+            isWritting = false;
+          });
+        }
+
         showToast(isGood: true, msg: "Success");
-        poper();
+        return safeState(() {
+          isWritting = false;
+        });
       } catch (e) {
-        poper();
-        print("Abject: ${e}");
-        showToast(isGood: true, msg: "Failed: $e");
+        safeState(() {
+          isWritting = false;
+        });
+        showToast(isGood: true, msg: "Failed because: $e");
       }
     }
   }
@@ -277,7 +289,6 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   safeState(runnable) {
     if (mounted) {
       setState(() {
-        debugPrint("Abject: Just Ran");
         runnable();
       });
     }

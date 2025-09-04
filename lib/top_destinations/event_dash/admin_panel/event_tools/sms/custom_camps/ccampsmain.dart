@@ -132,7 +132,6 @@ class _AdminCampaignsState extends State<AdminCampaigns> {
     String blabel = campaign == null ? "Create" : "Save";
     String tlabel = campaign == null ? "New Campaign" : "Edit Campaign";
     if (campaign != null) controller.text = campaign.name ?? "";
-
     return showDialog(
       context: context,
       builder: (context) {

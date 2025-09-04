@@ -11,13 +11,15 @@ import 'package:haflaway/models/event.dart';
 import 'package:haflaway/playground/index.dart';
 import 'package:haflaway/providers/balance_provider.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
+import 'package:haflaway/utils/styles.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/attendees.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/eventTools.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/eventTools.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'checkpoint/in_check.dart';
@@ -92,9 +94,37 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
           slivers: [
             SliverToBoxAdapter(child: SizedBox(height: 135)),
             _buildEventImageCard(),
+            _buildTitle(),
             _buildAdminToolsSection(),
             const SliverPadding(padding: EdgeInsets.only(bottom: p20)),
           ],
+        ),
+      ),
+    );
+  }
+
+  _buildTitle() {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.only(bottom: p20, left: psm, right: psm),
+        padding: EdgeInsets.symmetric(horizontal: psm),
+        decoration: BoxDecoration(
+          gradient: lqassgrad,
+          borderRadius: BorderRadius.circular(bmd),
+          border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+        ),
+        child: ListTile(
+          title: Text(
+            "${widget.edata.title}",
+            style: TextStyle(fontSize: fsm + 4, fontWeight: FontWeight.bold),
+          ),
+          subtitle: Row(
+            children: [
+              Icon(Clarity.map_marker_line),
+              SizedBox(width: psm * 0.5),
+              Text("${widget.edata.location}"),
+            ],
+          ),
         ),
       ),
     );
@@ -104,7 +134,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   SliverToBoxAdapter _buildEventImageCard() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(p20, 0, p20, p20),
+        padding: const EdgeInsets.fromLTRB(psm, 0, psm, p20),
         child: Container(
           height: 120,
           decoration: BoxDecoration(
@@ -139,7 +169,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   Widget _buildAdminToolsSection() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 0),
+        padding: const EdgeInsets.symmetric(horizontal: psm),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -148,7 +178,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                 children: [
                   buildGlassListItem(
                     title: "Events Toolkit",
-                    subtitle: "Manage all event messages and alerts",
+                    subtitle: "Manage event's notifications",
                     icon: Clarity.notification_solid,
                     gradient: [
                       const Color(0xFF4CAF50),
@@ -164,7 +194,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                   buildDivider(),
                   buildGlassListItem(
                     title: "Invitations Manager",
-                    subtitle: "Create & Manage Event Invitations",
+                    subtitle: "Create & Manage Invitations",
                     icon: Clarity.user_solid,
                     gradient: [
                       const Color(0xFF2196F3),
@@ -186,7 +216,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
 
                   buildGlassListItem(
                     title: "Contributors Manager",
-                    subtitle: "Create & Manage Event Contributors",
+                    subtitle: "Create & Manage Contributors",
                     icon: Clarity.coin_bag_solid,
                     gradient: [
                       const Color.fromARGB(255, 243, 33, 100),
@@ -208,7 +238,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                   buildDivider(),
                   buildGlassListItem(
                     title: "Scan & Verify Cards",
-                    subtitle: "Ensure Authenticity of Cards being Showed",
+                    subtitle: "Ensure Authenticity of Cards",
                     icon: Clarity.shield_check_solid,
                     gradient: [Colors.teal, Colors.teal],
                     onTap: () {
@@ -223,7 +253,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                   buildDivider(),
                   buildGlassListItem(
                     title: "Team Management",
-                    subtitle: "Manage staff permissions and roles",
+                    subtitle: "Manage staff permissions",
                     icon: Clarity.user_solid_alerted,
                     gradient: [
                       const Color(0xFFFF9800),

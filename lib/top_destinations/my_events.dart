@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/event_tile.dart';
 import 'package:haflaway/models/event.dart';
+import 'package:haflaway/top_destinations/account.dart';
 import 'package:haflaway/top_destinations/create_event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/admin_pane.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
+import 'package:icons_plus/icons_plus.dart';
 
 class HaflaWayHome extends StatefulWidget {
   const HaflaWayHome({super.key});
@@ -28,17 +30,34 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       backgroundColor: scaback,
       appBar: appBar(
         title: "Haflaway",
-        actions: buildActionButton(
-          icon: Icons.add,
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) {
-                  return CreateEvent();
-                },
-              ),
-            );
-          },
+        actions: Row(
+          children: [
+            buildActionButton(
+              icon: Icons.add,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return CreateEvent();
+                    },
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: psm),
+            buildActionButton(
+              icon: Clarity.settings_line,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return Mipangilio();
+                    },
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
       body: Container(

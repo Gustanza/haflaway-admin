@@ -14,6 +14,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/view_card.dart';
+import 'package:haflaway/utils/helpers.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/event.dart';
@@ -25,9 +26,7 @@ import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:string_similarity/string_similarity.dart';
-// import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'imp_preview.dart';
 
 class Attendees extends StatefulWidget {
@@ -276,17 +275,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     }
 
     return statusFiltered;
-  }
-
-  // Call attendee
-  Future<void> _callAttendee(String phoneNumber) async {
-    final Uri phoneUri = Uri(scheme: "tel", path: phoneNumber);
-    if (await canLaunchUrl(phoneUri)) {
-      await launchUrl(phoneUri);
-    } else {
-      showToast(isGood: false, msg: "Could not launch phone dialer");
-    }
-  }
+  } // Call attendee
 
   // Update attendance status
   Future<void> _updateAttendanceStatus(Attendee attendee, String status) async {
@@ -852,7 +841,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                     scale: 0.75,
                                     child: IconButton.outlined(
                                       onPressed: () {
-                                        _callAttendee(attendee.phone);
+                                        callNumber(attendee.phone);
                                       },
                                       icon: const Icon(Icons.call, size: icnsm),
                                     ),

@@ -48,9 +48,16 @@ class Userr {
       couponCode: map['couponCode'] ?? "",
       phoneNumber: map['phoneNumber'] ?? "",
       email: map['email'] ?? "",
-      balance: (map['balance'] as num).toDouble(),
-      registrationDate: DateTime.parse(map['registrationDate']),
-      lastLoginDate: DateTime.parse(map['lastLoginDate']),
+      balance:
+          map['balance'] != null ? (map['balance'] as num).toDouble() : 0.0,
+      registrationDate:
+          map['registrationDate'] != null
+              ? DateTime.parse(map['registrationDate'])
+              : DateTime(1990),
+      lastLoginDate:
+          map['lastLoginDate'] != null
+              ? DateTime.parse(map['lastLoginDate'])
+              : DateTime(1990),
     );
   }
 }
