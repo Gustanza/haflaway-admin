@@ -25,7 +25,6 @@ import 'package:haflaway/utils/errorstrs.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/styles.dart';
-import 'package:string_similarity/string_similarity.dart';
 import 'package:flutter/services.dart';
 import 'imp_preview.dart';
 
@@ -50,23 +49,20 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   List<Attendee> atList = [];
   List<Attendee> filteredList = [];
   List<Attendee> selectList = [];
-  TextEditingController mpname = TextEditingController();
-  TextEditingController mpphone = TextEditingController();
-  TextEditingController mpcard = TextEditingController();
+  TextEditingController impname = TextEditingController();
+  TextEditingController impphone = TextEditingController();
+  TextEditingController impcard = TextEditingController();
   FirebaseStorage storage = FirebaseStorage.instance;
   TextEditingController scont = TextEditingController();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-  // Animation controllers
-  late AnimationController _colorController;
-
   // Attendance status filters
-  String _currentFilter = "All";
+  String _attendanceFilter = "All";
   final List<String> _filters = [
     "All",
     "Confirmed",
     "Not Confirmed",
     "Declined",
+    "On Pursuit",
   ];
 
   // Pagination variables
@@ -82,23 +78,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     getCards();
     // Add scroll listener for pagination
     scrollController.addListener(_scrollListener);
-
-    // Initialize animation controllers
-    _colorController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _colorController.addListener(() {
-      setState(() {});
-    });
   }
 
   @override
   void dispose() {
     scrollController.removeListener(_scrollListener);
     scrollController.dispose();
-    _colorController.dispose();
     super.dispose();
   }
 
@@ -121,12 +106,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     });
 
     try {
-      var query = firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .orderBy("createdAt", descending: true)
-          .limit(pageSize);
+      Query<Map<String, dynamic>> query = nQwrBuilder();
 
       var snapshot = await query.get();
 
@@ -140,19 +120,105 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       lastDocument = snapshot.docs.last;
       setState(() {
         atList =
-            snapshot.docs
-                .where((doc) => doc['cards'][widget.kardType.name] != null)
-                .map<Attendee>((doc) {
-                  return Attendee.fromMap(doc.id, doc.data());
-                })
-                .toList();
-
+            snapshot.docs.map<Attendee>((doc) {
+              return Attendee.fromMap(doc.id, doc.data());
+            }).toList();
         isLoading = false;
       });
     } catch (e) {
       setState(() {
         isLoading = false;
       });
+    }
+  }
+
+  nQwrBuilder() {
+    if (_selectedKardFilter != null && _attendanceFilter != "All") {
+      return firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .where(
+            "cards.${widget.kardType.name}.templateCardId",
+            isEqualTo: _selectedKardFilter,
+          )
+          .where("attendanceStatus", isEqualTo: _attendanceFilter)
+          .orderBy("cards.${widget.kardType.name}.templateCardId")
+          .orderBy("attendanceStatus")
+          .limit(pageSize);
+    } else if (_selectedKardFilter == null && _attendanceFilter != "All") {
+      return firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .where("attendanceStatus", isEqualTo: _attendanceFilter)
+          .orderBy("attendanceStatus")
+          .limit(pageSize);
+    } else if (_selectedKardFilter != null && _attendanceFilter == "All") {
+      return firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .where(
+            "cards.${widget.kardType.name}.templateCardId",
+            isEqualTo: _selectedKardFilter,
+          )
+          .orderBy("cards.${widget.kardType.name}.templateCardId")
+          .limit(pageSize);
+    } else {
+      return firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .orderBy("createdAt", descending: true)
+          .limit(pageSize);
+    }
+  }
+
+  mQwrBuilder() {
+    if (_selectedKardFilter != null && _attendanceFilter != "All") {
+      return firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .where(
+            "cards.${widget.kardType.name}.templateCardId",
+            isEqualTo: _selectedKardFilter,
+          )
+          .where("attendanceStatus", isEqualTo: _attendanceFilter)
+          .orderBy("cards.${widget.kardType.name}.templateCardId")
+          .orderBy("attendanceStatus")
+          .startAfterDocument(lastDocument!)
+          .limit(pageSize);
+    } else if (_selectedKardFilter == null && _attendanceFilter != "All") {
+      return firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .where("attendanceStatus", isEqualTo: _attendanceFilter)
+          .orderBy("attendanceStatus")
+          .startAfterDocument(lastDocument!)
+          .limit(pageSize);
+    } else if (_selectedKardFilter != null && _attendanceFilter == "All") {
+      return firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .where(
+            "cards.${widget.kardType.name}.templateCardId",
+            isEqualTo: _selectedKardFilter,
+          )
+          .orderBy("cards.${widget.kardType.name}.templateCardId")
+          .startAfterDocument(lastDocument!)
+          .limit(pageSize);
+    } else {
+      return firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .orderBy("createdAt", descending: true)
+          .startAfterDocument(lastDocument!)
+          .limit(pageSize);
     }
   }
 
@@ -165,13 +231,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     });
 
     try {
-      var query = firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .orderBy("createdAt", descending: true)
-          .startAfterDocument(lastDocument!)
-          .limit(pageSize);
+      Query<Map<String, dynamic>> query = mQwrBuilder();
 
       var snapshot = await query.get();
       if (snapshot.docs.isEmpty) {
@@ -183,14 +243,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       }
 
       lastDocument = snapshot.docs.last;
-
       final newAttendees =
-          snapshot.docs
-              .where((doc) => doc['cards'][widget.kardType.name] != null)
-              .map<Attendee>((doc) {
-                return Attendee.fromMap(doc.id, doc.data());
-              })
-              .toList();
+          snapshot.docs.map<Attendee>((doc) {
+            return Attendee.fromMap(doc.id, doc.data());
+          }).toList();
 
       setState(() {
         atList.addAll(newAttendees);
@@ -202,80 +258,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       });
     }
   }
-
-  // Search attendees from Firebase
-  Future<void> _searchAttendees(String searchText) async {
-    if (searchText.isEmpty) {
-      // Reset to initial pagination state
-      atList = [];
-      lastDocument = null;
-      hasMore = true;
-      await _loadAttendees();
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      // Get all attendees for search (unfortunately we need to retrieve all to perform string similarity)
-      var snapshot =
-          await firestore
-              .collection(ecol)
-              .doc(widget.edata.id)
-              .collection(atcol)
-              .orderBy("createdAt", descending: true)
-              .get();
-
-      var allAttendees =
-          snapshot.docs
-              .where((doc) => doc['cards'][widget.kardType.name] != null)
-              .map<Attendee>((doc) {
-                return Attendee.fromMap(doc.id, doc.data());
-              })
-              .toList();
-
-      // Sort by similarity
-      allAttendees.sort((a, b) {
-        var bm1 = StringSimilarity.compareTwoStrings(searchText, a.fullName);
-        var bm2 = StringSimilarity.compareTwoStrings(searchText, b.fullName);
-        return bm2.compareTo(bm1);
-      });
-
-      setState(() {
-        atList = allAttendees;
-        hasMore = false; // No more pagination during search
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  // Filter attendees by attendance status
-  List<Attendee> _filterAttendees(List<Attendee> attendees) {
-    // First filter by status
-    List<Attendee> statusFiltered = attendees;
-    if (_currentFilter != "All") {
-      statusFiltered =
-          attendees.where((attendee) {
-            String status = attendee.attendanceStatus ?? "Not Confirmed";
-            return status == _currentFilter;
-          }).toList();
-    }
-
-    // Then filter by Kard if selected
-    if (_selectedKardFilter != null) {
-      return statusFiltered.where((attendee) {
-        return attendee.cards.toString() == _selectedKardFilter;
-      }).toList();
-    }
-
-    return statusFiltered;
-  } // Call attendee
 
   // Update attendance status
   Future<void> _updateAttendanceStatus(Attendee attendee, String status) async {
@@ -384,6 +366,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 showQuickStats();
               },
             ),
+            const SizedBox(width: psm),
+            buildActionButton(
+              icon: Icons.search,
+              onTap: () {
+                // showQuickStats();
+              },
+            ),
           ],
         ),
       ),
@@ -405,7 +394,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     await _loadAttendees();
                   },
                 )
-                : buildAtList(_filterAttendees(atList)),
+                : buildAtList(atList),
       ),
     );
   }
@@ -418,164 +407,46 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: psm * 0.35),
+          const SizedBox(height: psm * 0.5),
           _buildKardFilterChips(),
           _buildStatusFilterChips(),
-          if (selectList.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(
-                left: psm,
-                right: psm,
-                top: psm * 0.15,
-              ),
-              child: Text(
-                "Selected: ${selectList.length} Invitations",
-                style: const TextStyle(
-                  fontSize: fsm + 2,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.only(
-              left: psm,
-              right: psm,
-              top: psm,
-              bottom: psm * 0.75,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: buildField(
-                    cont: scont,
-                    filled: true,
-                    lbl: "Search Invitation",
-                    isChanged: () {
-                      _searchAttendees(scont.text);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
+          const SizedBox(height: psm * 0.5),
           Expanded(
-            child: NotificationListener<ScrollNotification>(
-              onNotification: (ScrollNotification scrollInfo) {
-                if (scrollInfo is ScrollEndNotification) {
-                  if (scrollInfo.metrics.pixels >=
-                          scrollInfo.metrics.maxScrollExtent - 200 &&
-                      !isLoading &&
-                      hasMore &&
-                      scont.text.isEmpty) {
-                    _loadMoreAttendees();
-                  }
-                }
-                return false;
-              },
-              child: ListView.builder(
-                controller: scrollController,
-                itemCount: atdata.length + 1, // +1 for the loading indicator
-                itemBuilder: (context, index) {
-                  // Show loading indicator at the end
-                  if (index == atdata.length) {
-                    if (isLoading) {
-                      return const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    } else if (!hasMore && atdata.isNotEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Center(
-                          child: Text(
-                            "No more attendees to load",
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontStyle: FontStyle.italic,
-                            ),
+            child: ListView.builder(
+              padding: EdgeInsets.all(0),
+              controller: scrollController,
+              itemCount: atdata.length + 1, // +1 for the loading indicator
+              itemBuilder: (context, index) {
+                // Show loading indicator at the end
+                if (index == atdata.length) {
+                  if (isLoading) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  } else if (!hasMore && atdata.isNotEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(
+                        child: Text(
+                          "No more attendees to load",
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
                           ),
                         ),
-                      );
-                    } else {
-                      return const SizedBox(height: 20);
-                    }
+                      ),
+                    );
+                  } else {
+                    return const SizedBox(height: 20);
                   }
-
-                  // Show attendee item
-                  return _buildAttendeeCard(atdata[index]);
-                },
-              ),
+                }
+                // Show attendee item
+                return _buildAttendeeCard(atdata[index]);
+              },
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // Build attendance stats widget
-  Widget buildAttendanceStats() {
-    // Count attendees by status
-    String confirmed = "Confirmed";
-    String pending = "Not Confirmed";
-    String declined = "Declined";
-
-    return Row(
-      children: [
-        _buildStatIndicator(true, confirmed, Colors.green),
-        const SizedBox(width: 8),
-        _buildStatIndicator(
-          false,
-          pending,
-          const Color.fromARGB(255, 196, 153, 21),
-        ),
-        const SizedBox(width: 8),
-        _buildStatIndicator(true, declined, Colors.red),
-      ],
-    );
-  }
-
-  // Build stat indicator
-  Widget _buildStatIndicator(bool postv, String fltr, Color color) {
-    var pathy =
-        postv
-            ? firestore
-                .collection(ecol)
-                .doc(widget.edata.id)
-                .collection(atcol)
-                .where("attendanceStatus", isEqualTo: fltr)
-            : firestore
-                .collection(ecol)
-                .doc(widget.edata.id)
-                .collection(atcol)
-                .where(
-                  Filter.or(
-                    Filter('attendanceStatus', isNull: true),
-                    Filter('attendanceStatus', isEqualTo: 'Not Confirmed'),
-                  ),
-                );
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: psm, vertical: 4),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(88),
-      ),
-      child: FutureBuilder(
-        future: pathy.count().get(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Text("🥵");
-          } else if (snapshot.hasData) {
-            return Text(
-              "${snapshot.data?.count}",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            );
-          } else {
-            return CupertinoActivityIndicator(color: Colors.white);
-          }
-        },
       ),
     );
   }
@@ -589,7 +460,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         scrollDirection: Axis.horizontal,
         children:
             _filters.map((filter) {
-              bool isSelected = _currentFilter == filter;
+              bool isSelected = _attendanceFilter == filter;
               return Padding(
                 padding: const EdgeInsets.only(right: 8.0),
                 child: FilterChip(
@@ -599,8 +470,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   shape: filShape(),
                   onSelected: (selected) {
                     setState(() {
-                      _currentFilter = filter;
+                      _attendanceFilter = filter;
                     });
+                    _loadAttendees();
                   },
                 ),
               );
@@ -631,6 +503,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 setState(() {
                   _selectedKardFilter = null;
                 });
+                _loadAttendees();
               },
             ),
           ),
@@ -648,6 +521,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   setState(() {
                     _selectedKardFilter = selected ? kard.id : null;
                   });
+                  _loadAttendees();
                 },
               ),
             );
@@ -689,199 +563,197 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         }
         setState(() {});
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: psm, vertical: 4),
+      child: Container(
+        margin: EdgeInsets.only(left: psm, right: psm, bottom: psm * 0.75),
+        decoration: BoxDecoration(
+          gradient: lqassgrad,
+          border: lqassbdr,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Container(
-          decoration: BoxDecoration(
-            gradient: lqassgrad,
-            border: lqassbdr,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            padding: EdgeInsets.all(psm),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    // first child
-                    Stack(
-                      children: [
-                        Hero(
-                          tag: "avatar-${attendee.id}",
+          padding: EdgeInsets.all(psm),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  // first child
+                  Stack(
+                    children: [
+                      Hero(
+                        tag: "avatar-${attendee.id}",
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Icon(
+                              size: 28,
+                              Icons.account_circle,
+                              color: Colors.white.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (messageCount > 0)
+                        Positioned(
+                          top: 0,
+                          right: 0,
                           child: Container(
-                            width: 50,
-                            height: 50,
+                            padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.25),
+                              color: Colors.red,
                               shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 2,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
                             ),
                             child: Center(
-                              child: Icon(
-                                size: 28,
-                                Icons.account_circle,
-                                color: Colors.white.withValues(alpha: 0.5),
+                              child: Text(
+                                messageCount > 99 ? "99+" : "$messageCount",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                        if (messageCount > 0)
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.2),
-                                    blurRadius: 2,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 16,
-                                minHeight: 16,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  messageCount > 99 ? "99+" : "$messageCount",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                    ],
+                  ),
+                  // second child
+                  const SizedBox(width: psm),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                fullname,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: fsm + 2,
                                 ),
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                    // second child
-                    const SizedBox(width: psm),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  fullname,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: fsm + 2,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.event, size: 16),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      crdnm,
-                                      style: TextStyle(
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                  // const SizedBox(width: psm * 2),
-                                  TextButton(
-                                    onPressed: () {
-                                      var vcrd =
-                                          attendee.cards[widget.kardType.name];
-                                      if (vcrd != null) {
-                                        AttributeCard attrCrd =
-                                            AttributeCard.fromMap(map: vcrd);
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) {
-                                              return ViewCard(
-                                                cardUrl: attrCrd.url ?? "",
-                                              );
-                                            },
-                                          ),
-                                        );
-                                      } else {
-                                        showToast(
-                                          isGood: false,
-                                          msg: "Unable to View",
-                                        );
-                                      }
-                                    },
-                                    child: Icon(
-                                      Clarity.eye_show_line,
-                                      size: icnmd,
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              Row(
-                                children: [
-                                  Icon(Clarity.mobile_phone_line, size: 16),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    attendee.phone,
+                          ],
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.event, size: 16),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    crdnm,
                                     style: TextStyle(
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  const SizedBox(width: psm * 2),
-                                  Transform.scale(
-                                    scale: 0.75,
-                                    child: IconButton.outlined(
-                                      onPressed: () {
-                                        callNumber(attendee.phone);
-                                      },
-                                      icon: const Icon(Icons.call, size: icnsm),
-                                    ),
+                                ),
+                                // const SizedBox(width: psm * 2),
+                                TextButton(
+                                  onPressed: () {
+                                    var vcrd =
+                                        attendee.cards[widget.kardType.name];
+                                    if (vcrd != null) {
+                                      AttributeCard attrCrd =
+                                          AttributeCard.fromMap(map: vcrd);
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) {
+                                            return ViewCard(
+                                              cardUrl: attrCrd.url ?? "",
+                                            );
+                                          },
+                                        ),
+                                      );
+                                    } else {
+                                      showToast(
+                                        isGood: false,
+                                        msg: "Unable to View",
+                                      );
+                                    }
+                                  },
+                                  child: Icon(
+                                    Clarity.eye_show_line,
+                                    size: icnmd,
                                   ),
-                                  Transform.scale(
-                                    scale: 0.75,
-                                    child: IconButton.outlined(
-                                      onPressed: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) {
-                                              return CreateAttendees(
-                                                event: widget.edata,
-                                                kardType: widget.kardType,
-                                                attendee: attendee,
-                                              );
-                                            },
-                                          ),
-                                        );
-                                      },
-                                      icon: const Icon(
-                                        Icons.edit_document,
-                                        size: icnsm,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: psm * 0.5),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                                ),
+                              ],
+                            ),
 
-                _buildAttendanceControls(attendee),
-              ],
-            ),
+                            Row(
+                              children: [
+                                Icon(Clarity.mobile_phone_line, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  attendee.phone,
+                                  style: TextStyle(
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: psm * 2),
+                                Transform.scale(
+                                  scale: 0.75,
+                                  child: IconButton.outlined(
+                                    onPressed: () {
+                                      callNumber(attendee.phone);
+                                    },
+                                    icon: const Icon(Icons.call, size: icnsm),
+                                  ),
+                                ),
+                                Transform.scale(
+                                  scale: 0.75,
+                                  child: IconButton.outlined(
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) {
+                                            return CreateAttendees(
+                                              event: widget.edata,
+                                              kardType: widget.kardType,
+                                              attendee: attendee,
+                                            );
+                                          },
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(
+                                      Icons.edit_document,
+                                      size: icnsm,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: psm * 0.5),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              _buildAttendanceControls(attendee),
+            ],
           ),
         ),
       ),
@@ -926,6 +798,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             Icons.cancel,
             Colors.red,
             attendee.attendanceStatus == "Declined",
+          ),
+          _buildStatusButton(
+            attendee,
+            "On Pursuit",
+            Icons.call,
+            Colors.teal,
+            attendee.attendanceStatus == "On Pursuit",
           ),
         ],
       ),
@@ -1229,7 +1108,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      buildDrop(sels, mpname),
+                      buildDrop(sels, impname),
                     ],
                   ),
                 ),
@@ -1245,7 +1124,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      buildDrop(sels, mpphone),
+                      buildDrop(sels, impphone),
                     ],
                   ),
                 ),
@@ -1261,7 +1140,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      buildDrop(synCrdmap, mpcard),
+                      buildDrop(synCrdmap, impcard),
                     ],
                   ),
                 ),
@@ -1272,11 +1151,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     if (isGreen()) {
                       poper();
                       Map<String, dynamic> mapp = {
-                        'fullName': int.parse(mpname.text),
-                        'phone': int.parse(mpphone.text),
+                        'fullName': int.parse(impname.text),
+                        'phone': int.parse(impphone.text),
                       };
                       var carddata = lcrds.firstWhere((lcrd) {
-                        return lcrd.id == mpcard.text;
+                        return lcrd.id == impcard.text;
                       });
                       await Navigator.of(context).push(
                         MaterialPageRoute(
@@ -1319,13 +1198,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   }
 
   isGreen() {
-    if (mpname.text.isEmpty) {
+    if (impname.text.isEmpty) {
       showToast(isGood: false, msg: "Select a column with values for name");
       return false;
-    } else if (mpphone.text.isEmpty) {
+    } else if (impphone.text.isEmpty) {
       showToast(isGood: false, msg: "Select a column with values for phone");
       return false;
-    } else if (mpcard.text.isEmpty) {
+    } else if (impcard.text.isEmpty) {
       showToast(isGood: false, msg: "Select a card to assign the attendees");
       return false;
     } else {

@@ -76,13 +76,16 @@ buildTiles({
         try {
           perCrdList =
               attendees.where((at) {
+                if (at.cards[kardType.name] == null) {
+                  return false;
+                }
                 AttributeCard attributeCard = AttributeCard.fromMap(
                   map: at.cards[kardType.name],
                 );
                 return attributeCard.templateCardId == kards[idx].id;
               }).toList();
         } catch (e) {
-          // Will handle some
+          debugPrint("Abject: $e");
         }
         var confirmedlist =
             perCrdList.where((at) {
