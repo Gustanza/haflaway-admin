@@ -41,6 +41,21 @@ navnReplaceUntil({context, widget}) {
   );
 }
 
+showSnack({context, isGood, msg}) {
+  return ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text("$msg"),
+      action: SnackBarAction(
+        label: "Dismiss",
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+      ),
+      backgroundColor: isGood ? Colors.green : Colors.red,
+    ),
+  );
+}
+
 showToast({isGood, msg}) {
   return Fluttertoast.showToast(
     msg: "$msg",

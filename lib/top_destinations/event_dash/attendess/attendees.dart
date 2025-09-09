@@ -8,6 +8,7 @@ import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/services/strg_service.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/components/importcontr.dart';
+import 'package:haflaway/top_destinations/event_dash/attendess/components/searchdel.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/components/stats.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/crtattendees.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -62,7 +63,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     "Confirmed",
     "Not Confirmed",
     "Declined",
-    "On Pursuit",
+    "Call Made",
   ];
 
   // Pagination variables
@@ -115,6 +116,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           hasMore = false;
           isLoading = false;
         });
+        if (_selectedKardFilter != null || _attendanceFilter != "All")
+          showToast(isGood: true, msg: "NO ITEMS FOUND");
         return;
       }
       lastDocument = snapshot.docs.last;
@@ -339,6 +342,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                         kardType: widget.kardType,
                       ),
                     );
+                    _loadAttendees();
                     break;
                   case atActnSelAll:
                     selectAll();
@@ -370,7 +374,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             buildActionButton(
               icon: Icons.search,
               onTap: () {
-                // showQuickStats();
+                showSearch(
+                  context: context,
+                  delegate: DhaSearchDelegate(
+                    edata: widget.edata,
+                    kardType: widget.kardType,
+                  ),
+                );
               },
             ),
           ],
@@ -787,7 +797,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             attendee,
             "Not Confirmed",
             Icons.schedule,
-            Colors.blue,
+            Colors.grey,
             attendee.attendanceStatus == "Not Confirmed" ||
                 attendee.attendanceStatus == null,
           ),
@@ -799,12 +809,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             Colors.red,
             attendee.attendanceStatus == "Declined",
           ),
+          const SizedBox(width: 8),
           _buildStatusButton(
             attendee,
-            "On Pursuit",
-            Icons.call,
+            "Call Made",
+            Icons.call_made,
             Colors.teal,
-            attendee.attendanceStatus == "On Pursuit",
+            attendee.attendanceStatus == "Call Made",
           ),
         ],
       ),

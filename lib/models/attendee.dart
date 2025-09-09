@@ -83,7 +83,7 @@ class Attendee {
       fullName: map['fullName'] ?? "",
       phone: map['phone'] ?? "",
       messages: map['messages'] ?? {},
-      attendanceStatus: map['attendanceStatus'] ?? "Pending",
+      attendanceStatus: map['attendanceStatus'] ?? "Not Confirmed",
     );
   }
 }

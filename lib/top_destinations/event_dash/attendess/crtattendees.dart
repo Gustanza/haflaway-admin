@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/buttons.dart';
+import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl_phone_field/intl_phone_field.dart';
@@ -196,9 +197,14 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   buildPhone({mobileCont}) {
     return IntlPhoneField(
       controller: mobileCont,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
+        filled: true,
         hintText: 'Phone Number',
-        border: OutlineInputBorder(),
+        enabledBorder: inputBorder,
+        border: inputBorder,
+        focusedBorder: inputBorder,
+        disabledBorder: inputBorder,
+        fillColor: lqassgradBaseColor,
       ),
       initialCountryCode: 'TZ',
       onChanged: (phone) {
@@ -210,6 +216,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   submitForm({attendeeId}) async {
     var isValid = fkey.currentState?.validate() ?? false;
     if (isValid && validatePhone()) {
+      return showOutput(msg: "Success");
       if (data == null) {
         showToast(isGood: false, msg: "Select Card Type");
         return;
@@ -243,13 +250,14 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         var body = jsonDecode(source.body);
         if (body == null || !body['status']) {
           var message = body != null ? body['message'] : "Failed";
-          showToast(isGood: true, msg: "$message");
+          showSnack(context: context, isGood: true, msg: "$message");
           return safeState(() {
             isWritting = false;
           });
         }
 
-        showToast(isGood: true, msg: "Success");
+        showSnack(context: context, isGood: true, msg: "Success");
+        showOutput(msg: "Success");
         return safeState(() {
           isWritting = false;
         });
@@ -257,7 +265,8 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         safeState(() {
           isWritting = false;
         });
-        showToast(isGood: true, msg: "Failed because: $e");
+        showOutput(msg: "Action Failed");
+        showSnack(context: context, isGood: true, msg: "Failed because: $e");
       }
     }
   }
@@ -292,6 +301,41 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         runnable();
       });
     }
+  }
+
+  showOutput({msg}) {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return glassDialog(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: psm * 2,
+              horizontal: psm,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                lqAssButton(
+                  label: "Stay here",
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                const SizedBox(height: psm * 0.75),
+                lqAssButton(
+                  label: "Leave page",
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   poper() {

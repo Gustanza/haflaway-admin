@@ -223,6 +223,14 @@ bldDrdDwn({
     controller: controller,
     width: double.maxFinite,
     onSelected: onSelected,
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      enabledBorder: inputBorder,
+      border: inputBorder,
+      focusedBorder: inputBorder,
+      disabledBorder: inputBorder,
+      fillColor: lqassgradBaseColor,
+    ),
     dropdownMenuEntries:
         entries.map<DropdownMenuEntry>((e) {
           return DropdownMenuEntry(value: e.key, label: e.value);

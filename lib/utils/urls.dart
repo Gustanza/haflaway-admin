@@ -20,6 +20,8 @@ var crtAtCloudUrl = "https://createattendees-frbu33fema-uc.a.run.app";
 // var crtAtCloudUrl =
 //     "http://$lokol:5001/haflaway-f14aa/us-central1/createAttendees";
 
+var getAttsUrl = 'https://getattendees-frbu33fema-uc.a.run.app';
+
 /* local */
 const lokol = '192.168.2.206';
 /* local */
