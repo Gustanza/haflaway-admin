@@ -14,12 +14,10 @@ import 'providers/theme_provider.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    await initializeDateFormatting('sw', null);
-  } catch (e) {}
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await initializeDateFormatting('sw', null);
+
   // if (kDebugMode) {
   //   try {
   //     // FirebaseStorage storage = FirebaseStorage.instance;
@@ -35,20 +33,7 @@ void main(List<String> args) async {
   //     debugPrint("Abject: $e");
   //   }
   // }
-  return runApp(
-    Phoenix(
-      child: MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => ThemeProvider()),
-          ChangeNotifierProvider(
-            create:
-                (_) => BalanceProvider(BalanceService(), EventPlanService()),
-          ),
-        ],
-        child: HfApp(),
-      ),
-    ),
-  );
+  runApp(Phoenix(child: HfApp()));
 }
 
 class HfApp extends StatelessWidget {
