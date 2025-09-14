@@ -15,6 +15,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/view_card.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/models/attendee.dart';
@@ -577,7 +578,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         margin: EdgeInsets.only(left: psm, right: psm, bottom: psm * 0.75),
         decoration: BoxDecoration(
           gradient: lqassgrad,
-          border: lqassbdr,
+          border: !hasKey ? lqassbdr : Border.all(color: Colors.redAccent),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Container(

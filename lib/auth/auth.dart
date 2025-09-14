@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/models/user.dart';
-import 'package:haflaway/top_destinations/navhost.dart';
+import 'package:haflaway/top_destinations/eventz/navhost.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/strings.dart';

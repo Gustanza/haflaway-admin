@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:haflaway/top_destinations/my_events.dart';
+import 'package:haflaway/top_destinations/eventz/my_events.dart';
 
 class NavHost extends StatefulWidget {
   const NavHost({super.key});

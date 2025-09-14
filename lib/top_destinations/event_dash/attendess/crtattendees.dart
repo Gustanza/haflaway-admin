@@ -216,7 +216,6 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   submitForm({attendeeId}) async {
     var isValid = fkey.currentState?.validate() ?? false;
     if (isValid && validatePhone()) {
-      return showOutput(msg: "Success");
       if (data == null) {
         showToast(isGood: false, msg: "Select Card Type");
         return;
@@ -250,13 +249,13 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         var body = jsonDecode(source.body);
         if (body == null || !body['status']) {
           var message = body != null ? body['message'] : "Failed";
-          showSnack(context: context, isGood: true, msg: "$message");
+          showToast(isGood: false, msg: "$message");
+          showOutput(msg: "$message");
           return safeState(() {
             isWritting = false;
           });
         }
-
-        showSnack(context: context, isGood: true, msg: "Success");
+        showToast(isGood: true, msg: "Success");
         showOutput(msg: "Success");
         return safeState(() {
           isWritting = false;
@@ -266,7 +265,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
           isWritting = false;
         });
         showOutput(msg: "Action Failed");
-        showSnack(context: context, isGood: true, msg: "Failed because: $e");
+        showToast(isGood: true, msg: "Failed because: $e");
       }
     }
   }
@@ -280,6 +279,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   }
 
   dataCleaner({passcode}) {
+    chk = [];
     String type = data?.type ?? "unknown";
     int cap = data?.capacity ?? 1;
     List clearAt = data?.clearAt ?? [];
@@ -316,6 +316,14 @@ class _CreateAttendeesState extends State<CreateAttendees> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Text(
+                  "$msg",
+                  style: TextStyle(
+                    fontSize: fsm + 6,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: psm * 0.75),
                 lqAssButton(
                   label: "Stay here",
                   onPressed: () {

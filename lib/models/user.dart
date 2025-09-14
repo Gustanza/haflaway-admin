@@ -10,12 +10,14 @@ class Userr {
   String phoneNumber;
   String email;
   double balance;
+  bool isActive;
   DateTime registrationDate;
   DateTime lastLoginDate;
   String couponCode;
 
   Userr({
     required this.id,
+    this.isActive = false,
     required this.profileImage,
     required this.firstName,
     required this.lastName,
@@ -28,6 +30,7 @@ class Userr {
   });
 
   Map<String, dynamic> kwendaJson() => {
+    'isActive': isActive,
     ufname: firstName,
     ulname: lastName,
     uphoneno: phoneNumber,
@@ -48,6 +51,7 @@ class Userr {
       couponCode: map['couponCode'] ?? "",
       phoneNumber: map['phoneNumber'] ?? "",
       email: map['email'] ?? "",
+      isActive: map['isActive'] ?? false,
       balance:
           map['balance'] != null ? (map['balance'] as num).toDouble() : 0.0,
       registrationDate:

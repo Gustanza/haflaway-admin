@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/top_destinations/create_event.dart';
+import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:haflaway/utils/globalwids.dart';
 

@@ -9,6 +9,7 @@ import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/user.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
+import 'package:haflaway/top_destinations/settings/all_transactions.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
@@ -201,7 +202,13 @@ class _MyAccountScreenState extends State<MyAccountScreen> {
                   icon: Icons.money,
                   title: 'Transactions',
                   subtitle: 'Preview your cash flow',
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => AllTransactions(),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 12),
                 _buildSettingsItem(
