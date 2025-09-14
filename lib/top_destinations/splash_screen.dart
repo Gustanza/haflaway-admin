@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:haflaway/auth/auth.dart';
 import 'package:haflaway/components/accessDenied.dart';
 import 'package:haflaway/components/appbar.dart';
+import 'package:haflaway/components/splash_affiliates.dart';
 import 'package:haflaway/components/updateAppState.dart';
 import 'package:haflaway/models/appState.dart';
 import 'package:haflaway/models/user.dart';
@@ -32,14 +33,14 @@ class _SplashScreenState extends State<SplashScreen> {
       var user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         String userId = user.uid;
-        gateKeep(userId: userId);
+        gateKeeper(userId: userId);
       } else {
         navnReplace(context: context, widget: const Login());
       }
     });
   }
 
-  gateKeep({userId}) async {
+  gateKeeper({userId}) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     int buildNumber = int.tryParse(packageInfo.buildNumber) ?? 0;
@@ -95,21 +96,6 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class OnSplashScreenError extends StatelessWidget {
-  const OnSplashScreenError({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: scaback,
-      appBar: appBar(title: "Haflaway Info"),
-      body: Center(
-        child: TextButton(onPressed: () {}, child: Text("Restart App")),
       ),
     );
   }

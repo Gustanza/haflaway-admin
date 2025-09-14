@@ -20,6 +20,14 @@ const scagrad = LinearGradient(
   colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f3460)],
 );
 
+var secscagrad = LinearGradient(
+  colors: [
+    Colors.white.withOpacity(0.2),
+    Colors.white.withOpacity(0.1),
+    Colors.white.withOpacity(0.05),
+  ],
+);
+
 Color lqassgradBaseColor = Colors.white.withOpacity(0.15);
 
 var lqassgrad = LinearGradient(
