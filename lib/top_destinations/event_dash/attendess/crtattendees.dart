@@ -5,6 +5,7 @@ import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
+import 'package:haflaway/hfhttp/clientelle.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl_phone_field/intl_phone_field.dart';
@@ -164,25 +165,16 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                       },
                     ),
                     const SizedBox(height: psm * 2),
-                    SizedBox(
-                      width: double.maxFinite,
-                      child: lqAssButton(
-                        onPressed: () {
-                          if (!isWritting) {
-                            attendee == null
-                                ? submitForm()
-                                : submitForm(attendeeId: attendee.id);
-                          }
-                        },
-                        label:
-                            attendee == null
-                                ? !isWritting
-                                    ? "Create"
-                                    : "Loading..."
-                                : !isWritting
-                                ? "Update"
-                                : "Loading...",
-                      ),
+                    buildPrimaryButton(
+                      onTap: () {
+                        if (!isWritting) {
+                          attendee == null
+                              ? submitForm()
+                              : submitForm(attendeeId: attendee.id);
+                        }
+                      },
+                      isLoading: isWritting,
+                      label: attendee == null ? "Create" : "Update",
                     ),
                   ],
                 ),
@@ -223,6 +215,8 @@ class _CreateAttendeesState extends State<CreateAttendees> {
       safeState(() {
         isWritting = true;
       });
+      HttpService client = HttpService();
+
       try {
         var atId = attendeeId ?? generateUniqueSequence();
         dataCleaner(passcode: atId);
@@ -242,7 +236,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
           "templateCard": data?.toMap(),
           "kardType": widget.kardType.name,
         };
-        var source = await http.post(
+        var source = await client.post(
           Uri.parse(crtAtCloudUrl),
           body: jsonEncode(payload),
         );
@@ -267,6 +261,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         showOutput(msg: "Action Failed");
         showToast(isGood: true, msg: "Failed because: $e");
       }
+      client.close();
     }
   }
 

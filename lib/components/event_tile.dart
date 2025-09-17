@@ -1,4 +1,6 @@
 import 'dart:ui';
+import 'package:haflaway/utils/colors.dart';
+import 'package:haflaway/utils/dimensions.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/models/event.dart';
@@ -22,24 +24,17 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    var dt = widget.eventData.calendar.first.eventDate;
-    var eventDate = dformtr.format(dt);
-    var eventfDt = formatDate(dtime: dt);
+    var dt = widget.eventData.calendar?.first.eventDate;
+    var eventDate = dformtr.format(dt!);
+    var eventfDt = formatDate(dtime: dt!);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: psm - 2),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.25),
-                Colors.white.withOpacity(0.1),
-              ],
-            ),
+            gradient: secscagrad,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: Colors.white.withOpacity(0.2),
@@ -167,7 +162,7 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.eventData.title,
+                      widget.eventData.title ?? "",
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,

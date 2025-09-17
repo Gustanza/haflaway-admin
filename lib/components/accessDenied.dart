@@ -56,16 +56,7 @@ class _AccessDeniedState extends State<AccessDenied> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: scaback,
-      appBar: appBar(
-        title: "Access Restricted",
-        leading: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: buildActionButton(
-            icon: Icons.arrow_back_ios_new_rounded,
-            onTap: () => Navigator.of(context).pop(),
-          ),
-        ),
-      ),
+      appBar: appBar(title: "Security Clearance"),
       body: Container(
         decoration: const BoxDecoration(gradient: scagrad),
         child: SafeArea(

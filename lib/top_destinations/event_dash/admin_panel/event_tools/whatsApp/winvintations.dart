@@ -4,7 +4,6 @@ import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/attendee_message.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/services/plan_service.dart';
 import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 import 'package:haflaway/utils/dimensions.dart';
@@ -13,7 +12,6 @@ import 'package:string_similarity/string_similarity.dart';
 
 class WInvSender extends StatefulWidget {
   final Event event;
-  final EventPlan eventPlan;
   final String campaignId;
   final KardType kardType;
   final Function(List<Attendee>) onChanged;
@@ -22,7 +20,6 @@ class WInvSender extends StatefulWidget {
     super.key,
     required this.event,
     required this.kardType,
-    required this.eventPlan,
     required this.campaignId,
     required this.onChanged,
   });
@@ -33,18 +30,11 @@ class WInvSender extends StatefulWidget {
 
 class _WInvSenderState extends State<WInvSender> {
   int cost = 0;
-  late int price;
   List<Attendee> senderList = [];
   WspDStates grpState = WspDStates.unsent;
   SenderChannels grpChnl = SenderChannels.all;
   TextEditingController scont = TextEditingController();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-  @override
-  void initState() {
-    price = widget.eventPlan.winvmsgprice.toInt();
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -216,9 +206,6 @@ class _WInvSenderState extends State<WInvSender> {
                     senderList = [];
                   }
                   widget.onChanged(senderList);
-                  setState(() {
-                    cost = senderList.length * price;
-                  });
                 },
                 child: Text(
                   senderList.length != attendees.length
@@ -275,8 +262,5 @@ class _WInvSenderState extends State<WInvSender> {
       senderList.add(rdata);
     }
     widget.onChanged(senderList);
-    setState(() {
-      cost = senderList.length * price;
-    });
   }
 }

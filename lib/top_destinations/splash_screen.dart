@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -33,10 +34,9 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void initState() {
-    super.initState();
     _initializeAnimations();
-    debugPrint("See Here");
     _initializeApp();
+    super.initState();
   }
 
   void _initializeAnimations() {
@@ -74,6 +74,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _initializeApp() async {
     try {
+      await Future.delayed(Duration(seconds: 5));
       var user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         String userId = user.uid;

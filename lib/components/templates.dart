@@ -262,9 +262,9 @@ Widget buildGlassListItem({
     onTap: onTap,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: p20, vertical: psm),
-      margin: EdgeInsets.only(bottom: psm * 0.5),
+      margin: EdgeInsets.only(bottom: psm),
       decoration: BoxDecoration(
-        gradient: lqassgrad,
+        gradient: secscagrad,
         borderRadius: BorderRadius.circular(bmd),
         border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
       ),
@@ -331,7 +331,7 @@ Widget buildGlassCheckpointItem(
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) {
-            return InCheckWrapper(checkpoint: checkpoint, eId: edata.id);
+            return InCheckWrapper(checkpoint: checkpoint, eId: edata.id ?? "");
           },
         ),
       );

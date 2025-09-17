@@ -15,7 +15,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/view_card.dart';
-import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/models/attendee.dart';
@@ -124,9 +123,23 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       lastDocument = snapshot.docs.last;
       setState(() {
         atList =
-            snapshot.docs.map<Attendee>((doc) {
-              return Attendee.fromMap(doc.id, doc.data());
-            }).toList();
+            snapshot.docs
+                .where((test) {
+                  try {
+                    var krd = test['cards'][widget.kardType.name];
+                    if (krd == null) {
+                      return false;
+                    } else {
+                      return true;
+                    }
+                  } catch (e) {
+                    return false;
+                  }
+                })
+                .map<Attendee>((doc) {
+                  return Attendee.fromMap(doc.id, doc.data());
+                })
+                .toList();
         isLoading = false;
       });
     } catch (e) {
@@ -248,10 +261,23 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
 
       lastDocument = snapshot.docs.last;
       final newAttendees =
-          snapshot.docs.map<Attendee>((doc) {
-            return Attendee.fromMap(doc.id, doc.data());
-          }).toList();
-
+          snapshot.docs
+              .where((test) {
+                try {
+                  var krd = test['cards'][widget.kardType.name];
+                  if (krd == null) {
+                    return false;
+                  } else {
+                    return true;
+                  }
+                } catch (e) {
+                  return false;
+                }
+              })
+              .map<Attendee>((doc) {
+                return Attendee.fromMap(doc.id, doc.data());
+              })
+              .toList();
       setState(() {
         atList.addAll(newAttendees);
         isLoading = false;
@@ -733,8 +759,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                 Transform.scale(
                                   scale: 0.75,
                                   child: IconButton.outlined(
-                                    onPressed: () {
-                                      Navigator.of(context).push(
+                                    onPressed: () async {
+                                      await Navigator.of(context).push(
                                         MaterialPageRoute(
                                           builder: (context) {
                                             return CreateAttendees(
@@ -745,11 +771,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                           },
                                         ),
                                       );
+                                      _loadAttendees();
                                     },
-                                    icon: const Icon(
-                                      Icons.edit_document,
-                                      size: icnsm,
-                                    ),
+                                    icon: const Icon(Icons.edit, size: icnsm),
                                   ),
                                 ),
                               ],
@@ -975,7 +999,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       builder: (context) {
         return glassDialog(
           child: quickStats(
-            eventId: widget.edata.id,
+            eventId: widget.edata.id ?? "",
             kardType: widget.kardType,
             kards: lcrds,
           ),
@@ -1044,7 +1068,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           height: MediaQuery.of(context).size.height * 0.9,
           child: modalBtmSheet(
             bdrdm: bmd,
-            child: ImportContributor(kard: kard, evId: widget.edata.id),
+            child: ImportContributor(kard: kard, evId: widget.edata.id ?? ""),
           ),
         );
       },
@@ -1176,7 +1200,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                               mapp: mapp,
                               xcelFile: file!,
                               carddata: carddata,
-                              eId: widget.edata.id,
+                              eId: widget.edata.id ?? "",
                               kardType: widget.kardType,
                             );
                           },

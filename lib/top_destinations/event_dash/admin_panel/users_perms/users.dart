@@ -45,7 +45,11 @@ class _UsersState extends State<Users> {
             var data = (snapshot.data);
             if (data!.exists) {
               Event event = Event.fromMap(data.id, data.data()!);
-              return usersList(event.authorId, event.adminsIds, event.usersIds);
+              return usersList(
+                event.authorId ?? "",
+                event.adminsIds ?? [],
+                event.usersIds ?? [],
+              );
             } else {
               return const BuildNoDt(string: "no data");
             }

@@ -1,24 +1,21 @@
 import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/hfhttp/clientelle.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/wsap_templates.dart';
-import 'package:haflaway/services/plan_service.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:haflaway/utils/urls.dart';
-import 'package:http/http.dart' as http;
 
 class SelectTemplate extends StatefulWidget {
   final Event event;
-  final EventPlan eventPlan;
   final String campaignId;
   final bool isWhatsApp;
   final KardType? kardType;
@@ -27,7 +24,7 @@ class SelectTemplate extends StatefulWidget {
     super.key,
     required this.event,
     this.isWhatsApp = true,
-    required this.eventPlan,
+
     required this.senderList,
     this.kardType = KardType.invitation,
     required this.campaignId,
@@ -161,6 +158,7 @@ class SelectTemplateState extends State<SelectTemplate> {
                       return e.id;
                     }).toList();
                 showProgress(context: context);
+                HttpService client = HttpService();
                 try {
                   dynamic response;
                   if (widget.isWhatsApp && groupValue != null) {
@@ -168,7 +166,7 @@ class SelectTemplateState extends State<SelectTemplate> {
                         widget.kardType == KardType.contribution
                             ? sendWspContr
                             : sendWspInv;
-                    response = await http.post(
+                    response = await client.post(
                       Uri.parse(_url),
                       body: jsonEncode({
                         "templateId": groupValue,
@@ -179,7 +177,7 @@ class SelectTemplateState extends State<SelectTemplate> {
                       }),
                     );
                   } else if (wsapTemplate != null) {
-                    response = await http.post(
+                    response = await client.post(
                       Uri.parse(sendSMSrl),
                       body: jsonEncode({
                         "content": wsapTemplate?.content,
@@ -199,6 +197,7 @@ class SelectTemplateState extends State<SelectTemplate> {
                   popper();
                   showToast(isGood: false, msg: "$e");
                 }
+                client.close();
                 popper();
               },
               child: Text("Complete Action"),

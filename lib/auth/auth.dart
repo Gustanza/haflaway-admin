@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/models/user.dart';
 import 'package:haflaway/top_destinations/eventz/navhost.dart';
 import 'package:haflaway/utils/colors.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/strings.dart';
 
@@ -25,18 +27,14 @@ class _LoginState extends State<Login> {
     return Scaffold(
       body: Container(
         padding: const EdgeInsets.only(left: 32, right: 32),
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(coverpic),
-            fit: BoxFit.cover,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: scagrad),
         child: SafeArea(
           child: Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               decoration: BoxDecoration(
-                color: primaryColor,
+                gradient: secscagrad,
+                border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
                 borderRadius: BorderRadius.circular(bmd),
               ),
               child: ListView(
@@ -133,19 +131,6 @@ class _LoginState extends State<Login> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const Msajili(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Register',
-                          style: TextStyle(color: Colors.blue),
-                        ),
-                      ),
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).push(
@@ -418,100 +403,106 @@ class _KuresetNenoSiriState extends State<KuresetNenoSiri> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.only(left: 32, right: 32),
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(coverpic),
-            fit: BoxFit.cover,
-          ),
+      backgroundColor: scaback,
+      appBar: appBar(
+        title: "Passwords & Security",
+        leading: buildActionButton(
+          icon: Icons.arrow_back,
+          onTap: () {
+            Navigator.of(context).pop();
+          },
         ),
-        child: SafeArea(
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(bmd),
-              ),
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  const Text(
-                    'Forgot password',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+      ),
+      body: Container(
+        width: double.maxFinite,
+        height: double.maxFinite,
+        padding: const EdgeInsets.only(left: p20, right: p20, top: p20),
+        decoration: const BoxDecoration(gradient: scagrad),
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            decoration: BoxDecoration(
+              gradient: secscagrad,
+              border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+              borderRadius: BorderRadius.circular(bmd),
+            ),
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                const Text(
+                  'Forgot password',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: baruaPepeCon,
-                    keyboardType: TextInputType.emailAddress,
-                    textCapitalization: TextCapitalization.sentences,
-                    style: const TextStyle(fontSize: 16, color: Colors.white),
-                    decoration: const InputDecoration(
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white),
-                      ),
-                      hintText: 'Email of the user',
-                      hintStyle: TextStyle(fontSize: 16, color: Colors.white),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: baruaPepeCon,
+                  keyboardType: TextInputType.emailAddress,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: const TextStyle(fontSize: 16, color: Colors.white),
+                  decoration: const InputDecoration(
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    hintText: 'Email of the user',
+                    hintStyle: TextStyle(fontSize: 16, color: Colors.white),
                   ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    height: kToolbarHeight,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child:
-                        nalodi
-                            ? const Center(child: CircularProgressIndicator())
-                            : TextButton(
-                              onPressed: () async {
-                                if (baruaPepeCon.text.isNotEmpty) {
-                                  try {
-                                    setState(() {
-                                      nalodi = true;
-                                    });
-                                    await FirebaseAuth.instance
-                                        .sendPasswordResetEmail(
-                                          email: baruaPepeCon.text,
-                                        );
-                                    setState(() {
-                                      nalodi = false;
-                                    });
-                                    mjumbe(
-                                      'Password reset email sent succesfully',
-                                    );
-                                  } catch (shida) {
-                                    setState(() {
-                                      nalodi = false;
-                                    });
-                                    mjumbe(shida.toString());
-                                  }
-                                } else {
-                                  mjumbe('Email is required');
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  height: kToolbarHeight,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child:
+                      nalodi
+                          ? const Center(child: CircularProgressIndicator())
+                          : TextButton(
+                            onPressed: () async {
+                              if (baruaPepeCon.text.isNotEmpty) {
+                                try {
+                                  setState(() {
+                                    nalodi = true;
+                                  });
+                                  await FirebaseAuth.instance
+                                      .sendPasswordResetEmail(
+                                        email: baruaPepeCon.text,
+                                      );
+                                  setState(() {
+                                    nalodi = false;
+                                  });
+                                  mjumbe(
+                                    'Password reset email sent succesfully',
+                                  );
+                                } catch (shida) {
+                                  setState(() {
+                                    nalodi = false;
+                                  });
+                                  mjumbe(shida.toString());
                                 }
-                              },
-                              child: const Text(
-                                'Reset',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              } else {
+                                mjumbe('Email is required');
+                              }
+                            },
+                            child: const Text(
+                              'Reset',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                  ),
-                ],
-              ),
+                          ),
+                ),
+              ],
             ),
           ),
         ),

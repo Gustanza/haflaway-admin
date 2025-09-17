@@ -84,7 +84,11 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
               } else {
                 return ListView.builder(
                   itemCount: data.length,
-                  padding: const EdgeInsets.all(p20),
+                  padding: const EdgeInsets.only(
+                    left: psm,
+                    right: psm,
+                    top: psm,
+                  ),
                   itemBuilder: (context, index) {
                     var evlvl = data[index].categoryLevel;
                     return GestureDetector(

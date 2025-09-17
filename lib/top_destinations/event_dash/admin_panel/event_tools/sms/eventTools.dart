@@ -52,7 +52,7 @@ class _InRemState extends State<InRem> {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) {
-                      return Cards(eId: widget.event.id);
+                      return Cards(eId: widget.event.id ?? "");
                     },
                   ),
                 );
@@ -68,7 +68,7 @@ class _InRemState extends State<InRem> {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) {
-                      return InvEditor(eId: widget.event.id);
+                      return InvEditor(eId: widget.event.id ?? "");
                     },
                   ),
                 );

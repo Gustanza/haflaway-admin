@@ -8,21 +8,15 @@ import 'package:haflaway/components/templates.dart' hide buildActionButton;
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/playground/index.dart';
-import 'package:haflaway/providers/balance_provider.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
-import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
-import 'package:haflaway/utils/styles.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/attendees.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/eventTools.dart';
-import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
-import 'checkpoint/in_check.dart';
 
 class AdminPanel extends StatefulWidget {
   final Event edata;
@@ -37,35 +31,6 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   GlobalKey<FormState> key = GlobalKey<FormState>();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-  bool _isScrolled = false;
-  final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    String userId = widget.edata.authorId;
-    var provider = Provider.of<BalanceProvider>(context, listen: false);
-    provider.startWatchingBalance(userId);
-    provider.startWatchingEventPlan(planId: widget.edata.eventPlanId);
-
-    _scrollController.addListener(_onScroll);
-
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.offset > 100 && !_isScrolled) {
-      setState(() => _isScrolled = true);
-    } else if (_scrollController.offset <= 100 && _isScrolled) {
-      setState(() => _isScrolled = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,41 +55,13 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
           ),
         ),
         child: CustomScrollView(
-          controller: _scrollController,
           slivers: [
             SliverToBoxAdapter(child: SizedBox(height: 135)),
             _buildEventImageCard(),
-            _buildTitle(),
+            // _buildTitle(),
             _buildAdminToolsSection(),
             const SliverPadding(padding: EdgeInsets.only(bottom: p20)),
           ],
-        ),
-      ),
-    );
-  }
-
-  _buildTitle() {
-    return SliverToBoxAdapter(
-      child: Container(
-        margin: EdgeInsets.only(bottom: p20, left: psm, right: psm),
-        padding: EdgeInsets.symmetric(horizontal: psm),
-        decoration: BoxDecoration(
-          gradient: lqassgrad,
-          borderRadius: BorderRadius.circular(bmd),
-          border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
-        ),
-        child: ListTile(
-          title: Text(
-            "${widget.edata.title}",
-            style: TextStyle(fontSize: fsm + 4, fontWeight: FontWeight.bold),
-          ),
-          subtitle: Row(
-            children: [
-              Icon(Clarity.map_marker_line),
-              SizedBox(width: psm * 0.5),
-              Text("${widget.edata.location}"),
-            ],
-          ),
         ),
       ),
     );
@@ -148,7 +85,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(p20),
             child: CachedNetworkImage(
-              imageUrl: widget.edata.eventThumbnail,
+              imageUrl: widget.edata.eventThumbnail ?? "",
               fit: BoxFit.cover,
               filterQuality: FilterQuality.high,
               placeholder:
@@ -262,7 +199,8 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                     onTap:
                         () => Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => Users(eId: widget.edata.id),
+                            builder:
+                                (context) => Users(eId: widget.edata.id ?? ""),
                           ),
                         ),
                   ),

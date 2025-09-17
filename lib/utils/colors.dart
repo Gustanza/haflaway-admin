@@ -31,12 +31,10 @@ var secscagrad = LinearGradient(
 Color lqassgradBaseColor = Colors.white.withOpacity(0.15);
 
 var lqassgrad = LinearGradient(
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
   colors: [
-    lqassgradBaseColor,
+    Colors.white.withOpacity(0.2),
     Colors.white.withOpacity(0.1),
-    Colors.white.withOpacity(0.08),
+    Colors.white.withOpacity(0.05),
   ],
 );
 var lqassbdrColor = Colors.white.withOpacity(0.4);

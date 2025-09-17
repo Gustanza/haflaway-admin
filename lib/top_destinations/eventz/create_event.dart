@@ -2,11 +2,11 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/utils/constants.dart';
+import 'package:haflaway/utils/urls.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -36,6 +36,8 @@ class _CreateEventState extends State<CreateEvent> {
   String phnnumber = '';
   String fEventCatId = '';
   String fEventCatLevel = '';
+  List<EventPlan> eventPlans = [];
+  List<EventCategory> catsList = [];
   List<EventCalendar> eventDays = [];
   String? uid = FirebaseAuth.instance.currentUser?.uid;
   GlobalKey<FormState> globalKey = GlobalKey<FormState>();
@@ -52,17 +54,33 @@ class _CreateEventState extends State<CreateEvent> {
   @override
   void initState() {
     super.initState();
-    bindData();
+    if (widget.event != null) {
+      bindData();
+    } else {
+      getCatsList();
+    }
   }
 
-  bindData() async {}
+  bindData() async {
+    Event? event = widget.event;
+    if (event == null) return;
+    phnnumber = event.supportPhone ?? "";
+    fEventTitleCon.text = event.title ?? "";
+    fEventDescCon.text = event.description ?? "";
+    fEventLocationCon.text = event.location ?? "";
+    phncont.text = event.supportPhone!.substring(3);
+    eventDays = event.calendar!;
+    safeState(() {});
+    getCatsList();
+  }
 
   @override
   Widget build(BuildContext context) {
+    Event? event = widget.event;
     return Scaffold(
       backgroundColor: scaback,
       appBar: appBar(
-        title: 'Create Event',
+        title: event == null ? 'Create Event' : 'Edit Event',
         leading: buildActionButton(
           onTap: () {
             Navigator.of(context).pop();
@@ -98,35 +116,63 @@ class _CreateEventState extends State<CreateEvent> {
                       ),
                     ),
                     const SizedBox(height: psm * 0.3),
-                    Container(
-                      height: 200,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        gradient: lqassgrad,
-                        border: Border.all(
-                          color: lqassbdrColor,
-                          width: bdrWidthGen,
+                    Stack(
+                      children: [
+                        Container(
+                          height: 200,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: lqassgrad,
+                            border: Border.all(
+                              color: lqassbdrColor,
+                              width: bdrWidthGen,
+                            ),
+                            borderRadius: BorderRadius.circular(bmd),
+                            image:
+                                picha != null
+                                    ? DecorationImage(
+                                      image: FileImage(File(picha!.path)),
+                                      fit: BoxFit.cover,
+                                    )
+                                    : event != null
+                                    ? DecorationImage(
+                                      image: NetworkImage(
+                                        event.eventThumbnail ?? "",
+                                      ),
+                                      fit: BoxFit.cover,
+                                    )
+                                    : null,
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(bmd),
-                        image:
-                            picha != null
-                                ? DecorationImage(
-                                  image: FileImage(File(picha!.path)),
-                                  fit: BoxFit.cover,
-                                )
-                                : null,
-                      ),
-                      child: IconButton(
-                        onPressed: () async {
-                          picha = await ImagePicker().pickImage(
-                            source: ImageSource.gallery,
-                          );
-                          if (picha != null) {
-                            setState(() {});
-                          }
-                        },
-                        icon: const Icon(Clarity.plus_circle_solid),
-                      ),
+                        Positioned(
+                          left: psm,
+                          bottom: psm,
+                          child: IconButton.outlined(
+                            onPressed: () async {
+                              picha = await ImagePicker().pickImage(
+                                source: ImageSource.gallery,
+                              );
+                              if (picha != null) {
+                                safeState(() {});
+                              }
+                            },
+                            icon: const Icon(Icons.image),
+                          ),
+                        ),
+                        if (picha != null)
+                          Positioned(
+                            right: psm,
+                            bottom: psm,
+                            child: IconButton.outlined(
+                              onPressed: () {
+                                safeState(() {
+                                  picha = null;
+                                });
+                              },
+                              icon: Icon(Icons.delete),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: psm),
                     const Text(
@@ -235,13 +281,23 @@ class _CreateEventState extends State<CreateEvent> {
                         icon: const Icon(Clarity.plus_circle_line),
                       ),
                     ),
-                    eventDays.isNotEmpty
-                        ? Column(
-                          children: List.generate(eventDays.length, (idx) {
-                            var edt = dformtr.format(eventDays[idx].eventDate);
-                            var est = tformtr.format(eventDays[idx].startTime);
-                            var eet = tformtr.format(eventDays[idx].endTime);
-                            return ListTile(
+                    if (eventDays.isNotEmpty)
+                      Column(
+                        children: List.generate(eventDays.length, (idx) {
+                          var edt = dformtr.format(eventDays[idx].eventDate);
+                          var est = tformtr.format(eventDays[idx].startTime);
+                          var eet = tformtr.format(eventDays[idx].endTime);
+                          return Container(
+                            padding: EdgeInsets.only(left: psm, right: psm),
+                            decoration: BoxDecoration(
+                              gradient: secscagrad,
+                              border: Border.all(
+                                color: lqassbdrColor,
+                                width: bdrWidthGen,
+                              ),
+                              borderRadius: BorderRadius.circular(bsm),
+                            ),
+                            child: ListTile(
                               title: Text(edt),
                               contentPadding: EdgeInsets.zero,
                               tileColor: lqassgradBaseColor,
@@ -251,7 +307,6 @@ class _CreateEventState extends State<CreateEvent> {
                                   bmd,
                                 ),
                               ),
-                              leading: const Icon(Clarity.clock_line),
                               subtitle: Text("$est - $eet"),
                               trailing: IconButton(
                                 onPressed: () {
@@ -261,10 +316,10 @@ class _CreateEventState extends State<CreateEvent> {
                                 },
                                 icon: const Icon(Icons.close),
                               ),
-                            );
-                          }),
-                        )
-                        : const SizedBox(),
+                            ),
+                          );
+                        }),
+                      ),
                   ]),
                 ),
               ),
@@ -292,7 +347,7 @@ class _CreateEventState extends State<CreateEvent> {
           ),
           initialCountryCode: 'TZ',
           onChanged: (phone) {
-            phnnumber = phone.completeNumber;
+            phnnumber = phone.completeNumber.replaceAll('+', '');
           },
         ),
       ],
@@ -319,110 +374,161 @@ class _CreateEventState extends State<CreateEvent> {
     );
   }
 
+  getCatsList() async {
+    try {
+      QuerySnapshot<Map<String, dynamic>> catSnaps =
+          await firestore.collection(ecatcol).get();
+
+      if (catSnaps.docs.isEmpty) {
+        showToast(isGood: false, msg: "Failed to get categories");
+      }
+
+      catsList =
+          catSnaps.docs.map<EventCategory>((doc) {
+            return EventCategory.fromMap(doc.id, doc.data());
+          }).toList();
+      if (widget.event != null) {
+        EventCategory? catItself = catsList.firstWhere((tst) {
+          return tst.id == widget.event?.categoryId;
+        });
+        fEventCatId = catItself.id;
+        fEventCatLevel = catItself.level;
+        fEventCatCon.text = catItself.name;
+      }
+      // doing plans here
+      QuerySnapshot<Map<String, dynamic>> planSnaps =
+          await firestore
+              .collection(eplancol)
+              .orderBy('rank', descending: false)
+              .get();
+      if (planSnaps.docs.isEmpty) {
+        showToast(isGood: false, msg: "Failed to map plan");
+      }
+      eventPlans =
+          planSnaps.docs.map<EventPlan>((e) {
+            return EventPlan.fromMap(e.id, e.data());
+          }).toList();
+      if (widget.event != null) {
+        plan = eventPlans.firstWhere((tst) {
+          return tst.id == widget.event?.eventPlanId;
+        });
+        fEventBillCon.text = plan!.name;
+      }
+    } catch (e) {
+      return showToast(isGood: false, msg: "Failed to get data");
+    }
+    safeState(() {});
+  }
+
   buildSheetBody() {
-    return StreamBuilder(
-      stream: FirebaseFirestore.instance.collection(ecatcol).snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          List<EventCategory> data =
-              (snapshot.data as dynamic).docs.map<EventCategory>((doc) {
-                return EventCategory.fromMap(doc.id, doc.data());
-              }).toList();
-          if (data.isEmpty) {
-            return const Center(child: Text("Categories not available"));
-          }
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(psm),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(height: psm),
-                Text(
-                  "Select Category",
-                  style: TextStyle(
-                    fontSize: fsm + 6,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: psm * 1.5),
-                Divider(color: lqassbdrColor, height: 0),
-                SizedBox(height: psm),
-                ...List.generate(data.length, (index) {
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    onTap: () {
-                      setState(() {
-                        fEventCatId = data[index].id;
-                        fEventCatLevel = data[index].level;
-                        fEventCatCon.text = data[index].name;
-                      });
-                      popper();
-                    },
-                    title: Text(
-                      data[index].name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    trailing: Icon(Icons.add, color: primaryWhite),
-                  );
-                }),
-              ],
-            ),
-          );
-        }
-        return const Center(child: CircularProgressIndicator());
-      },
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(psm),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(height: psm),
+          Text(
+            "Select Category",
+            style: TextStyle(fontSize: fsm + 6, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: psm * 1.5),
+          Divider(color: lqassbdrColor, height: 0),
+          SizedBox(height: psm),
+          ...List.generate(catsList.length, (index) {
+            bool isSelected = fEventCatId == catsList[index].id;
+            return CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              checkboxScaleFactor: .75,
+              checkboxShape: CircleBorder(),
+              selected: isSelected,
+              activeColor: primaryColor,
+              value: isSelected,
+              onChanged: (_) {
+                setState(() {
+                  fEventCatId = catsList[index].id;
+                  fEventCatLevel = catsList[index].level;
+                  fEventCatCon.text = catsList[index].name;
+                });
+                popper();
+              },
+              title: Text(
+                catsList[index].name,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 
   saver() async {
+    Event? eventt = widget.event;
     bool currenformstate = globalKey.currentState?.validate() ?? false;
     if (tvalidator() && currenformstate) {
       showProgress(context: context);
-      var imageId =
-          "${FirebaseAuth.instance.currentUser?.uid}?=${DateTime.now().toString()}?=${picha!.name}";
-      final storageRef = FirebaseStorage.instance.ref();
-      final eventImagesRef = storageRef.child("Event-Thumbnails/$imageId");
 
       try {
-        var p0 = await eventImagesRef.putFile(File(picha!.path));
+        String dwnURL = defThumb;
+
+        if (picha != null) {
+          var imageId =
+              "${FirebaseAuth.instance.currentUser?.uid}?=${DateTime.now().toString()}?=${picha!.name}";
+          final storageRef = FirebaseStorage.instance.ref();
+          final eventImagesRef = storageRef.child("Event-Thumbnails/$imageId");
+          var p0 = await eventImagesRef.putFile(File(picha!.path));
+          dwnURL = await p0.ref.getDownloadURL();
+        } else if (eventt != null) {
+          dwnURL = eventt.eventThumbnail ?? defThumb;
+        }
+
         WriteBatch batch = firestore.batch();
-        var evRef = firestore.collection(ecol).doc();
-        var chkpnRef =
-            firestore
-                .collection(ecol)
-                .doc(evRef.id)
-                .collection(echecksub)
-                .doc();
-        var dwnURL = await p0.ref.getDownloadURL();
+
+        var evRef =
+            eventt == null
+                ? firestore.collection(ecol).doc()
+                : firestore.collection(ecol).doc(widget.event?.id);
+
+        if (eventt == null) {
+          var chkpnRef =
+              firestore
+                  .collection(ecol)
+                  .doc(evRef.id)
+                  .collection(echecksub)
+                  .doc();
+          CheckPoint checkPoint = CheckPoint(
+            id: chkpnRef.id,
+            name: echecknameVal,
+          );
+          batch.set(chkpnRef, checkPoint.toMap());
+        }
+
+        String estatus = eventt == null ? 'Draft' : 'Published';
+
         Event event = Event(
           id: evRef.id,
-          title: fEventTitleCon.text,
+          title: fEventTitleCon.text.trim(),
           authorId: uid!,
           adminsIds: [uid!],
-          usersIds: [],
-          status: 'Draft',
+          usersIds: eventt == null ? [] : null,
+          status: estatus,
           supportPhone: phnnumber,
           categoryId: fEventCatId,
           categoryLevel: fEventCatLevel,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          description: fEventDescCon.text,
-          eventPlanId: plan!.id,
+          createdAt: eventt == null ? DateTime.now() : null,
+          updatedAt: eventt == null ? DateTime.now() : null,
+          description: fEventDescCon.text.trim(),
+          eventPlanId: plan?.id ?? null,
           eventThumbnail: dwnURL,
-          location: fEventLocationCon.text,
+          location: fEventLocationCon.text.trim(),
           calendar: eventDays,
         );
-        batch.set(evRef, event.toMap());
-        CheckPoint checkPoint = CheckPoint(
-          id: chkpnRef.id,
-          name: echecknameVal,
-        );
-        batch.set(chkpnRef, checkPoint.toMap());
+        batch.set(evRef, event.toMap(), SetOptions(merge: true));
         batch.commit();
         popper();
         popper();
       } catch (e) {
-        debugPrint("Comes 3st$e");
+        debugPrint("Error: $e");
         popper();
         showToast(isGood: false, msg: gErrMsg);
       }
@@ -434,7 +540,7 @@ class _CreateEventState extends State<CreateEvent> {
   }
 
   tvalidator() {
-    if (picha == null) {
+    if (picha == null && widget.event == null) {
       showToast(isGood: false, msg: "Thumbnail is required");
       return false;
     } else if (eventDays.isEmpty) {
@@ -481,6 +587,14 @@ class _CreateEventState extends State<CreateEvent> {
 
       default:
         return null;
+    }
+  }
+
+  safeState(Function() runnbale) {
+    if (mounted) {
+      setState(() {
+        runnbale();
+      });
     }
   }
 }

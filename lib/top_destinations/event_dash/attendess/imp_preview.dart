@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:haflaway/components/appbar.dart';
+import 'package:haflaway/hfhttp/clientelle.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:http/http.dart' as http;
@@ -266,6 +267,7 @@ class _ImpPreviewState extends State<ImpPreview> {
       isWritting = true;
     });
     List<Attendee> attendeesCpy = List.from(attendees);
+    HttpService client = HttpService();
     for (var attendee in attendeesCpy) {
       var atId = attendee.id ?? generateUniqueSequence();
       var atRef = firestore
@@ -285,7 +287,7 @@ class _ImpPreviewState extends State<ImpPreview> {
           "templateCard": data?.toMap(),
           "kardType": widget.kardType.name,
         };
-        var source = await http.post(
+        var source = await client.post(
           Uri.parse(crtAtCloudUrl),
           body: jsonEncode(payload),
         );
@@ -312,6 +314,7 @@ class _ImpPreviewState extends State<ImpPreview> {
         showToast(isGood: false, msg: genErrMsg);
       }
     }
+    client.close();
     safeState(() {
       isWritting = false;
     });

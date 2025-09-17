@@ -17,7 +17,7 @@ appBar({leading, title, actions}) {
           leadingWidth: 0,
           flexibleSpace: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: psm),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
