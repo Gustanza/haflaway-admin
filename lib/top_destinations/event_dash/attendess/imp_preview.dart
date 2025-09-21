@@ -142,7 +142,7 @@ class _ImpPreviewState extends State<ImpPreview> {
       backgroundColor: scaback,
       appBar: appBar(
         title: 'Import Previewer',
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
@@ -150,7 +150,7 @@ class _ImpPreviewState extends State<ImpPreview> {
         ),
         actions:
             !isWritting
-                ? buildActionButton(
+                ? appBarActionButton(
                   icon: Clarity.import_solid,
                   onTap: () {
                     if (attendees.isNotEmpty) {

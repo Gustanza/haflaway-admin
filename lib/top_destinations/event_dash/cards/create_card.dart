@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:haflaway/components/appbar.dart';
+import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/utils/strings.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:image_picker/image_picker.dart';
@@ -43,92 +45,104 @@ class _CreateCardState extends State<CreateCard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        elevation: psm,
-        titleSpacing: 0,
-        title: const Text("Create Card"),
-        actions: [
-          widget.card == null
-              ? TextButton(onPressed: crtFn, child: const Text("Create"))
-              : TextButton(onPressed: () {}, child: const Text("Edit")),
-        ],
+      backgroundColor: scaback,
+      appBar: appBar(
+        title: "Create Card",
+        leading: appBarActionButton(
+          icon: Icons.arrow_back,
+          onTap: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        actions: Row(
+          children: [
+            widget.card == null
+                ? TextButton(onPressed: crtFn, child: const Text("Create"))
+                : TextButton(onPressed: () {}, child: const Text("Edit")),
+          ],
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(psm),
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              buildField(
-                lbl: cardart,
-                cont: cArtCont,
-                isReadOnly: true,
-                showCursor: false,
-                isTapped: () async {
-                  pic = await ImagePicker().pickImage(
-                    source: ImageSource.gallery,
-                  );
-                  if (pic != null) {
-                    cardConfig = await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return CardCustomizer(imagefile: pic!);
-                        },
-                      ),
+      body: Container(
+        width: double.maxFinite,
+        height: double.maxFinite,
+        decoration: BoxDecoration(gradient: scagrad),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(psm),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                buildField(
+                  lbl: cardart,
+                  cont: cArtCont,
+                  isReadOnly: true,
+                  showCursor: false,
+                  isTapped: () async {
+                    pic = await ImagePicker().pickImage(
+                      source: ImageSource.gallery,
                     );
-                    if (cardConfig != null) {
-                      setState(() {
-                        cArtCont.text = pic!.name;
-                      });
+                    if (pic != null) {
+                      cardConfig = await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) {
+                            return CardCustomizer(imagefile: pic!);
+                          },
+                        ),
+                      );
+                      if (cardConfig != null) {
+                        setState(() {
+                          cArtCont.text = pic!.name;
+                        });
+                      }
                     }
-                  }
-                },
-              ),
-              const SizedBox(height: psm),
-              bldDrdDwn(
-                lbl: "Card Purpose",
-                controller: cPrpsCont,
-                entries: cardPrps.entries,
-                onSelected: (val) {
-                  safeState(() {
-                    cpurpose = val;
-                  });
-                },
-              ),
-              const SizedBox(height: psm),
-              bldDrdDwn(
-                lbl: "Card Type",
-                controller: cTypeCont,
-                entries: cardType.entries,
-                onSelected: (val) {
-                  safeState(() {
-                    cCapCont.text = "$val";
-                  });
-                },
-              ),
-              const SizedBox(height: psm),
-              buildField(
-                cont: cCapCont,
-                lbl: cardcap,
-                type: TextInputType.number,
-                suff: MaterialButton(
-                  onPressed: () {},
-                  child: const Text("People"),
+                  },
                 ),
-              ),
-              const SizedBox(height: psm),
-              buildField(
-                lbl: cardchecks,
-                isReadOnly: true,
-                showCursor: false,
-                cont: cChecksCont,
-                isTapped: () async {
-                  await showCheckPoint();
-                  setState(() {});
-                },
-              ),
-            ],
+                const SizedBox(height: psm),
+                bldDrdDwn(
+                  lbl: "Card Purpose",
+                  controller: cPrpsCont,
+                  entries: cardPrps.entries,
+                  onSelected: (val) {
+                    safeState(() {
+                      cpurpose = val;
+                    });
+                  },
+                ),
+                const SizedBox(height: psm),
+                bldDrdDwn(
+                  lbl: "Card Type",
+                  controller: cTypeCont,
+                  entries: cardType.entries,
+                  onSelected: (val) {
+                    safeState(() {
+                      cCapCont.text = "$val";
+                    });
+                  },
+                ),
+                const SizedBox(height: psm),
+                buildField(
+                  cont: cCapCont,
+                  lbl: cardcap,
+                  type: TextInputType.number,
+                  suff: MaterialButton(
+                    onPressed: () {},
+                    child: const Text("People"),
+                  ),
+                ),
+                const SizedBox(height: psm),
+                buildField(
+                  lbl: cardchecks,
+                  isReadOnly: true,
+                  showCursor: false,
+                  cont: cChecksCont,
+                  isTapped: () async {
+                    await showCheckPoint();
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -146,15 +160,6 @@ class _CreateCardState extends State<CreateCard> {
           var cardRef =
               fstr.collection(ecol).doc(widget.eId).collection(cardcol).doc();
           var cblueRef = fstr.collection(cardcol).doc(cardRef.id);
-          // cardConfig[tempccurl] = curl;
-          // cardConfig[cevId] = widget.eId;
-          // cardConfig[tempcid] = cardRef.id;
-          // cardConfig['type'] = cTypeCont.text;
-          // cardConfig['clearAt'] = checkpoints;
-          // cardConfig['createdAt'] = DateTime.now();
-          // cardConfig['updatedAt'] = DateTime.now();
-          // cardConfig['purpose'] = cpurpose ?? "unknown";
-          // cardConfig['capacity'] = int.parse(cleanStr(input: cCapCont.text));
           CardConfig config = CardConfig(
             templateUrl: curl,
             type: cTypeCont.text,
@@ -311,27 +316,35 @@ class _CardCustomizerState extends State<CardCustomizer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text("Card Settings"),
-        actions: [
-          IconButton(
-            icon: const Icon(Clarity.settings_line),
-            onPressed: () async {
-              await showSettings();
-              if (mounted) {
-                setState(() {});
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Clarity.floppy_line),
-            onPressed: () {
-              final config = getCardConfig();
-              Navigator.of(context).pop(config);
-            },
-          ),
-        ],
+      backgroundColor: scaback,
+      appBar: appBar(
+        title: "Card Settings",
+        leading: appBarActionButton(
+          icon: Icons.arrow_back,
+          onTap: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        actions: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Clarity.settings_line),
+              onPressed: () async {
+                await showSettings();
+                if (mounted) {
+                  setState(() {});
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Clarity.floppy_line),
+              onPressed: () {
+                final config = getCardConfig();
+                Navigator.of(context).pop(config);
+              },
+            ),
+          ],
+        ),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -359,7 +372,7 @@ class _CardCustomizerState extends State<CardCustomizer> {
           return Container(
             width: constraints.maxWidth,
             height: constraints.maxHeight,
-            color: Colors.black,
+            decoration: BoxDecoration(gradient: scagrad),
             child: Stack(
               children: [
                 Positioned(
@@ -605,55 +618,60 @@ class _CardCustomizerState extends State<CardCustomizer> {
 
   showSettings() async {
     return await showModalBottomSheet(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadiusGeometry.only(
+          topLeft: Radius.circular(bmd),
+          topRight: Radius.circular(bmd),
+        ),
+      ),
       context: context,
       builder: (context) {
-        return Column(
-          children: [
-            Card(
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(bmd),
-                  topRight: Radius.circular(bmd),
-                ),
-              ),
-              child: Center(
-                child: Container(
-                  width: 60,
-                  height: psm * 0.5,
-                  margin: const EdgeInsets.all(psm),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade500,
-                    borderRadius: BorderRadius.circular(bmd),
+        return modalBtmSheet(
+          bdrdm: bmd,
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.65,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: psm),
+                Text(
+                  "Adjust Settings",
+                  style: TextStyle(
+                    fontSize: fsm + 6,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                child: CupertinoListSection.insetGrouped(
-                  margin: const EdgeInsets.all(psm),
-                  children: [
-                    buildSettingsSection(
-                      "User name",
-                      userName,
-                      (color) => setState(() => userName.color = color),
+                const SizedBox(height: psm),
+                Divider(thickness: 0.5),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        buildSettingsSection(
+                          "User name",
+                          userName,
+                          (color) => setState(() => userName.color = color),
+                        ),
+                        buildSettingsSection(
+                          "Card type",
+                          cardType,
+                          (color) => setState(() => cardType.color = color),
+                        ),
+                        buildSettingsSection(
+                          "User QR code",
+                          qrcode,
+                          (color) => setState(() => qrcode.color = color),
+                          isQRCode: true,
+                        ),
+                      ],
                     ),
-                    buildSettingsSection(
-                      "Card type",
-                      cardType,
-                      (color) => setState(() => cardType.color = color),
-                    ),
-                    buildSettingsSection(
-                      "User QR code",
-                      qrcode,
-                      (color) => setState(() => qrcode.color = color),
-                      isQRCode: true,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );

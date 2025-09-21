@@ -46,7 +46,10 @@ class SelectTemplateState extends State<SelectTemplate> {
                 .collection("messageTemplates")
                 .where('category', isEqualTo: "matrimony-contributions")
                 .get()
-            : firestore.collection("messageTemplates").get();
+            : firestore
+                .collection("messageTemplates")
+                .where('category', isEqualTo: "whatsapp-wedding-invitations")
+                .get();
     return Scaffold(
       backgroundColor: scaback,
       body: Container(

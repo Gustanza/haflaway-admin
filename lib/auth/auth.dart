@@ -406,7 +406,7 @@ class _KuresetNenoSiriState extends State<KuresetNenoSiri> {
       backgroundColor: scaback,
       appBar: appBar(
         title: "Passwords & Security",
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
@@ -430,7 +430,7 @@ class _KuresetNenoSiriState extends State<KuresetNenoSiri> {
               shrinkWrap: true,
               children: [
                 const Text(
-                  'Forgot password',
+                  'Rotate password',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24,

@@ -31,7 +31,7 @@ class _InRemState extends State<InRem> {
       backgroundColor: scaback,
       appBar: appBar(
         title: "Handy Tools",
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();

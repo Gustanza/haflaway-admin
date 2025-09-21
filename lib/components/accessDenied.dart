@@ -109,7 +109,7 @@ class _AccessDeniedState extends State<AccessDenied> {
                                   ),
                                 ),
                                 child: Text(
-                                  "Account Limited",
+                                  "Account Frozen",
                                   style: TextStyle(
                                     fontSize: fsm * 0.9,
                                     fontWeight: FontWeight.w600,
@@ -199,11 +199,11 @@ class _AccessDeniedState extends State<AccessDenied> {
 
                       // Email Button
                       buildPrimaryButton(
+                        iconData: Icons.phone,
                         isLoading: _isEmailLoading,
                         label: "Contact Support",
                         onTap: _isEmailLoading ? null : _launchEmail,
                       ),
-
                       const SizedBox(height: psm),
 
                       // Additional Info

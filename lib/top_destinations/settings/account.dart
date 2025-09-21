@@ -9,7 +9,8 @@ import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/user.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
-import 'package:haflaway/top_destinations/settings/all_transactions.dart';
+import 'package:haflaway/top_destinations/settings/notifications/notindex.dart';
+import 'package:haflaway/top_destinations/settings/transactions/all_transactions.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
@@ -31,7 +32,7 @@ class _MipangilioState extends State<Mipangilio> {
     return Scaffold(
       backgroundColor: scaback,
       appBar: appBar(
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
@@ -215,18 +216,32 @@ class _MyAccountScreenState extends State<MyAccountScreen> {
                   icon: Icons.notifications_outlined,
                   title: 'Notifications',
                   subtitle: 'Manage notifications',
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return Notifications();
+                        },
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 12),
                 _buildSettingsItem(
                   icon: Icons.security_outlined,
                   title: 'Security',
                   subtitle: 'Password and security',
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return KuresetNenoSiri();
+                        },
+                      ),
+                    );
+                  },
                 ),
-
                 const SizedBox(height: 12),
-
                 _buildSettingsItem(
                   icon: Icons.help_outline,
                   title: 'Help & Support',

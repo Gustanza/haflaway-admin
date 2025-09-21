@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/styles.dart';
 
@@ -9,38 +10,43 @@ appBar({leading, title, actions}) {
     child: ClipRRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: AppBar(
-          backgroundColor: Colors.white.withOpacity(0.1),
-          elevation: 0,
-          toolbarHeight: 100,
-          leading: SizedBox.shrink(),
-          leadingWidth: 0,
-          flexibleSpace: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: psm),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (leading != null) leading,
-                      if (leading != null) const SizedBox(width: psm),
-                      Text(
-                        title,
-                        maxLines: 1,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: fsm + 4,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.5,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: lqassgrad
+          ),
+          child: AppBar(
+            backgroundColor: Colors.white.withOpacity(0.05),
+            elevation: 0,
+            toolbarHeight: 100,
+            leading: SizedBox.shrink(),
+            leadingWidth: 0,
+            flexibleSpace: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: psm),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (leading != null) leading,
+                        if (leading != null) const SizedBox(width: psm),
+                        Text(
+                          title,
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: fsm + 4,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                      Spacer(),
-                      if (actions != null) actions,
-                    ],
-                  ),
-                ],
+                        Spacer(),
+                        if (actions != null) actions,
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -50,7 +56,7 @@ appBar({leading, title, actions}) {
   );
 }
 
-Widget buildActionButton({
+Widget appBarActionButton({
   required IconData icon,
   required VoidCallback onTap,
 }) {

@@ -32,7 +32,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
         title: "Haflaway",
         actions: Row(
           children: [
-            buildActionButton(
+            appBarActionButton(
               icon: Icons.add,
               onTap: () {
                 Navigator.of(context).push(
@@ -45,7 +45,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
               },
             ),
             const SizedBox(width: psm),
-            buildActionButton(
+            appBarActionButton(
               icon: Clarity.settings_line,
               onTap: () {
                 Navigator.of(context).push(

@@ -7,7 +7,6 @@ import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/hfhttp/clientelle.dart';
 import 'package:haflaway/utils/colors.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/event.dart';
@@ -123,7 +122,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
       backgroundColor: scaback,
       appBar: appBar(
         title: "Write ${widget.title}",
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
@@ -174,6 +173,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                         }
                       },
                       isLoading: isWritting,
+                      iconData: Icons.create,
                       label: attendee == null ? "Create" : "Update",
                     ),
                   ],

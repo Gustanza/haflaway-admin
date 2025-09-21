@@ -56,40 +56,51 @@ class JpSDelegate extends SearchDelegate {
   @override
   Widget buildResults(BuildContext context) {
     String sqry = query.toLowerCase().trim();
-    return FutureBuilder(
-      future: firestore.collection(ucol).where("email", isEqualTo: sqry).get(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          var docs = (snapshot.data as dynamic).docs;
-          if (docs.isEmpty) {
-            return const BuildNoDt(string: "no data");
-          } else {
-            List<Userr> users =
-                docs.map<Userr>((doc) {
-                  return Userr.fromMap(doc.id, doc.data());
-                }).toList();
-            return SearchResults(
-              firestore: firestore,
-              users: users,
-              eId: eId,
-              onFinish: () {
-                close(context, null);
-              },
-            );
+    return Container(
+      decoration: BoxDecoration(gradient: scagrad),
+      child: FutureBuilder(
+        future:
+            firestore.collection(ucol).where("email", isEqualTo: sqry).get(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            var docs = (snapshot.data as dynamic).docs;
+            if (docs.isEmpty) {
+              return const BuildNoDt(string: "no data");
+            } else {
+              List<Userr> users =
+                  docs.map<Userr>((doc) {
+                    return Userr.fromMap(doc.id, doc.data());
+                  }).toList();
+              return SearchResults(
+                firestore: firestore,
+                users: users,
+                eId: eId,
+                onFinish: () {
+                  close(context, null);
+                },
+              );
+            }
           }
-        }
-        if (snapshot.hasError) {
-          return buildErr();
-        } else {
-          return buildLoader();
-        }
-      },
+          if (snapshot.hasError) {
+            return buildErr();
+          } else {
+            return buildLoader();
+          }
+        },
+      ),
     );
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return const Center();
+    return Container(
+      width: double.maxFinite,
+      height: double.maxFinite,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(gradient: scagrad),
+      child: Text("Type Something to Search"),
+    );
+    ;
   }
 }
 

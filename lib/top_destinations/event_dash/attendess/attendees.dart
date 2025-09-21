@@ -343,7 +343,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       backgroundColor: scaback,
       appBar: appBar(
         title: "${widget.title}",
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
@@ -391,14 +391,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 }
               },
             ),
-            buildActionButton(
+            appBarActionButton(
               icon: Icons.bar_chart,
               onTap: () {
                 showQuickStats();
               },
             ),
             const SizedBox(width: psm),
-            buildActionButton(
+            appBarActionButton(
               icon: Icons.search,
               onTap: () {
                 showSearch(
@@ -973,13 +973,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       poper();
       showToast(isGood: true, msg: "Deleting....");
       for (var sel in selectList) {
-        var cardsAttr = sel.cards;
-        for (var value in cardsAttr.values) {
-          AttributeCard attributeCard = AttributeCard.fromMap(map: value);
-          var cRef = storage.refFromURL(attributeCard.url!);
-          await cRef.delete();
-        }
-        await firestore
+        // var cardsAttr = sel.cards;
+        // for (var value in cardsAttr.values) {
+        //   AttributeCard attributeCard = AttributeCard.fromMap(map: value);
+        //   var cRef = storage.refFromURL(attributeCard.url!);
+        //   await cRef.delete();
+        // }
+        firestore
             .collection(ecol)
             .doc(widget.edata.id)
             .collection(atcol)

@@ -4,7 +4,6 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/services/plan_service.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/whatsApp/select_template.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/whatsApp/winvintations.dart';
@@ -42,8 +41,8 @@ class _WInvHostState extends State<WInvHost> {
       backgroundColor: scaback,
       appBar: appBar(
         title: "${widget.title}",
-        leading: buildActionButton(
-          icon: Icons.arrow_back_ios,
+        leading: appBarActionButton(
+          icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
           },
@@ -102,6 +101,7 @@ class _WInvHostState extends State<WInvHost> {
                         currentStep > 0
                             ? () {
                               safeState(() {
+                                senderList = [];
                                 currentStep -= 1;
                                 pageController.jumpToPage(currentStep);
                               });

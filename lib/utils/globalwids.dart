@@ -77,8 +77,8 @@ customSmBtn(Function() callback) {
 
 buildShimmer() {
   return Shimmer.fromColors(
-    baseColor: primaryColor,
-    highlightColor: primaryColor.withOpacity(0.7),
+    baseColor: lqassgradBaseColor,
+    highlightColor: lqassbdrColor,
     child: Container(color: Colors.green),
   );
 }
@@ -125,7 +125,7 @@ buildCard(Kard card, Function() tapd) {
   return Container(
     margin: const EdgeInsets.only(bottom: psm * 0.5),
     decoration: BoxDecoration(
-      color: primaryColor,
+      gradient: lqassgrad,
       borderRadius: BorderRadius.circular(brsm),
     ),
     child: Column(
@@ -157,7 +157,7 @@ buildCard(Kard card, Function() tapd) {
                             top: psm,
                             right: psm,
                             child: MaterialButton(
-                              color: primaryColor,
+                              color: destructiveColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(brsm),
                               ),

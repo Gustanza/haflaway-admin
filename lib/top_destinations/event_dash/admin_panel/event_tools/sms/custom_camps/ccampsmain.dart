@@ -41,7 +41,7 @@ class _AdminCampaignsState extends State<AdminCampaigns> {
       backgroundColor: scaback,
       appBar: appBar(
         title: "${widget.title}",
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
@@ -49,7 +49,7 @@ class _AdminCampaignsState extends State<AdminCampaigns> {
         ),
         actions: Row(
           children: [
-            buildActionButton(
+            appBarActionButton(
               icon: Icons.add,
               onTap: () {
                 showSelectCard();

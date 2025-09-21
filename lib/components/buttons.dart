@@ -26,7 +26,7 @@ lqAssButton({onPressed, label}) {
   );
 }
 
-Widget buildPrimaryButton({onTap, isLoading, label}) {
+Widget buildPrimaryButton({onTap, isLoading, label, iconData}) {
   return GestureDetector(
     onTap: onTap,
     child: Container(
@@ -86,8 +86,8 @@ Widget buildPrimaryButton({onTap, isLoading, label}) {
                       : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
-                            Icons.download_rounded,
+                          Icon(
+                            iconData ?? Icons.download_rounded,
                             color: Colors.white,
                             size: 22,
                           ),

@@ -18,14 +18,13 @@ const sendSMSrl = "https://sendsmsaction-frbu33fema-uc.a.run.app";
 // const sendSMSrl = "http://$lokol:5001/haflaway-f14aa/us-central1/sendSMSAction";
 
 var crtAtCloudUrl = "https://createattendees-frbu33fema-uc.a.run.app";
-
 // var crtAtCloudUrl =
 //     "http://$lokol:5001/haflaway-f14aa/us-central1/createAttendees";
 
 var getAttsUrl = 'https://getattendees-frbu33fema-uc.a.run.app';
 
 /* local */
-const lokol = '192.168.2.206';
+const lokol = '10.200.170.56';
 /* local */
 const basicHeaders = {
   'Content-Type': 'application/json',

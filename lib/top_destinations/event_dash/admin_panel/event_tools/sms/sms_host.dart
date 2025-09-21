@@ -3,7 +3,6 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/services/plan_service.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/sms_invitations.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/whatsApp/select_template.dart';
 import 'package:haflaway/utils/colors.dart';
@@ -39,7 +38,7 @@ class _SMSsenderHostState extends State<SMSsenderHost> {
       backgroundColor: scaback,
       appBar: appBar(
         title: widget.title,
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
@@ -57,7 +56,6 @@ class _SMSsenderHostState extends State<SMSsenderHost> {
                 children: [
                   SMSArtieSender(
                     event: widget.event,
-
                     karddType: widget.kardType,
                     onChanged: (p0) {
                       setState(() {

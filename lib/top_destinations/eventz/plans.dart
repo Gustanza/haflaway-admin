@@ -29,7 +29,7 @@ class _BillScreenState extends State<BillScreen> {
     return Scaffold(
       backgroundColor: scaback,
       appBar: appBar(
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();

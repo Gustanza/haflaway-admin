@@ -303,7 +303,7 @@ class _AttendeeCheckInViewState extends State<AttendeeCheckInView>
           widget.showAppBar
               ? appBar(
                 title: "",
-                leading: buildActionButton(
+                leading: appBarActionButton(
                   icon: Icons.arrow_back,
                   onTap: () {
                     Navigator.of(context).pop();

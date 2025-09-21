@@ -81,7 +81,7 @@ class _CreateEventState extends State<CreateEvent> {
       backgroundColor: scaback,
       appBar: appBar(
         title: event == null ? 'Create Event' : 'Edit Event',
-        leading: buildActionButton(
+        leading: appBarActionButton(
           onTap: () {
             Navigator.of(context).pop();
           },
@@ -89,7 +89,7 @@ class _CreateEventState extends State<CreateEvent> {
         ),
         actions: Row(
           children: [
-            buildActionButton(
+            appBarActionButton(
               onTap: () {
                 saver();
               },

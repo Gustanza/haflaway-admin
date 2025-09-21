@@ -275,13 +275,6 @@ Widget buildGlassListItem({
             decoration: BoxDecoration(
               gradient: LinearGradient(colors: gradient),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: gradient[0].withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
             child: Icon(icon, color: Colors.white, size: 24),
           ),
@@ -338,6 +331,11 @@ Widget buildGlassCheckpointItem(
     },
     child: Container(
       padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: lqassgrad,
+        borderRadius: BorderRadius.circular(bmd),
+        border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+      ),
       child: Row(
         children: [
           Container(

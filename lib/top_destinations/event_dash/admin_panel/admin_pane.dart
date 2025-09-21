@@ -39,7 +39,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
       backgroundColor: scaback,
       appBar: appBar(
         title: "Dashboard",
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
@@ -73,7 +73,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(psm, 0, psm, p20),
         child: Container(
-          height: 120,
+          height: 250,
           decoration: BoxDecoration(
             border: Border.all(color: Colors.white.withOpacity(0.5)),
             borderRadius: BorderRadius.circular(p20),
@@ -84,18 +84,65 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(p20),
-            child: CachedNetworkImage(
-              imageUrl: widget.edata.eventThumbnail ?? "",
-              fit: BoxFit.cover,
-              filterQuality: FilterQuality.high,
-              placeholder:
-                  (context, url) => Shimmer.fromColors(
-                    baseColor: primaryColor,
-                    highlightColor: primaryColor.withValues(alpha: 0.85),
-                    child: Container(color: primaryColor),
+            child: Stack(
+              children: [
+                // Background image
+                CachedNetworkImage(
+                  imageUrl: widget.edata.eventThumbnail ?? "",
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  filterQuality: FilterQuality.high,
+                  placeholder:
+                      (context, url) => Shimmer.fromColors(
+                        baseColor: primaryColor,
+                        highlightColor: primaryColor.withValues(alpha: 0.85),
+                        child: Container(color: primaryColor),
+                      ),
+                  errorWidget:
+                      (context, url, error) => const Icon(Clarity.error_line),
+                ),
+
+                // Gradient overlay
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.0, 0.6, 1.0],
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.3),
+                        Colors.black.withOpacity(0.8),
+                      ],
+                    ),
                   ),
-              errorWidget:
-                  (context, url, error) => const Icon(Clarity.error_line),
+                ),
+
+                // Title text at the bottom
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: Text(
+                    widget.edata.title ?? "",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          offset: Offset(0, 1),
+                          blurRadius: 3,
+                          color: primaryColor,
+                        ),
+                      ],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

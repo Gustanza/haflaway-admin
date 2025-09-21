@@ -90,47 +90,102 @@ class _BuildResultsListState extends State<BuildResultsList> {
   @override
   Widget build(BuildContext context) {
     if (widget.query.isEmpty) {
-      return Center(child: Text("Type Something to Search"));
+      return Container(
+        alignment: Alignment.center,
+        decoration: BoxDecoration(gradient: scagrad),
+        child: Text("Type Something to Search"),
+      );
     }
-    return FutureBuilder(
-      future: http.get(
-        Uri.parse(
-          "${getAttsUrl}/?eventId=${widget.edata.id}&searchKey=${widget.query}",
+    return Container(
+      decoration: BoxDecoration(gradient: scagrad),
+      child: FutureBuilder(
+        future: http.get(
+          Uri.parse(
+            "${getAttsUrl}/?eventId=${widget.edata.id}&searchKey=${widget.query}",
+          ),
         ),
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          try {
-            var source = snapshot.data;
-            var body = jsonDecode(source!.body);
-            bool status = body['status'];
-            if (status) {
-              List data = body['data'];
-              atList =
-                  data.map((e) {
-                    var item = e['item'];
-                    return Attendee.fromMap(item['id'] ?? "", item);
-                  }).toList();
-              return ListView.builder(
-                itemCount: atList.length,
-                padding: EdgeInsets.only(top: psm, bottom: psm),
-                itemBuilder: (context, index) {
-                  return buildAttendeeCard(atList[index]);
-                },
-              );
-            } else {
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            try {
+              var source = snapshot.data;
+              var body = jsonDecode(source!.body);
+              bool status = body['status'];
+              if (status) {
+                List data = body['data'];
+                atList =
+                    data.map((e) {
+                      var item = e['item'];
+                      return Attendee.fromMap(item['id'] ?? "", item);
+                    }).toList();
+                return ListView.builder(
+                  itemCount: atList.length,
+                  padding: EdgeInsets.only(top: psm, bottom: psm),
+                  itemBuilder: (context, index) {
+                    return buildAttendeeCard(atList[index]);
+                  },
+                );
+              } else {
+                return buildErrorView();
+              }
+            } catch (e) {
+              debugPrint("Abject: ${e}");
               return buildErrorView();
             }
-          } catch (e) {
-            debugPrint("Abject: ${e}");
+          } else if (snapshot.hasError) {
             return buildErrorView();
-          }
-        } else if (snapshot.hasError) {
-          return buildErrorView();
-        } else
-          return Center(child: CupertinoActivityIndicator());
+          } else
+            return Center(child: CupertinoActivityIndicator());
+        },
+      ),
+    );
+  }
+
+  deleteTargAtt({atId}) async {
+    return await showCupertinoModalPopup(
+      context: context,
+      builder: (context) {
+        return CupertinoActionSheet(
+          title: const Text("Destructive Action"),
+          message: Text(
+            "You are about to delete an attendee, keep in mind this action is ireversible",
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: fsm),
+          ),
+          actions: [
+            CupertinoActionSheetAction(
+              isDefaultAction: true,
+              child: const Text("Delete", style: TextStyle(color: Colors.red)),
+              onPressed: () async {
+                firestore
+                    .collection(ecol)
+                    .doc(widget.edata.id)
+                    .collection(atcol)
+                    .doc(atId)
+                    .delete()
+                    .then((onValue) {
+                      showToast(isGood: true, msg: "Succesful deletion");
+                      if (mounted) {
+                        setState(() {});
+                      }
+                    })
+                    .catchError((onError) {
+                      showToast(isGood: false, msg: "Deletion failed");
+                    });
+                popper();
+              },
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            child: const Text("Cancel"),
+            onPressed: popper,
+          ),
+        );
       },
     );
+  }
+
+  popper() {
+    Navigator.of(context).pop();
   }
 
   Widget buildAttendeeCard(Attendee attendee) {
@@ -148,6 +203,9 @@ class _BuildResultsListState extends State<BuildResultsList> {
 
     return GestureDetector(
       onTap: () {},
+      onLongPress: () {
+        deleteTargAtt(atId: attendee.id);
+      },
       child: Container(
         margin: EdgeInsets.only(left: psm, right: psm, bottom: psm * 0.75),
         decoration: BoxDecoration(
