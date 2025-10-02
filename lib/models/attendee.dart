@@ -43,6 +43,7 @@ class Attendee {
   String? attendanceStatus;
   String phone;
   Map messages;
+  String idComment;
   Attendee({
     this.id,
     required this.cards,
@@ -55,6 +56,7 @@ class Attendee {
     required this.fullName,
     required this.phone,
     this.attendanceStatus,
+    this.idComment = 'No Comment',
     required this.messages,
   });
 
@@ -67,6 +69,7 @@ class Attendee {
     "fullName": fullName,
     "phone": phone,
     "messages": messages,
+    "idComment": idComment,
     "attendanceStatus": attendanceStatus,
   };
 
@@ -83,6 +86,7 @@ class Attendee {
       fullName: map['fullName'] ?? "",
       phone: map['phone'] ?? "",
       messages: map['messages'] ?? {},
+      idComment: map['idComment'] ?? "No Comment",
       attendanceStatus: map['attendanceStatus'] ?? "Not Confirmed",
     );
   }

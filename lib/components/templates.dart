@@ -1,6 +1,8 @@
 import 'dart:ui';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
@@ -9,6 +11,8 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/in_c
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
+import 'package:haflaway/utils/globalfns.dart';
+import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/styles.dart';
 
 buildInvite({
@@ -16,24 +20,148 @@ buildInvite({
   Attendee? rdata,
   KardType kardType = KardType.invitation,
   onChanged,
-  onTap,
+  eventId,
 }) {
-  return Container(
-    margin: EdgeInsets.only(bottom: psm * 0.5),
-    decoration: BoxDecoration(
-      color: lqassgradBaseColor,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
-    ),
-    child: ListTile(
-      leading: CupertinoCheckbox(value: containz, onChanged: onChanged),
-      title: Text("${rdata?.fullName}", style: TextStyle(fontSize: fsm - 1)),
-      subtitle: Text("${rdata?.phone}"),
-      trailing: Container(
-        child: Text("${rdata?.cards[kardType.name]?['name']}"),
-      ),
-      onTap: onTap,
-    ),
+  return StatefulBuilder(
+    builder: (context, setState) {
+      return Container(
+        margin: EdgeInsets.only(bottom: psm * 0.5),
+        decoration: BoxDecoration(
+          color: lqassgradBaseColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+        ),
+        padding: EdgeInsets.symmetric(vertical: psm * 0.5),
+        child: ListTile(
+          leading: CupertinoCheckbox(
+            shape: RoundedRectangleBorder(
+              side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+              borderRadius: BorderRadius.circular(50),
+            ),
+            value: containz,
+            onChanged: onChanged,
+          ),
+          title: Text(
+            "${rdata?.fullName}",
+            style: TextStyle(fontSize: fsm - 1),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: psm * 0.5),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(Icons.phone_android, size: icnsm),
+                        const SizedBox(width: psm * 0.5),
+                        Text("${rdata?.phone}"),
+                      ],
+                    ),
+                    const SizedBox(width: psm),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(Icons.card_membership, size: icnsm),
+                        const SizedBox(width: psm * 0.5),
+                        Text("${rdata?.cards[kardType.name]?['name']}"),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: psm * 0.75),
+                Divider(height: 0, thickness: bdrWidthGen),
+                const SizedBox(height: psm * 0.75),
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () async {
+                        await showCommentDialog(
+                          context: context,
+                          atId: rdata?.id,
+                          eventId: eventId,
+                          label: rdata?.idComment,
+                        );
+                      },
+                      child: Icon(Icons.edit_square),
+                    ),
+                    const SizedBox(width: psm * 0.5),
+                    Expanded(
+                      child: Text(
+                        "${rdata?.idComment}",
+                        style: TextStyle(fontSize: fsm),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // onTap: onTap,
+        ),
+      );
+    },
+  );
+}
+
+showCommentDialog({context, eventId, atId, label}) {
+  TextEditingController controller = TextEditingController();
+  if (label != null) controller.text = label;
+
+  return showDialog(
+    context: context,
+    builder: (context) {
+      return glassDialog(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: psm * 3,
+            horizontal: psm * 2,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Add Comment",
+                style: TextStyle(
+                  fontSize: fsm + 4,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: psm),
+              buildField(lbl: label ?? "Comment here", cont: controller),
+              const SizedBox(height: psm * 1.5),
+              SizedBox(
+                width: double.maxFinite,
+                child: buildGlassButton(
+                  text: "Save Comment",
+                  icon: Icons.save,
+                  onPressed: () {
+                    try {
+                      FirebaseFirestore.instance
+                          .collection(ecol)
+                          .doc(eventId)
+                          .collection(atcol)
+                          .doc(atId)
+                          .set({
+                            "idComment": controller.text.trim(),
+                          }, SetOptions(merge: true));
+                    } catch (e) {
+                      showToast(isGood: false, msg: "$e");
+                    }
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
   );
 }
 

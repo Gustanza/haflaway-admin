@@ -15,6 +15,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/top_destinations/event_dash/attendess/view_card.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/models/attendee.dart';
@@ -27,6 +28,7 @@ import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'imp_preview.dart';
 
 class Attendees extends StatefulWidget {
@@ -604,7 +606,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         margin: EdgeInsets.only(left: psm, right: psm, bottom: psm * 0.75),
         decoration: BoxDecoration(
           gradient: lqassgrad,
-          border: !hasKey ? lqassbdr : Border.all(color: Colors.redAccent),
+          border:
+              !hasKey
+                  ? lqassbdr
+                  : Border.all(color: Colors.redAccent, width: bdrWidthGen),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Container(
@@ -712,15 +717,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                     if (vcrd != null) {
                                       AttributeCard attrCrd =
                                           AttributeCard.fromMap(map: vcrd);
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) {
-                                            return ViewCard(
-                                              cardUrl: attrCrd.url ?? "",
-                                            );
-                                          },
-                                        ),
-                                      );
+                                      try {
+                                        launchUrl(Uri.parse(attrCrd.url ?? ""));
+                                      } catch (e) {
+                                        showToast(isGood: false, msg: "$e");
+                                      }
                                     } else {
                                       showToast(
                                         isGood: false,
@@ -973,12 +974,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       poper();
       showToast(isGood: true, msg: "Deleting....");
       for (var sel in selectList) {
-        // var cardsAttr = sel.cards;
-        // for (var value in cardsAttr.values) {
-        //   AttributeCard attributeCard = AttributeCard.fromMap(map: value);
-        //   var cRef = storage.refFromURL(attributeCard.url!);
-        //   await cRef.delete();
-        // }
         firestore
             .collection(ecol)
             .doc(widget.edata.id)

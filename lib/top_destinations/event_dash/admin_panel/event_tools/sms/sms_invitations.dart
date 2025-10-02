@@ -209,9 +209,7 @@ class _SMSArtieSenderState extends State<SMSArtieSender> {
                           onChanged: (change) {
                             onCheckTap(rdata: rdata, containz: containz);
                           },
-                          onTap: () {
-                            onCheckTap(rdata: rdata, containz: containz);
-                          },
+                          eventId: widget.event.id,
                         );
                       }),
                     )

@@ -235,9 +235,7 @@ class _WInvSenderState extends State<WInvSender> {
                           containz: containz,
                           rdata: rdata,
                           kardType: widget.kardType,
-                          onTap: () {
-                            onCheckTap(rdata: rdata, containz: containz);
-                          },
+                          eventId: widget.event.id,
                           onChanged: (change) {
                             onCheckTap(rdata: rdata, containz: containz);
                           },
