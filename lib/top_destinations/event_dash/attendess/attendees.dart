@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:excel/excel.dart' as exl;
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/buttons.dart';
@@ -58,6 +59,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   FirebaseStorage storage = FirebaseStorage.instance;
   TextEditingController scont = TextEditingController();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+  FirebaseAuth auth = FirebaseAuth.instance;
   // Attendance status filters
   String _attendanceFilter = "All";
   final List<String> _filters = [
@@ -378,9 +380,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     break;
                   case atActnDel:
                     delSelect();
-                    break;
-                  case atActnDwn:
-                    downCards();
                     break;
                   case atActnImprtFile:
                     importFile();
@@ -918,22 +917,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     safeState(() {});
   }
 
-  downCards() async {
-    if (selectList.isEmpty) {
-      showToast(isGood: false, msg: "No attendee(s) selected");
+  delSelect() async {
+    var uid = auth.currentUser?.uid;
+    if (uid != widget.edata.authorId) {
+      showToast(isGood: false, msg: "Action not allowed");
       return;
     }
-    List<Attendee> lList = selectList;
-    await StorageService.fetchFile(
-      kardtype: widget.kardType,
-      atList: lList,
-      fdbck: (p0) {
-        showToast(isGood: true, msg: p0);
-      },
-    );
-  }
-
-  delSelect() async {
     if (selectList.isEmpty) {
       showToast(isGood: false, msg: "Select attendee(s) first");
       return;

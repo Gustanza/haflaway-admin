@@ -17,6 +17,7 @@ import 'package:haflaway/utils/styles.dart';
 import 'package:haflaway/utils/urls.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class DhaSearchDelegate extends SearchDelegate {
   String selType = '';
@@ -318,15 +319,11 @@ class _BuildResultsListState extends State<BuildResultsList> {
                                     if (vcrd != null) {
                                       AttributeCard attrCrd =
                                           AttributeCard.fromMap(map: vcrd);
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) {
-                                            return ViewCard(
-                                              cardUrl: attrCrd.url ?? "",
-                                            );
-                                          },
-                                        ),
-                                      );
+                                      try {
+                                        launchUrl(Uri.parse(attrCrd.url ?? ""));
+                                      } catch (e) {
+                                        showToast(isGood: false, msg: "$e");
+                                      }
                                     } else {
                                       showToast(
                                         isGood: false,

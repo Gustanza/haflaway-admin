@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:go_router/go_router.dart';
 import 'package:haflaway/firebase_options.dart';
 import 'package:haflaway/providers/balance_provider.dart';
 import 'package:haflaway/services/balance_service.dart';
@@ -47,5 +48,15 @@ class HfApp extends StatelessWidget {
       themeMode: ThemeMode.dark,
       theme: ThemeData(colorScheme: ColorScheme.dark()),
     );
+    // return MaterialApp.router(
+    //   routerConfig: _router,
+    //   themeMode: ThemeMode.dark,
+    //   debugShowCheckedModeBanner: false,
+    //   theme: ThemeData(colorScheme: ColorScheme.dark()),
+    // );
   }
 }
+
+final _router = GoRouter(
+  routes: [GoRoute(path: '/', builder: (context, state) => SplashScreen())],
+);
