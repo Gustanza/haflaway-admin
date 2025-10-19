@@ -64,6 +64,7 @@ const cardcap = 'Card Capacity';
 
 class Event {
   String? id;
+  bool? usepng;
   String? title;
   String? authorId;
   List? adminsIds;
@@ -96,6 +97,7 @@ class Event {
     this.location,
     this.status,
     this.supportPhone,
+    this.usepng = true,
     this.calendar = const [],
   });
 
@@ -114,6 +116,7 @@ class Event {
     if (eventThumbnail != null) 'eventThumbnail': eventThumbnail,
     if (location != null) 'location': location,
     if (status != null) 'status': status,
+    if (usepng != null) 'usepng': usepng,
     if (supportPhone != null) 'supportPhone': supportPhone,
     if (calendar != null)
       'calendar':
@@ -139,6 +142,7 @@ class Event {
       eventPlanId: map['eventPlanId'] ?? '',
       eventThumbnail: map['eventThumbnail'] ?? '',
       location: map['location'] ?? '',
+      usepng: map['usepng'] ?? true,
       calendar:
           map['calendar'].map<EventCalendar>((e) {
             return EventCalendar.fromMap(e);

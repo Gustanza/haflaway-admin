@@ -1052,7 +1052,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           height: MediaQuery.of(context).size.height * 0.9,
           child: modalBtmSheet(
             bdrdm: bmd,
-            child: ImportContributor(kard: kard, evId: widget.edata.id ?? ""),
+            child: ImportContributor(kard: kard, event: widget.edata),
           ),
         );
       },
@@ -1184,7 +1184,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                               mapp: mapp,
                               xcelFile: file!,
                               carddata: carddata,
-                              eId: widget.edata.id ?? "",
+                              event: widget.edata,
                               kardType: widget.kardType,
                             );
                           },

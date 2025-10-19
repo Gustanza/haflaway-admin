@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/utils/colors.dart';
+import 'package:haflaway/utils/constants.dart';
+import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -44,14 +46,11 @@ navnReplaceUntil({context, widget}) {
 showSnack({context, isGood, msg}) {
   return ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text("$msg"),
-      action: SnackBarAction(
-        label: "Dismiss",
-        onPressed: () {
-          Navigator.of(context).pop();
-        },
-      ),
-      backgroundColor: isGood ? Colors.green : Colors.red,
+      elevation: p20,
+      showCloseIcon: true,
+      duration: Duration(minutes: 5),
+      backgroundColor: isGood ? primaryColor : Colors.red,
+      content: Text("$msg", style: TextStyle(fontWeight: FontWeight.bold)),
     ),
   );
 }

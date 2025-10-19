@@ -234,6 +234,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
           "eventId": widget.event.id,
           "attendees": [atdt.toMap()],
           "templateCard": data?.toMap(),
+          "usepng": widget.event.usepng,
           "kardType": widget.kardType.name,
         };
         var source = await client.post(

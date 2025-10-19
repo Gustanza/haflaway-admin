@@ -5,7 +5,6 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/hfhttp/clientelle.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/helpers.dart';
-import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:excel/excel.dart' as xcl;
 import 'package:firebase_storage/firebase_storage.dart';
@@ -23,7 +22,7 @@ import 'package:haflaway/utils/styles.dart';
 import 'package:haflaway/utils/urls.dart';
 
 class ImpPreview extends StatefulWidget {
-  final String eId;
+  final Event event;
   final Kard carddata;
   final KardType kardType;
   final List<Attendee>? atList;
@@ -34,7 +33,7 @@ class ImpPreview extends StatefulWidget {
     this.mapp,
     this.atList,
     this.xcelFile,
-    required this.eId,
+    required this.event,
     required this.kardType,
     required this.carddata,
   });
@@ -272,7 +271,7 @@ class _ImpPreviewState extends State<ImpPreview> {
       var atId = attendee.id ?? generateUniqueSequence();
       var atRef = firestore
           .collection(ecol)
-          .doc(widget.eId)
+          .doc(widget.event.id)
           .collection(atcol)
           .doc(atId);
       dataCleaner(passcode: atRef.id, lfname: attendee.fullName);
@@ -282,9 +281,10 @@ class _ImpPreviewState extends State<ImpPreview> {
         attendee.id = attendee.id ?? atId;
         attendee.createdAt = DateTime.now();
         var payload = {
-          "eventId": widget.eId,
+          "eventId": widget.event.id,
           "attendees": [attendee.toMap()],
           "templateCard": data?.toMap(),
+          "usepng": widget.event.usepng,
           "kardType": widget.kardType.name,
         };
         var source = await client.post(

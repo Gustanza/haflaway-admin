@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/buttons.dart';
+import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/hfhttp/clientelle.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
@@ -70,9 +72,21 @@ class SelectTemplateState extends State<SelectTemplate> {
               var dt = (snapshot.data as dynamic).docs;
               if (dt != null && dt.isNotEmpty) {
                 List<WsapTemplate> wtemps =
-                    dt.map<WsapTemplate>((tdt) {
-                      return WsapTemplate.fromMap(id: tdt.id, map: tdt);
-                    }).toList();
+                    dt
+                        .where((tdt) {
+                          WsapTemplate wsapTemplate = WsapTemplate.fromMap(
+                            id: tdt.id,
+                            map: tdt.data(),
+                          );
+                          return wsapTemplate.usepng;
+                        })
+                        .map<WsapTemplate>((tdt) {
+                          return WsapTemplate.fromMap(
+                            id: tdt.id,
+                            map: tdt.data(),
+                          );
+                        })
+                        .toList();
                 return buildTemplates(wtemps);
               } else {
                 return BuildNoDt(string: "no data");
@@ -191,14 +205,17 @@ class SelectTemplateState extends State<SelectTemplate> {
                       }),
                     );
                   }
-                  if (response != null) {
-                    var res = jsonDecode(response.body);
-                    showToast(isGood: true, msg: "${res['message']}");
-                  }
+
+                  var res = jsonDecode(response.body);
+                  showSnack(
+                    context: context,
+                    isGood: true,
+                    msg: "${res['message']}",
+                  );
                   popper();
                 } catch (e) {
                   popper();
-                  showToast(isGood: false, msg: "$e");
+                  showSnack(context: context, isGood: false, msg: "$e");
                 }
                 client.close();
                 popper();

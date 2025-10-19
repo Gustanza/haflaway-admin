@@ -12,9 +12,9 @@ import 'package:haflaway/utils/globalwids.dart';
 import 'package:string_similarity/string_similarity.dart';
 
 class ImportContributor extends StatefulWidget {
-  final String evId;
+  final Event event;
   final Kard kard;
-  const ImportContributor({super.key, required this.evId, required this.kard});
+  const ImportContributor({super.key, required this.event, required this.kard});
 
   @override
   State<ImportContributor> createState() => _ImportContributorState();
@@ -26,7 +26,11 @@ class _ImportContributorState extends State<ImportContributor> {
   Widget build(BuildContext context) {
     return FutureBuilder(
       future:
-          firestore.collection(ecol).doc(widget.evId).collection(atcol).get(),
+          firestore
+              .collection(ecol)
+              .doc(widget.event.id)
+              .collection(atcol)
+              .get(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           var source = (snapshot.data as dynamic).docs;
@@ -45,9 +49,9 @@ class _ImportContributorState extends State<ImportContributor> {
                     })
                     .toList();
             return buildContrList(
-              eId: widget.evId,
               list: atList,
               kard: widget.kard,
+              event: widget.event,
               kardType: KardType.invitation,
             );
           }
@@ -63,7 +67,7 @@ class _ImportContributorState extends State<ImportContributor> {
 
 buildContrList({
   required List<Attendee> list,
-  required String eId,
+  required Event event,
   required KardType kardType,
   required Kard kard,
 }) {
@@ -109,7 +113,7 @@ buildContrList({
                   MaterialPageRoute(
                     builder: (context) {
                       return ImpPreview(
-                        eId: eId,
+                        event: event,
                         carddata: kard,
                         atList: selectList,
                         kardType: kardType,
