@@ -14,7 +14,7 @@ import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
-import 'package:haflaway/top_destinations/event_dash/attendess/attendees.dart';
+import 'package:haflaway/top_destinations/event_dash/attendees/attendees.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/eventTools.dart';
 import 'package:shimmer/shimmer.dart';
 

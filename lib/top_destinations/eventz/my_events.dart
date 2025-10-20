@@ -69,7 +69,6 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
               firestore
                   .collection(ecol)
                   .where(eadminsIds, arrayContains: uid)
-                  .where('status', isEqualTo: 'Published')
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
           builder: (context, snapshot) {

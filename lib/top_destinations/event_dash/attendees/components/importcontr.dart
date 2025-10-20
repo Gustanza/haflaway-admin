@@ -4,7 +4,7 @@ import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
-import 'package:haflaway/top_destinations/event_dash/attendess/imp_preview.dart';
+import 'package:haflaway/top_destinations/event_dash/attendees/imp_preview.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
