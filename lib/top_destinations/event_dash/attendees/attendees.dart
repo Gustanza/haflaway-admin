@@ -4,10 +4,10 @@ import 'package:excel/excel.dart' as exl;
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
-import 'package:haflaway/services/strg_service.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/importcontr.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/searchdel.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/stats.dart';
@@ -15,7 +15,6 @@ import 'package:haflaway/top_destinations/event_dash/attendees/crtattendees.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:haflaway/top_destinations/event_dash/attendees/view_card.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:icons_plus/icons_plus.dart';
@@ -112,9 +111,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
 
     try {
       Query<Map<String, dynamic>> query = nQwrBuilder();
-
       var snapshot = await query.get();
-
       if (snapshot.docs.isEmpty) {
         setState(() {
           hasMore = false;
@@ -414,14 +411,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           ],
         ),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f3460)],
-          ),
-        ),
+      body: Ccafold(
         child:
             atList.isEmpty && isLoading
                 ? buildLoader()
@@ -492,7 +482,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   // Build status filter chips
   Widget _buildStatusFilterChips() {
     return Container(
-      height: 50,
+      height: 42,
       padding: const EdgeInsets.symmetric(horizontal: psm),
       child: ListView(
         scrollDirection: Axis.horizontal,
@@ -524,7 +514,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       return const SizedBox.shrink();
     }
     return Container(
-      height: 50,
+      height: 42,
       padding: const EdgeInsets.symmetric(horizontal: psm),
       child: ListView(
         scrollDirection: Axis.horizontal,

@@ -165,7 +165,7 @@ class _UserTileState extends State<UserTile> {
               ),
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundImage: NetworkImage(userr.profileImage),
+                  backgroundImage: NetworkImage(userr.profileImage ?? ""),
                 ),
                 title: Text("${userr.firstName} ${userr.lastName}"),
                 trailing:

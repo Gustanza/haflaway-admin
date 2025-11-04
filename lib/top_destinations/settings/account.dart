@@ -184,7 +184,7 @@ class _MyAccountScreenState extends State<MyAccountScreen> {
                       child: _buildStatCard(
                         icon: Icons.account_balance_wallet_outlined,
                         title: 'Account Balance',
-                        value: '\TZS ${widget.userr.balance.toInt()}',
+                        value: '\TZS ${widget.userr.balance?.toInt()}',
                         color: Colors.green,
                       ),
                     ),

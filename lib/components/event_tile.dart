@@ -8,7 +8,6 @@ import 'package:haflaway/utils/globalfns.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:haflaway/utils/globalwids.dart';
 
@@ -119,46 +118,6 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  // Edit Button
-                  if (uid == widget.eventData.authorId)
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return CreateEvent(event: widget.eventData);
-                              },
-                            ),
-                          );
-                        },
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
-                                  width: 0.5,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.edit_outlined,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               ),
               // Content Section

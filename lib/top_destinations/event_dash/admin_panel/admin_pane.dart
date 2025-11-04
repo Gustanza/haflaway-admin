@@ -3,12 +3,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
-import 'package:haflaway/components/templates.dart' hide buildActionButton;
+import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
+import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
@@ -19,9 +21,9 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms
 import 'package:shimmer/shimmer.dart';
 
 class AdminPanel extends StatefulWidget {
-  final Event edata;
+  final Event eventO;
   final bool isAdmin;
-  const AdminPanel({super.key, required this.edata, required this.isAdmin});
+  const AdminPanel({super.key, required this.eventO, required this.isAdmin});
 
   @override
   State<AdminPanel> createState() => _AdminPanelState();
@@ -35,7 +37,6 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       backgroundColor: scaback,
       appBar: appBar(
         title: "Dashboard",
@@ -45,22 +46,30 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
             Navigator.of(context).pop();
           },
         ),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f3460)],
-          ),
+        actions: Row(
+          children: [
+            buildActionButton(
+              icon: Icons.edit_document,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return CreateEvent(event: widget.eventO);
+                    },
+                  ),
+                );
+              },
+            ),
+          ],
         ),
+      ),
+      body: Ccafold(
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: SizedBox(height: 135)),
+            SliverToBoxAdapter(child: SizedBox(height: psm)),
             _buildEventImageCard(),
-            // _buildTitle(),
             _buildAdminToolsSection(),
-            const SliverPadding(padding: EdgeInsets.only(bottom: p20)),
+            const SliverPadding(padding: EdgeInsets.only(bottom: psm)),
           ],
         ),
       ),
@@ -71,7 +80,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   SliverToBoxAdapter _buildEventImageCard() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(psm, 0, psm, p20),
+        padding: const EdgeInsets.fromLTRB(psm, 0, psm, psm),
         child: Container(
           height: 250,
           decoration: BoxDecoration(
@@ -88,7 +97,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
               children: [
                 // Background image
                 CachedNetworkImage(
-                  imageUrl: widget.edata.eventThumbnail ?? "",
+                  imageUrl: widget.eventO.eventThumbnail ?? "",
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: double.infinity,
@@ -125,7 +134,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                   left: 20,
                   right: 20,
                   child: Text(
-                    widget.edata.title ?? "",
+                    widget.eventO.title ?? "",
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -171,11 +180,11 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                     onTap:
                         () => Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => InRem(event: widget.edata),
+                            builder: (context) => InRem(event: widget.eventO),
                           ),
                         ),
                   ),
-                  buildDivider(),
+
                   buildGlassListItem(
                     title: "Invitations Manager",
                     subtitle: "Create & Manage Invitations",
@@ -189,14 +198,13 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                         MaterialPageRoute(
                           builder:
                               (context) => Attendees(
-                                edata: widget.edata,
+                                edata: widget.eventO,
                                 kardType: KardType.invitation,
                               ),
                         ),
                       );
                     },
                   ),
-                  buildDivider(),
 
                   buildGlassListItem(
                     title: "Contributors Manager",
@@ -211,7 +219,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                         MaterialPageRoute(
                           builder:
                               (context) => Attendees(
-                                edata: widget.edata,
+                                edata: widget.eventO,
                                 title: "Contributors",
                                 kardType: KardType.contribution,
                               ),
@@ -219,7 +227,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                       );
                     },
                   ),
-                  buildDivider(),
+
                   buildGlassListItem(
                     title: "Scan & Verify Cards",
                     subtitle: "Ensure Authenticity of Cards",
@@ -229,12 +237,12 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder:
-                              (context) => CheckPoints(edata: widget.edata),
+                              (context) => CheckPoints(edata: widget.eventO),
                         ),
                       );
                     },
                   ),
-                  buildDivider(),
+
                   buildGlassListItem(
                     title: "Team Management",
                     subtitle: "Manage staff permissions",
@@ -247,7 +255,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                         () => Navigator.of(context).push(
                           MaterialPageRoute(
                             builder:
-                                (context) => Users(eId: widget.edata.id ?? ""),
+                                (context) => Users(eId: widget.eventO.id ?? ""),
                           ),
                         ),
                   ),
