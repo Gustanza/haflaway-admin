@@ -157,52 +157,65 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
           ],
         ),
       ),
-      body: Ccafold(
-        child:
-            events.isEmpty && isLoading
-                ? buildLoader()
-                : events.isEmpty && !isLoading
-                ? BuildNoDt(
-                  string: "No Events Found",
-                  isRefreshed: () async {
-                    await loadEvents();
-                  },
-                )
-                : ListView.builder(
-                  itemCount: events.length + 1,
-                  controller: scrollController,
-                  padding: const EdgeInsets.only(
-                    left: psm,
-                    right: psm,
-                    top: psm,
-                  ),
-                  itemBuilder: (context, index) {
-                    if (index == events.length && isLoading) {
-                      return Padding(
-                        padding: EdgeInsetsGeometry.all(psm),
-                        child: Center(child: CupertinoActivityIndicator()),
-                      );
-                    } else if (index == events.length && !isLoading) {
-                      return const SizedBox.shrink();
-                    }
-                    var evlvl = events[index].categoryLevel;
+      body: RefreshIndicator(
+        onRefresh: () async {
+          if (!isLoading) {
+            await loadEvents();
+          }
+        },
+        child: Ccafold(
+          child:
+              events.isEmpty && isLoading
+                  ? buildLoader()
+                  : events.isEmpty && !isLoading
+                  ? BuildNoDt(
+                    string: "No Events Found",
+                    isRefreshed: () async {
+                      await loadEvents();
+                    },
+                  )
+                  : ListView.builder(
+                    itemCount: events.length + 1,
+                    controller: scrollController,
+                    padding: const EdgeInsets.only(
+                      left: psm,
+                      right: psm,
+                      top: psm,
+                    ),
+                    itemBuilder: (context, index) {
+                      if (index == events.length && isLoading) {
+                        return Padding(
+                          padding: EdgeInsetsGeometry.all(psm),
+                          child: Center(child: CupertinoActivityIndicator()),
+                        );
+                      } else if (index == events.length && !isLoading) {
+                        return const SizedBox.shrink();
+                      }
+                      var evlvl = events[index].categoryLevel;
 
-                    return GestureDetector(
-                      onTap: () {
-                        if (evlvl == '0') {
-                          navNormal(
-                            context: context,
-                            widget: AdminPanel(
-                              isAdmin: true,
-                              eventO: events[index],
-                            ),
-                          );
-                        }
-                      },
-                      child: EventTile(eventData: events[index]),
-                    );
-                  },
-                ),
+                      return GestureDetector(
+                        onTap: () {
+                          if (evlvl == '0') {
+                            if (events[index].status != "Published")
+                              return showToast(
+                                isGood: false,
+                                msg: "Event not published",
+                              );
+
+                            navNormal(
+                              context: context,
+                              widget: AdminPanel(
+                                isAdmin: true,
+                                eventO: events[index],
+                              ),
+                            );
+                          }
+                        },
+                        child: EventTile(eventData: events[index]),
+                      );
+                    },
+                  ),
+        ),
       ),
     );
   }
