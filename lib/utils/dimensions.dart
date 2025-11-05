@@ -7,3 +7,6 @@ const icnmd = 20.00;
 const icnsm = 16.00;
 
 const brsm = 16.00;
+
+//
+const spaceTiles = psm * 0.65;

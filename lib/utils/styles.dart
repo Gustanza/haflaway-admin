@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:haflaway/utils/colors.dart';
+import 'package:haflaway/utils/constants.dart';
+import 'package:haflaway/utils/dimensions.dart';
 
 const fsm = 15.00;
 header1() {
@@ -15,7 +18,7 @@ normalBold() {
 
 filShape() {
   return RoundedRectangleBorder(
-    borderRadius: BorderRadiusGeometry.circular(8),
-    side: BorderSide(width: 0.5, color: Colors.white.withOpacity(0.3)),
+    borderRadius: BorderRadiusGeometry.circular(bsm * 2),
+    side: BorderSide(width: bdrWidthGen, color: lqassgradBaseColor),
   );
 }

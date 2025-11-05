@@ -1,15 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
+import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/models/user.dart';
 import 'package:haflaway/top_destinations/eventz/navhost.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
-import 'package:haflaway/utils/strings.dart';
-
-import 'utils.dart';
+import 'package:haflaway/utils/globalfns.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
+import '../utils/globalwids.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -180,118 +183,136 @@ class _LoginState extends State<Login> {
 }
 
 class Msajili extends StatefulWidget {
-  const Msajili({super.key});
+  final Userr? userr;
+  const Msajili({super.key, this.userr});
 
   @override
   State<Msajili> createState() => _MsajiliState();
 }
 
 class _MsajiliState extends State<Msajili> {
-  dynamic programe;
+  int? selClrnc;
+  String phnnumber = '';
+  Map<int, String> clrncDict = {
+    2: "Cards Verification Staff (Level 02)",
+    4: "Committee Staff (Level 04)",
+    6: "Event Organizer (Level 06)",
+  };
+  GlobalKey<FormState> key = GlobalKey<FormState>();
   TextEditingController jinafestCon = TextEditingController();
   TextEditingController jinalastCon = TextEditingController();
   TextEditingController baruapepeCon = TextEditingController();
   TextEditingController nenoSiriCon = TextEditingController();
-  TextEditingController nenoSiriConCon = TextEditingController();
-  TextEditingController couponCodeCon = TextEditingController();
+  TextEditingController clrncLvlCon = TextEditingController();
+  TextEditingController phoneCon = TextEditingController();
   FirebaseAuth kisajilishi = FirebaseAuth.instance;
   String? yuarL;
   bool nalodi = false;
+
+  popper() {
+    Navigator.of(context).pop();
+  }
+
+  @override
+  void initState() {
+    bindData();
+    super.initState();
+  }
+
+  bindData() {
+    Userr? userr = widget.userr;
+    if (userr == null) return;
+    jinafestCon.text = userr.firstName ?? "";
+    jinalastCon.text = userr.lastName ?? "";
+    selClrnc = userr.clearanceLevel ?? 2;
+    clrncLvlCon.text = clrncDict[selClrnc] ?? "";
+    phnnumber = userr.phoneNumber ?? "";
+    phoneCon.text = phnnumber.replaceAll('255', '');
+    safeState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.only(left: 32, right: 32),
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(coverpic),
-            fit: BoxFit.cover,
-          ),
+      backgroundColor: scaback,
+      appBar: appBar(
+        title: 'Register User',
+        leading: appBarActionButton(
+          onTap: () {
+            popper();
+          },
+          icon: Icons.arrow_back,
         ),
-        //safe-area hapa ili ku allow container beyond statusbar
-        child: SafeArea(
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.only(
-                left: psm,
-                top: psm,
-                right: psm,
-                bottom: psm * 2,
-              ),
-              decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(bmd),
-              ),
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  const Text(
-                    'Register',
-                    style: TextStyle(
-                      fontSize: 32,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  fomu(jinafestCon, 'First name'),
-                  const SizedBox(height: psm * 0.5),
-                  fomu(jinalastCon, 'Last name'),
-                  const SizedBox(height: psm * 0.5),
-                  fomu(baruapepeCon, 'Email'),
-                  const SizedBox(height: psm * 0.5),
-                  fomu(nenoSiriCon, 'Password'),
-                  const SizedBox(height: psm * 0.5),
-                  fomu(nenoSiriConCon, 'Confirm password'),
-                  const SizedBox(height: psm * 0.5),
-                  fomu(couponCodeCon, 'Coupon Code (optional)'),
-                  const SizedBox(height: psm * 1.5),
-                  Container(
-                    width: double.infinity,
-                    height: kToolbarHeight,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child:
-                        nalodi
-                            ? const Center(child: CircularProgressIndicator())
-                            : TextButton(
-                              onPressed: () async {
-                                if (mcheckiFomu()) {
-                                  try {
-                                    setState(() {
-                                      nalodi = true;
-                                    });
-                                    await kisajilishi
-                                        .createUserWithEmailAndPassword(
-                                          email: baruapepeCon.text.trim(),
-                                          password: nenoSiriCon.text.trim(),
-                                        );
-                                    await mratibuDeits();
-                                    setState(() {
-                                      nalodi = false;
-                                    });
-                                    goOn();
-                                  } catch (shida) {
-                                    setState(() {
-                                      nalodi = false;
-                                    });
-                                    mjumbe(shida.toString());
-                                  }
-                                }
-                              },
-                              child: const Text(
-                                'register',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                  ),
-                ],
-              ),
+        actions: Row(children: [
+            
+          ],
+        ),
+      ),
+      body: Ccafold(
+        child: Form(
+          key: key,
+          child: Container(
+            padding: EdgeInsets.only(left: psm, right: psm),
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                const SizedBox(height: psm),
+                buildField(cont: jinafestCon, lbl: 'First name'),
+                const SizedBox(height: spaceTiles),
+                buildField(cont: jinalastCon, lbl: 'Last name'),
+                if (widget.userr == null) // //
+                  const SizedBox(height: spaceTiles),
+                if (widget.userr == null) // //
+                  buildField(cont: baruapepeCon, lbl: 'Email'),
+                if (widget.userr == null) // //
+                  const SizedBox(height: spaceTiles),
+                if (widget.userr == null) // //
+                  buildField(cont: nenoSiriCon, lbl: 'Password'),
+                const SizedBox(height: spaceTiles),
+                bldDrdDwn(
+                  lbl: "Clearence Level",
+                  controller: clrncLvlCon,
+                  entries: clrncDict.entries,
+                  onSelected: (val) {
+                    selClrnc = val;
+                  },
+                ),
+                const SizedBox(height: spaceTiles),
+                buildPhone(mobileCont: phoneCon),
+                const SizedBox(height: psm),
+                buildPrimaryButton(
+                  label: widget.userr == null ? "Register" : "Save Info",
+                  isLoading: nalodi,
+                  iconData: Icons.edit,
+                  onTap: () async {
+                    bool isValid = key.currentState?.validate() ?? false;
+                    if (isValid && izVally()) {
+                      try {
+                        safeState(() {
+                          nalodi = true;
+                        });
+                        if (widget.userr == null) {
+                          await kisajilishi.createUserWithEmailAndPassword(
+                            email: baruapepeCon.text.trim(),
+                            password: nenoSiriCon.text.trim(),
+                          );
+                          await createDeits();
+                        } else {
+                          await saveEdits(userId: widget.userr?.id ?? "");
+                        }
+                        safeState(() {
+                          nalodi = false;
+                        });
+                      } catch (shida) {
+                        safeState(() {
+                          nalodi = false;
+                        });
+                        mjumbe(shida.toString());
+                      }
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -299,94 +320,99 @@ class _MsajiliState extends State<Msajili> {
     );
   }
 
-  fomu(TextEditingController con, String hint) {
-    return TextField(
-      controller: con,
-      textCapitalization: TextCapitalization.sentences,
-      style: const TextStyle(fontSize: 16, color: Colors.white),
-      decoration: InputDecoration(
-        enabledBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white),
-        ),
-        hintText: hint,
-        hintStyle: const TextStyle(fontSize: 16, color: Colors.white),
-      ),
-    );
+  safeState(runnable) {
+    if (mounted) {
+      setState(() {
+        runnable();
+      });
+    }
   }
 
-  mcheckiFomu() {
-    if (jinafestCon.text.isEmpty) {
-      mjumbe('Jina la kwanza linahitajika');
+  bool izVally() {
+    if (selClrnc == null) {
+      showToast(isGood: false, msg: "Select clearence level");
       return false;
     }
-    if (jinalastCon.text.isEmpty) {
-      mjumbe('Jina la mwisho linahitajika');
-      return false;
-    }
-    if (baruapepeCon.text.isEmpty) {
-      mjumbe('Barua Pepe inahitajika');
-      return false;
-    }
-
-    if (nenoSiriCon.text.isEmpty) {
-      mjumbe('Andika neno siri');
-      return false;
-    }
-    if (nenoSiriConCon.text.isEmpty) {
-      mjumbe('Hakiki neno siri');
-      return false;
-    }
-    if (nenoSiriCon.text != nenoSiriConCon.text) {
-      mjumbe('Neno siri haliendani, Hakiki upya ili kuendelea');
+    if (phoneCon.text.isEmpty) {
+      showToast(isGood: false, msg: "Phone number is required");
       return false;
     }
     return true;
   }
 
-  Future<void> mratibuDeits() async {
-    var obj = FirebaseAuth.instance;
-    await kisajilishi.currentUser?.updateDisplayName(
-      '${jinafestCon.text} ${jinalastCon.text}',
+  buildPhone({mobileCont}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IntlPhoneField(
+          controller: mobileCont,
+          decoration: InputDecoration(
+            hintText: 'Phone Number',
+            filled: true,
+            fillColor: lqassgradBaseColor,
+            border: inputBorder,
+            focusedBorder: inputBorder,
+            enabledBorder: inputBorder,
+            disabledBorder: inputBorder,
+          ),
+          initialCountryCode: 'TZ',
+          onChanged: (phone) {
+            phnnumber = phone.completeNumber.replaceAll('+', '');
+          },
+        ),
+      ],
     );
-    await kisajilishi.currentUser?.updatePhotoURL(defImg);
-    //mwisho hapa
-    var picha = obj.currentUser?.photoURL;
+  }
+
+  Future<void> createDeits() async {
+    var obj = FirebaseAuth.instance;
     var userId = obj.currentUser?.uid;
     //process ya ku upload deits za yuza
     try {
       Userr userr = Userr(
-        id: '',
-        profileImage: picha ?? "",
-        firstName: jinafestCon.text,
-        lastName: jinalastCon.text,
-        couponCode: couponCodeCon.text,
-        phoneNumber: '',
-        email: baruapepeCon.text,
-        balance: 10000.0,
-        registrationDate: DateTime.now(),
-        lastLoginDate: DateTime.now(),
+        profileImage: "",
+        isActive: true,
+        firstName: jinafestCon.text.trim(),
+        lastName: jinalastCon.text.trim(),
+        phoneNumber: phnnumber,
+        email: baruapepeCon.text.trim(),
+        balance: 1000.0,
+        clearanceLevel: selClrnc,
+        registrationDate: DateTime.now().toIso8601String(),
+        lastLoginDate: DateTime.now().toIso8601String(),
       );
       await FirebaseFirestore.instance
           .collection(ucol)
           .doc(userId)
           .set(userr.kwendaJson(), SetOptions(merge: true));
+      showToast(isGood: true, msg: "User created successfully");
     } catch (shida) {
+      showToast(isGood: false, msg: "$shida");
+      debugPrint('shida ni: $shida');
+    }
+  }
+
+  Future<void> saveEdits({userId}) async {
+    try {
+      Userr userr = Userr(
+        firstName: jinafestCon.text.trim(),
+        lastName: jinalastCon.text.trim(),
+        phoneNumber: phnnumber,
+        clearanceLevel: selClrnc,
+      );
+      await FirebaseFirestore.instance
+          .collection(ucol)
+          .doc(userId)
+          .set(userr.kwendaJson(), SetOptions(merge: true));
+      showToast(isGood: true, msg: "Data saved successfully");
+    } catch (shida) {
+      showToast(isGood: false, msg: "$shida");
       debugPrint('shida ni: $shida');
     }
   }
 
   mjumbe(String ujumbe) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ujumbe)));
-  }
-
-  goOn() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const NavHost()),
-      (route) => false,
-    );
   }
 }
 

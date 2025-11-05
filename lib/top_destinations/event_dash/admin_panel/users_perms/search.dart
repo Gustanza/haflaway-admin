@@ -136,13 +136,13 @@ class _SearchResultsState extends State<SearchResults> {
               children: [
                 ListTile(
                   leading: CircleAvatar(
-                    backgroundImage: NetworkImage(userr.profileImage),
+                    backgroundImage: NetworkImage(userr.profileImage ?? ""),
                   ),
                   title: Text(
                     "${userr.firstName} ${userr.lastName}",
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  subtitle: Text(userr.email),
+                  subtitle: Text(userr.email ?? ""),
                 ),
                 Row(
                   children: [

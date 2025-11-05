@@ -159,6 +159,9 @@ class SelectTemplateState extends State<SelectTemplate> {
       showToast(isGood: false, msg: "Select template");
       return;
     }
+    return showPopap();
+
+    ///
     return await showCupertinoModalPopup(
       context: context,
       builder: (context) {
@@ -169,66 +172,109 @@ class SelectTemplateState extends State<SelectTemplate> {
           actions: [
             CupertinoActionSheetAction(
               isDefaultAction: true,
-              onPressed: () async {
-                List inviteesIds =
-                    widget.senderList.map((e) {
-                      return e.id;
-                    }).toList();
-                showProgress(context: context);
-                HttpService client = HttpService();
-                try {
-                  dynamic response;
-                  if (widget.isWhatsApp && groupValue != null) {
-                    var _url =
-                        widget.kardType == KardType.contribution
-                            ? sendWspContr
-                            : sendWspInv;
-                    response = await client.post(
-                      Uri.parse(_url),
-                      body: jsonEncode({
-                        "templateId": groupValue,
-                        "type": widget.campaignId,
-                        "eventId": widget.event.id,
-                        "attendeesIds": inviteesIds,
-                        "kardType": widget.kardType?.name,
-                      }),
-                    );
-                  } else if (wsapTemplate != null) {
-                    response = await client.post(
-                      Uri.parse(sendSMSrl),
-                      body: jsonEncode({
-                        "content": wsapTemplate?.content,
-                        "type": widget.campaignId,
-                        "eventId": widget.event.id,
-                        "attendeesIds": inviteesIds,
-                        "kardType": widget.kardType?.name,
-                      }),
-                    );
-                  }
-
-                  var res = jsonDecode(response.body);
-                  showSnack(
-                    context: context,
-                    isGood: true,
-                    msg: "${res['message']}",
-                  );
-                  popper();
-                } catch (e) {
-                  popper();
-                  showSnack(context: context, isGood: false, msg: "$e");
-                }
-                client.close();
-                popper();
-              },
+              onPressed: () {},
               child: Text("Complete Action"),
             ),
           ],
           cancelButton: CupertinoActionSheetAction(
             isDestructiveAction: true,
-            onPressed: () {
-              popper();
-            },
+            onPressed: () {},
             child: Text("Cancel Action"),
+          ),
+        );
+      },
+    );
+  }
+
+  showPopap() {
+    return showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadiusGeometry.only(
+          topLeft: Radius.circular(bmd),
+          topRight: Radius.circular(bmd),
+        ),
+      ),
+      builder: (context) {
+        return modalBtmSheet(
+          bdrdm: bmd,
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              const SizedBox(height: psm),
+              Text(
+                "Confirm Intent",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: fsm + 4,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: psm),
+              lqAssButton(
+                label: "Execute Action",
+                onPressed: () async {
+                  List inviteesIds =
+                      widget.senderList.map((e) {
+                        return e.id;
+                      }).toList();
+                  showProgress(context: context);
+                  HttpService client = HttpService();
+                  try {
+                    dynamic response;
+                    if (widget.isWhatsApp && groupValue != null) {
+                      var _url =
+                          widget.kardType == KardType.contribution
+                              ? sendWspContr
+                              : sendWspInv;
+                      response = await client.post(
+                        Uri.parse(_url),
+                        body: jsonEncode({
+                          "templateId": groupValue,
+                          "type": widget.campaignId,
+                          "eventId": widget.event.id,
+                          "attendeesIds": inviteesIds,
+                          "kardType": widget.kardType?.name,
+                        }),
+                      );
+                    } else if (wsapTemplate != null) {
+                      response = await client.post(
+                        Uri.parse(sendSMSrl),
+                        body: jsonEncode({
+                          "content": wsapTemplate?.content,
+                          "type": widget.campaignId,
+                          "eventId": widget.event.id,
+                          "attendeesIds": inviteesIds,
+                          "kardType": widget.kardType?.name,
+                        }),
+                      );
+                    }
+
+                    var res = jsonDecode(response.body);
+                    showSnack(
+                      context: context,
+                      isGood: true,
+                      msg: "${res['message']}",
+                    );
+                    popper();
+                  } catch (e) {
+                    popper();
+                    showSnack(context: context, isGood: false, msg: "$e");
+                  }
+                  client.close();
+                  popper();
+                },
+              ),
+              const SizedBox(height: spaceTiles),
+              lqAssButton(
+                label: "Cancel Action",
+                onPressed: () {
+                  popper();
+                },
+              ),
+              const SizedBox(height: psm),
+            ],
           ),
         );
       },

@@ -212,7 +212,7 @@ Widget buildListItemCard({
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           transform: Matrix4.identity()..scale(isHovered ? 1.02 : 1.0),
-          margin: const EdgeInsets.only(bottom: psm),
+          margin: const EdgeInsets.only(bottom: psm * 0.65),
           decoration: BoxDecoration(
             gradient: lqassgrad,
             borderRadius: BorderRadius.circular(bmd),
@@ -390,7 +390,7 @@ Widget buildGlassListItem({
     onTap: onTap,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: p20, vertical: psm),
-      margin: EdgeInsets.only(bottom: psm),
+      margin: EdgeInsets.only(bottom: psm * 0.65),
       decoration: BoxDecoration(
         gradient: secscagrad,
         borderRadius: BorderRadius.circular(bmd),

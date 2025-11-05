@@ -1,7 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:haflaway/models/attendee.dart';
-import 'package:haflaway/models/event.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:icons_plus/icons_plus.dart';
@@ -25,7 +24,7 @@ showProgress({context}) {
 }
 
 buildLoader() {
-  return const Center(child: CircularProgressIndicator());
+  return const Center(child: CupertinoActivityIndicator(radius: brsm));
 }
 
 buildErr() {
@@ -219,7 +218,8 @@ bldDrdDwn({
   DropdownMenuEntry? initialSelection,
 }) {
   return DropdownMenu(
-    label: Text("$lbl"),
+    hintText: "$lbl",
+    // label: Text("$lbl"),
     controller: controller,
     width: double.maxFinite,
     onSelected: onSelected,
@@ -290,68 +290,10 @@ Widget buildField({
 }
 
 validator({lbl, value}) {
-  switch (lbl) {
-    case cardart:
-      if (value.isEmpty) {
-        return "$cardart is required";
-      } else {
-        return null;
-      }
-    case cardname:
-      if (value.isEmpty) {
-        return "$cardname is required";
-      } else {
-        return null;
-      }
-    case cardprice:
-      if (value.isEmpty) {
-        return "$cardprice is required";
-      } else {
-        return null;
-      }
-    case cardcap:
-      if (value.isEmpty) {
-        return "$cardcap is required";
-      } else {
-        return null;
-      }
-
-    case cardcount:
-      if (value.isEmpty) {
-        return "$cardcount is required";
-      } else {
-        return null;
-      }
-    case cardchecks:
-      if (value.isEmpty) {
-        return "$cardchecks are required";
-      } else {
-        return null;
-      }
-
-    case atlblname:
-      if (value.isEmpty) {
-        return "$atlblname is required";
-      } else {
-        return null;
-      }
-
-    case atlblphone:
-      if (value.isEmpty) {
-        return "$atlblphone is required";
-      } else {
-        return null;
-      }
-
-    // case atlblemail:
-    //   if (value.isEmpty) {
-    //     return "$atlblemail is required";
-    //   } else {
-    //     return null;
-    //   }
-
-    default:
-      return null;
+  if (value.isEmpty) {
+    return "This field is required";
+  } else {
+    return null;
   }
 }
 

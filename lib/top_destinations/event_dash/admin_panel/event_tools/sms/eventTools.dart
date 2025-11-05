@@ -27,7 +27,6 @@ class _InRemState extends State<InRem> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       backgroundColor: scaback,
       appBar: appBar(
         title: "Handy Tools",
@@ -40,10 +39,15 @@ class _InRemState extends State<InRem> {
       ),
       body: Ccafold(
         child: ListView(
-          padding: paddPrime,
+          padding: EdgeInsets.only(
+            left: psm,
+            right: psm,
+            top: psm * 0.7,
+            bottom: psm,
+          ),
           children: [
             buildSectionHeader("Editor tools", Icons.edit_document, null),
-            const SizedBox(height: psm),
+            const SizedBox(height: spaceTiles),
             buildListItemCard(
               title: "Design & Configure Cards ",
               subtitle: "Set your invitation & other cards",
@@ -75,7 +79,7 @@ class _InRemState extends State<InRem> {
               },
             ),
             buildSectionHeader("WhatsApp tools", Icons.wechat_sharp, null),
-            const SizedBox(height: psm),
+            const SizedBox(height: spaceTiles),
             buildListItemCard(
               title: sendwinv,
               subtitle: "Invite people via WhatsApp protocol",
@@ -98,7 +102,6 @@ class _InRemState extends State<InRem> {
             buildListItemCard(
               title: "Ask people for contributions",
               subtitle: "Send instant contribution messages",
-
               icon: Clarity.chat_bubble_outline_badged,
               onTap: () {
                 Navigator.of(context).push(
@@ -117,7 +120,7 @@ class _InRemState extends State<InRem> {
             ),
             // SMS Tools
             buildSectionHeader("SMS tools", Icons.wechat_sharp, null),
-            const SizedBox(height: psm),
+            const SizedBox(height: spaceTiles),
             buildListItemCard(
               title: "Custom Invitation Campaigns",
               subtitle: "Enhance your event with campaings",

@@ -149,7 +149,7 @@ class _SplashScreenState extends State<SplashScreen>
       Userr userr = Userr.fromMap(userSnapshot.id, userSnapshot.data()!);
 
       // Check user status
-      if (!userr.isActive) {
+      if (!(userr.isActive ?? false)) {
         if (mounted) {
           navnReplace(context: context, widget: const AccessDenied());
         }
