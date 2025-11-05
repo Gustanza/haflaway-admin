@@ -520,8 +520,9 @@ class _CreateEventState extends State<CreateEvent> {
           description: fEventDescCon.text.trim(),
           eventPlanId: plan?.id ?? null,
           eventThumbnail: dwnURL,
-          location: fEventLocationCon.text.trim(),
           calendar: eventDays,
+          location: fEventLocationCon.text.trim(),
+          startDate: eventDays.first.eventDate.toIso8601String(),
         );
         batch.set(evRef, event.toMap(), SetOptions(merge: true));
         batch.commit();
