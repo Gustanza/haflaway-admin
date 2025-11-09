@@ -160,30 +160,6 @@ class SelectTemplateState extends State<SelectTemplate> {
       return;
     }
     return showPopap();
-
-    ///
-    return await showCupertinoModalPopup(
-      context: context,
-      builder: (context) {
-        return CupertinoActionSheet(
-          title: Text(
-            "Completing this action may cause a significant impact on your wallet's current balance, please be sure before tapping anymore stuff",
-          ),
-          actions: [
-            CupertinoActionSheetAction(
-              isDefaultAction: true,
-              onPressed: () {},
-              child: Text("Complete Action"),
-            ),
-          ],
-          cancelButton: CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () {},
-            child: Text("Cancel Action"),
-          ),
-        );
-      },
-    );
   }
 
   showPopap() {
@@ -250,7 +226,6 @@ class SelectTemplateState extends State<SelectTemplate> {
                         }),
                       );
                     }
-
                     var res = jsonDecode(response.body);
                     showSnack(
                       context: context,
