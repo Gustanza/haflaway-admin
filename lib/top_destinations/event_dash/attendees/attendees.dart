@@ -587,191 +587,219 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         setState(() {});
       },
       child: Container(
-        margin: EdgeInsets.only(left: psm, right: psm, bottom: psm * 0.75),
+        margin: EdgeInsets.only(left: psm, right: psm, bottom: psm * 0.5),
         decoration: BoxDecoration(
           gradient: lqassgrad,
           border:
               !hasKey
                   ? lqassbdr
                   : Border.all(color: Colors.redAccent, width: bdrWidthGen),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Container(
-          padding: EdgeInsets.all(psm),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: EdgeInsets.all(psm * 0.625),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              // Top row: Avatar, Name, Actions
               Row(
                 children: [
-                  // first child
+                  // Avatar with message badge
                   Stack(
+                    clipBehavior: Clip.none,
                     children: [
                       Hero(
                         tag: "avatar-${attendee.id}",
                         child: Container(
-                          width: 50,
-                          height: 50,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.25),
                             shape: BoxShape.circle,
                           ),
-                          child: Center(
-                            child: Icon(
-                              size: 28,
-                              Icons.account_circle,
-                              color: Colors.white.withValues(alpha: 0.5),
-                            ),
+                          child: Icon(
+                            Icons.account_circle,
+                            size: 24,
+                            color: Colors.white.withValues(alpha: 0.5),
                           ),
                         ),
                       ),
                       if (messageCount > 0)
                         Positioned(
-                          top: 0,
-                          right: 0,
+                          top: -2,
+                          right: -2,
                           child: Container(
-                            padding: const EdgeInsets.all(4),
+                            padding: EdgeInsets.all(messageCount > 9 ? 3 : 4),
                             decoration: BoxDecoration(
                               color: Colors.red,
                               shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 2,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
                             ),
                             constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
+                              minWidth: 14,
+                              minHeight: 14,
                             ),
-                            child: Center(
-                              child: Text(
-                                messageCount > 99 ? "99+" : "$messageCount",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            child: Text(
+                              messageCount > 99 ? "99+" : "$messageCount",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                                height: 1,
                               ),
                             ),
                           ),
                         ),
                     ],
                   ),
-                  // second child
-                  const SizedBox(width: psm),
+                  SizedBox(width: psm * 0.5),
+                  // Name and info
                   Expanded(
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
+                        Text(
+                          fullname,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: fsm + 1,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: psm * 0.25),
+                        // Card name and phone in compact row
                         Row(
                           children: [
+                            Icon(
+                              Icons.event,
+                              size: 12,
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
+                            SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                fullname,
+                                crdnm,
                                 style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: fsm + 2,
+                                  fontSize: fsm - 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  color: Colors.white.withValues(alpha: 0.85),
                                 ),
+                                maxLines: 1,
+                              ),
+                            ),
+                            SizedBox(width: psm * 0.375),
+                            Icon(
+                              Clarity.mobile_phone_line,
+                              size: 12,
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
+                            SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                attendee.phone,
+                                style: TextStyle(
+                                  fontSize: fsm - 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                ),
+                                maxLines: 1,
                               ),
                             ),
                           ],
                         ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.event, size: 16),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    crdnm,
-                                    style: TextStyle(
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
-                                // const SizedBox(width: psm * 2),
-                                TextButton(
-                                  onPressed: () {
-                                    var vcrd =
-                                        attendee.cards[widget.kardType.name];
-                                    if (vcrd != null) {
-                                      AttributeCard attrCrd =
-                                          AttributeCard.fromMap(map: vcrd);
-                                      try {
-                                        launchUrl(Uri.parse(attrCrd.url ?? ""));
-                                      } catch (e) {
-                                        showToast(isGood: false, msg: "$e");
-                                      }
-                                    } else {
-                                      showToast(
-                                        isGood: false,
-                                        msg: "Unable to View",
-                                      );
-                                    }
-                                  },
-                                  child: Icon(
-                                    Clarity.eye_show_line,
-                                    size: icnmd,
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            Row(
-                              children: [
-                                Icon(Clarity.mobile_phone_line, size: 16),
-                                const SizedBox(width: 4),
-                                Text(
-                                  attendee.phone,
-                                  style: TextStyle(
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(width: psm * 2),
-                                Transform.scale(
-                                  scale: 0.75,
-                                  child: IconButton.outlined(
-                                    onPressed: () {
-                                      callNumber(attendee.phone);
-                                    },
-                                    icon: const Icon(Icons.call, size: icnsm),
-                                  ),
-                                ),
-                                Transform.scale(
-                                  scale: 0.75,
-                                  child: IconButton.outlined(
-                                    onPressed: () async {
-                                      await Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) {
-                                            return CreateAttendees(
-                                              event: widget.edata,
-                                              kardType: widget.kardType,
-                                              attendee: attendee,
-                                            );
-                                          },
-                                        ),
-                                      );
-                                      _loadAttendees();
-                                    },
-                                    icon: const Icon(Icons.edit, size: icnsm),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: psm * 0.5),
                       ],
                     ),
                   ),
+                  // Action buttons - compact
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // View card button
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            var vcrd = attendee.cards[widget.kardType.name];
+                            if (vcrd != null) {
+                              AttributeCard attrCrd = AttributeCard.fromMap(
+                                map: vcrd,
+                              );
+                              try {
+                                launchUrl(Uri.parse(attrCrd.url ?? ""));
+                              } catch (e) {
+                                showToast(isGood: false, msg: "$e");
+                              }
+                            } else {
+                              showToast(isGood: false, msg: "Unable to View");
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(6),
+                          child: Padding(
+                            padding: EdgeInsets.all(6),
+                            child: Icon(
+                              Clarity.eye_show_line,
+                              size: icnsm + 2,
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Call button
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => callNumber(attendee.phone),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Padding(
+                            padding: EdgeInsets.all(6),
+                            child: Icon(
+                              Icons.call,
+                              size: icnsm + 2,
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Edit button
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return CreateAttendees(
+                                    event: widget.edata,
+                                    kardType: widget.kardType,
+                                    attendee: attendee,
+                                  );
+                                },
+                              ),
+                            );
+                            _loadAttendees();
+                          },
+                          borderRadius: BorderRadius.circular(6),
+                          child: Padding(
+                            padding: EdgeInsets.all(6),
+                            child: Icon(
+                              Icons.edit,
+                              size: icnsm + 2,
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
-
+              SizedBox(height: psm * 0.5),
+              // Attendance controls - compact
               _buildAttendanceControls(attendee),
             ],
           ),
@@ -783,17 +811,20 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   // Build attendance controls
   Widget _buildAttendanceControls(Attendee attendee) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: psm * 0.5,
+        vertical: psm * 0.375,
+      ),
       decoration: BoxDecoration(
-        gradient: lqassgrad,
-        border: lqassbdr,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.15),
+          width: 1,
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildStatusButton(
             attendee,
@@ -802,7 +833,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             Colors.green,
             attendee.attendanceStatus == atconfstate,
           ),
-          const SizedBox(width: 8),
           _buildStatusButton(
             attendee,
             atnotconfstate,
@@ -811,7 +841,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             attendee.attendanceStatus == atnotconfstate ||
                 attendee.attendanceStatus == null,
           ),
-          const SizedBox(width: 8),
           _buildStatusButton(
             attendee,
             atdeclstate,
@@ -819,7 +848,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             Colors.red,
             attendee.attendanceStatus == atdeclstate,
           ),
-          const SizedBox(width: 8),
           _buildStatusButton(
             attendee,
             atcallstate,
@@ -827,12 +855,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             Colors.teal,
             attendee.attendanceStatus == atcallstate,
           ),
-          const SizedBox(width: 8),
           _buildStatusButton(
             attendee,
             atunreachablestate,
             Icons.cloud_off_outlined,
-            Colors.red,
+            Colors.orange,
             attendee.attendanceStatus == atunreachablestate,
           ),
         ],
@@ -848,33 +875,29 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     Color color,
     bool isActive,
   ) {
-    return InkWell(
-      onTap: () {
-        // Vibrate for haptic feedback
-        HapticFeedback.mediumImpact();
-        _updateAttendanceStatus(attendee, status);
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive ? color : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 16, color: isActive ? Colors.white : color),
-            if (isActive) const SizedBox(width: 4),
-            if (isActive)
-              Text(
-                status,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-          ],
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          _updateAttendanceStatus(attendee, status);
+        },
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: psm * 0.375),
+          margin: EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: isActive ? color : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isActive ? color : color.withValues(alpha: 0.3),
+              width: isActive ? 1.5 : 1,
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 16,
+            color: isActive ? Colors.white : color.withValues(alpha: 0.7),
+          ),
         ),
       ),
     );
