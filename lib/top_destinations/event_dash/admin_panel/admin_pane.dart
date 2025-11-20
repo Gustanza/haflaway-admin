@@ -180,54 +180,95 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                     onTap:
                         () => Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => InRem(event: widget.eventO),
+                            builder:
+                                (context) => EventTools(event: widget.eventO),
                           ),
                         ),
                   ),
 
-                  buildGlassListItem(
-                    title: "Invitations Manager",
-                    subtitle: "Create & Manage Invitations",
-                    icon: Clarity.user_solid,
-                    gradient: [
-                      const Color(0xFF2196F3),
-                      const Color(0xFF1976D2),
+                  buildActionItem(
+                    title: "Invitations",
+                    children: [
+                      ActionItem(
+                        figure: "0",
+                        icon: Clarity.printer_line,
+                        subtitle: "Printed Order",
+                        onPressed: () {},
+                      ),
+                      ActionItem(
+                        figure: "16",
+                        icon: Clarity.email_line,
+                        subtitle: "Digital Issued",
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => Attendees(
+                                    edata: widget.eventO,
+                                    kardType: KardType.invitation,
+                                  ),
+                            ),
+                          );
+                        },
+                      ),
                     ],
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (context) => Attendees(
-                                edata: widget.eventO,
-                                kardType: KardType.invitation,
-                              ),
-                        ),
-                      );
-                    },
                   ),
-
-                  buildGlassListItem(
-                    title: "Contributors Manager",
-                    subtitle: "Create & Manage Contributors",
-                    icon: Clarity.coin_bag_solid,
-                    gradient: [
-                      const Color.fromARGB(255, 243, 33, 100),
-                      const Color.fromARGB(255, 243, 33, 100),
+                  const SizedBox(height: spaceTiles),
+                  buildActionItem(
+                    title: "Contacts",
+                    children: [
+                      ActionItem(
+                        figure: "0",
+                        icon: Clarity.printer_line,
+                        subtitle: "Printed Order",
+                        onPressed: () {},
+                      ),
+                      ActionItem(
+                        figure: "16",
+                        icon: Clarity.users_line,
+                        subtitle: "People reached",
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => Attendees(
+                                    edata: widget.eventO,
+                                    title: "Contributors",
+                                    kardType: KardType.contribution,
+                                  ),
+                            ),
+                          );
+                        },
+                      ),
                     ],
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (context) => Attendees(
-                                edata: widget.eventO,
-                                title: "Contributors",
-                                kardType: KardType.contribution,
-                              ),
-                        ),
-                      );
-                    },
                   ),
-
+                  const SizedBox(height: spaceTiles),
+                  buildActionItem(
+                    title: "Team Management",
+                    children: [
+                      ActionItem(
+                        figure: "0",
+                        icon: Clarity.printer_line,
+                        subtitle: "Total Scanners",
+                        onPressed: () {},
+                      ),
+                      ActionItem(
+                        figure: "16",
+                        icon: Clarity.users_line,
+                        subtitle: "Total Admins",
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      Users(eId: widget.eventO.id ?? ""),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: spaceTiles),
                   buildGlassListItem(
                     title: "Scan & Verify Cards",
                     subtitle: "Ensure Authenticity of Cards",
@@ -241,23 +282,6 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                         ),
                       );
                     },
-                  ),
-
-                  buildGlassListItem(
-                    title: "Team Management",
-                    subtitle: "Manage staff permissions",
-                    icon: Clarity.user_solid_alerted,
-                    gradient: [
-                      const Color(0xFFFF9800),
-                      const Color(0xFFF57C00),
-                    ],
-                    onTap:
-                        () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder:
-                                (context) => Users(eId: widget.eventO.id ?? ""),
-                          ),
-                        ),
                   ),
                 ],
               ),

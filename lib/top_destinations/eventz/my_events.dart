@@ -47,7 +47,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
 
   void _scrollListener() {
     if (scrollController.position.pixels >=
-        scrollController.position.maxScrollExtent - 20) {
+        scrollController.position.maxScrollExtent - 40) {
       if (!isLoading) {
         loadMoreEvents();
       }
@@ -62,7 +62,6 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       QuerySnapshot<Map<String, dynamic>> res =
           await firestore
               .collection(ecol)
-              .where(eadminsIds, arrayContains: uid)
               .orderBy('startDate', descending: true)
               .limit(pageSize)
               .get();
@@ -87,7 +86,6 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       QuerySnapshot<Map<String, dynamic>> res =
           await firestore
               .collection(ecol)
-              .where(eadminsIds, arrayContains: uid)
               .orderBy('startDate', descending: true)
               .startAfterDocument(lastEvent!)
               .limit(pageSize)
@@ -157,52 +155,61 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
           ],
         ),
       ),
-      body: Ccafold(
-        child:
-            events.isEmpty && isLoading
-                ? buildLoader()
-                : events.isEmpty && !isLoading
-                ? BuildNoDt(
-                  string: "No Events Found",
-                  isRefreshed: () async {
-                    await loadEvents();
-                  },
-                )
-                : ListView.builder(
-                  itemCount: events.length + 1,
-                  controller: scrollController,
-                  padding: const EdgeInsets.only(
-                    left: psm,
-                    right: psm,
-                    top: psm,
-                  ),
-                  itemBuilder: (context, index) {
-                    if (index == events.length && isLoading) {
-                      return Padding(
-                        padding: EdgeInsetsGeometry.all(psm),
-                        child: Center(child: CupertinoActivityIndicator()),
-                      );
-                    } else if (index == events.length && !isLoading) {
-                      return const SizedBox.shrink();
-                    }
-                    var evlvl = events[index].categoryLevel;
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await loadEvents();
+        },
+        child: Ccafold(
+          child:
+              events.isEmpty && isLoading
+                  ? buildLoader()
+                  : events.isEmpty && !isLoading
+                  ? BuildNoDt(
+                    string: "No Events Found",
+                    isRefreshed: () async {
+                      await loadEvents();
+                    },
+                  )
+                  : ListView.builder(
+                    itemCount: events.length + 1,
+                    controller: scrollController,
+                    padding: const EdgeInsets.only(
+                      left: psm,
+                      right: psm,
+                      top: psm,
+                    ),
+                    itemBuilder: (context, index) {
+                      if (index == events.length && isLoading) {
+                        return Padding(
+                          padding: EdgeInsetsGeometry.all(psm),
+                          child: Center(child: CupertinoActivityIndicator()),
+                        );
+                      } else if (index == events.length && !isLoading) {
+                        return const SizedBox.shrink();
+                      }
+                      var evlvl = events[index].categoryLevel;
 
-                    return GestureDetector(
-                      onTap: () {
-                        if (evlvl == '0') {
-                          navNormal(
-                            context: context,
-                            widget: AdminPanel(
-                              isAdmin: true,
-                              eventO: events[index],
-                            ),
-                          );
-                        }
-                      },
-                      child: EventTile(eventData: events[index]),
-                    );
-                  },
-                ),
+                      return GestureDetector(
+                        onTap: () async {
+                          if (evlvl == '0') {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return AdminPanel(
+                                    isAdmin: true,
+                                    eventO: events[index],
+                                  );
+                                },
+                              ),
+                            );
+                            loadEvents();
+                          }
+                        },
+                        child: EventTile(eventData: events[index]),
+                      );
+                    },
+                  ),
+        ),
       ),
     );
   }

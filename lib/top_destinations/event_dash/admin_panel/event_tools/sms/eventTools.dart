@@ -8,22 +8,22 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/whatsApp/wsp_host.dart';
 import 'package:haflaway/utils/colors.dart';
-import 'package:haflaway/utils/constants.dart';
+import 'package:haflaway/utils/styles.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/cards/cards.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/strings.dart';
 
-class InRem extends StatefulWidget {
+class EventTools extends StatefulWidget {
   final Event event;
-  const InRem({super.key, required this.event});
+  const EventTools({super.key, required this.event});
 
   @override
-  State<InRem> createState() => _InRemState();
+  State<EventTools> createState() => _EventToolsState();
 }
 
-class _InRemState extends State<InRem> {
+class _EventToolsState extends State<EventTools> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,117 +46,173 @@ class _InRemState extends State<InRem> {
             bottom: psm,
           ),
           children: [
-            buildSectionHeader("Editor tools", Icons.edit_document, null),
+            const SizedBox(height: psm * 0.25),
+            buildActionItem(
+              title: "Designers",
+              children: [
+                ActionItem(
+                  figure: "1",
+                  icon: Icons.card_giftcard,
+                  subtitle: "Card Templates",
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return Cards(eId: widget.event.id ?? "");
+                        },
+                      ),
+                    );
+                  },
+                ),
+                ActionItem(
+                  figure: "2",
+                  icon: Icons.sms,
+                  subtitle: "SMS Templates",
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return InvEditor(eId: widget.event.id ?? "");
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: spaceTiles),
-            buildListItemCard(
-              title: "Design & Configure Cards ",
-              subtitle: "Set your invitation & other cards",
-              icon: Clarity.design_line,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return Cards(eId: widget.event.id ?? "");
-                    },
-                  ),
-                );
-              },
+            buildActionItem(
+              title: "Save the Dates",
+              children: [
+                ActionItem(
+                  figure: "0",
+                  icon: Icons.notifications_active,
+                  subtitle: "Printed Order",
+                  onPressed: () {},
+                ),
+                ActionItem(
+                  figure: "16",
+                  icon: Icons.notifications_on,
+                  subtitle: "Digital Sent",
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return WInvHost(
+                            title: "Issue Cards",
+                            event: widget.event,
+                            campaignId: svdtCampId,
+                            kardType: KardType.invitation,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-
-            buildListItemCard(
-              title: "Compose SMS Templates",
-              subtitle: "Easy customization of messages",
-
-              icon: Clarity.chat_bubble_line,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return InvEditor(eId: widget.event.id ?? "");
-                    },
-                  ),
-                );
-              },
-            ),
-            buildSectionHeader("WhatsApp tools", Icons.wechat_sharp, null),
             const SizedBox(height: spaceTiles),
-            buildListItemCard(
-              title: sendwinv,
-              subtitle: "Invite people via WhatsApp protocol",
-
-              icon: Clarity.chat_bubble_outline_badged,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return WInvHost(
-                        kardType: KardType.invitation,
-                        event: widget.event,
-                        campaignId: invCampId,
-                      );
-                    },
-                  ),
-                );
-              },
+            buildActionItem(
+              title: "Invitations",
+              children: [
+                ActionItem(
+                  figure: "0",
+                  icon: Icons.people,
+                  subtitle: "Printed Order",
+                  onPressed: () {},
+                ),
+                ActionItem(
+                  figure: "10",
+                  icon: Icons.mark_email_read,
+                  subtitle: "Digital Sent",
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return WInvHost(
+                            kardType: KardType.invitation,
+                            event: widget.event,
+                            campaignId: invCampId,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-            buildListItemCard(
-              title: "Ask people for contributions",
-              subtitle: "Send instant contribution messages",
-              icon: Clarity.chat_bubble_outline_badged,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return WInvHost(
-                        title: "Issue Cards",
-                        event: widget.event,
-                        campaignId: contrCampId,
-                        kardType: KardType.contribution,
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-            // SMS Tools
-            buildSectionHeader("SMS tools", Icons.wechat_sharp, null),
             const SizedBox(height: spaceTiles),
-            buildListItemCard(
-              title: "Custom Invitation Campaigns",
-              subtitle: "Enhance your event with campaings",
-              icon: Clarity.users_outline_badged,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return AdminCampaigns(
-                        event: widget.event,
-                        title: "Invitation Campaigns",
-                        kardType: KardType.invitation,
-                      );
-                    },
-                  ),
-                );
-              },
+            buildActionItem(
+              title: "Contributions",
+              children: [
+                ActionItem(
+                  figure: "0",
+                  icon: Icons.people,
+                  subtitle: "Physical Outreach",
+                  onPressed: () {},
+                ),
+                ActionItem(
+                  figure: "10",
+                  icon: Icons.email,
+                  subtitle: "Digital Outreach",
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return WInvHost(
+                            title: "Issue Cards",
+                            event: widget.event,
+                            campaignId: contrCampId,
+                            kardType: KardType.contribution,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-            // const SizedBox(height: psm),
-            buildListItemCard(
-              title: "Custom Contribution Campaigns",
-              subtitle: "Enhance your event with campaings",
-              icon: Clarity.users_outline_badged,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return AdminCampaigns(
-                        event: widget.event,
-                        title: "Contribution Campaigns",
-                        kardType: KardType.contribution,
-                      );
-                    },
-                  ),
-                );
-              },
+            const SizedBox(height: spaceTiles),
+            buildActionItem(
+              title: "SMS Campaigns",
+              children: [
+                ActionItem(
+                  figure: "0",
+                  icon: Icons.sms,
+                  subtitle: "Invitation Campaigns",
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return AdminCampaigns(
+                            event: widget.event,
+                            title: "Invitation Campaigns",
+                            kardType: KardType.invitation,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+                ActionItem(
+                  figure: "10",
+                  icon: Icons.sms,
+                  subtitle: "Contribution Campaigns",
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return AdminCampaigns(
+                            event: widget.event,
+                            title: "Contribution Campaigns",
+                            kardType: KardType.contribution,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ],
         ),

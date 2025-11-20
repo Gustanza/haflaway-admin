@@ -14,6 +14,11 @@ const sendWspContr =
 // const sendWspContr =
 //     "http://$lokol:5001/haflaway-f14aa/us-central1/sendWhatsAppContributionMessages";
 
+const sendWspSvDt =
+    "https://sendwhatsappcontributionmessages-frbu33fema-uc.a.run.app";
+// const sendWspContr =
+//     "http://$lokol:5001/haflaway-f14aa/us-central1/sendWhatsAppContributionMessages";
+
 const sendSMSrl = "https://sendsmsaction-frbu33fema-uc.a.run.app";
 // const sendSMSrl = "http://$lokol:5001/haflaway-f14aa/us-central1/sendSMSAction";
 
