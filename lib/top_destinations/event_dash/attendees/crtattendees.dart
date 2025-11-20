@@ -6,6 +6,7 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/hfhttp/clientelle.dart';
+import 'package:haflaway/utils/attstates.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:haflaway/models/attendee.dart';
@@ -227,6 +228,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
           checkinStatus: chk,
           createdAt: DateTime.now(),
           fullName: ncont.text.trim(),
+          attendanceStatus: atnotconfstate,
           phone: phnnumber.replaceAll('+', ''),
           cards: {},
         );

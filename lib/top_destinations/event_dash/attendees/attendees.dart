@@ -15,6 +15,7 @@ import 'package:haflaway/top_destinations/event_dash/attendees/crtattendees.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/utils/attstates.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:icons_plus/icons_plus.dart';
@@ -61,13 +62,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   FirebaseAuth auth = FirebaseAuth.instance;
   // Attendance status filters
   String _attendanceFilter = "All";
-  final List<String> _filters = [
-    "All",
-    "Confirmed",
-    "Not Confirmed",
-    "Declined",
-    "Call Made",
-  ];
+  final List<String> _filters = atStatesList;
 
   // Pagination variables
   final int pageSize = 20;
@@ -802,35 +797,43 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         children: [
           _buildStatusButton(
             attendee,
-            "Confirmed",
+            atconfstate,
             Icons.check_circle,
             Colors.green,
-            attendee.attendanceStatus == "Confirmed",
+            attendee.attendanceStatus == atconfstate,
           ),
           const SizedBox(width: 8),
           _buildStatusButton(
             attendee,
-            "Not Confirmed",
+            atnotconfstate,
             Icons.schedule,
             Colors.grey,
-            attendee.attendanceStatus == "Not Confirmed" ||
+            attendee.attendanceStatus == atnotconfstate ||
                 attendee.attendanceStatus == null,
           ),
           const SizedBox(width: 8),
           _buildStatusButton(
             attendee,
-            "Declined",
+            atdeclstate,
             Icons.cancel,
             Colors.red,
-            attendee.attendanceStatus == "Declined",
+            attendee.attendanceStatus == atdeclstate,
           ),
           const SizedBox(width: 8),
           _buildStatusButton(
             attendee,
-            "Call Made",
+            atcallstate,
             Icons.call_made,
             Colors.teal,
-            attendee.attendanceStatus == "Call Made",
+            attendee.attendanceStatus == atcallstate,
+          ),
+          const SizedBox(width: 8),
+          _buildStatusButton(
+            attendee,
+            atunreachablestate,
+            Icons.cloud_off_outlined,
+            Colors.red,
+            attendee.attendanceStatus == atunreachablestate,
           ),
         ],
       ),
