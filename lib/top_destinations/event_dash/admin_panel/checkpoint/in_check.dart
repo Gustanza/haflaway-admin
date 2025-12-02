@@ -3,6 +3,7 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/templates.dart' hide buildActionButton;
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/components/searchAtt.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/scancheck.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -56,7 +57,7 @@ class InCheckWrapper extends StatelessWidget {
             acIds: acIds,
           );
         } else if (snapshots.hasError) {
-          return buildErrorState();
+          return buildErrorView();
         } else {
           return buildShimmerLoader();
         }
@@ -96,13 +97,25 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
         backgroundColor: scaback,
         appBar: appBar(
           title: "Checkins",
-          leading: buildActionButton(
+          leading: appBarActionButton(
             icon: Icons.arrow_back,
             onTap: () {
               Navigator.of(context).pop();
             },
           ),
-          actions: buildActionButton(icon: Icons.bar_chart, onTap: () {}),
+          actions: appBarActionButton(
+            icon: Icons.search,
+            onTap: () {
+              showSearch(
+                context: context,
+                delegate: CheckPnSearchDelegate(
+                  eId: widget.eId,
+                  kardType: KardType.invitation,
+                  checkpnId: widget.checkpoint.id,
+                ),
+              );
+            },
+          ),
         ),
         floatingActionButton: Column(
           mainAxisSize: MainAxisSize.min,
@@ -239,7 +252,7 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
         }
 
         if (snapshot.hasError) {
-          return buildErrorState();
+          return buildErrorView();
         } else {
           return buildListShimmer();
         }

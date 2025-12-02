@@ -63,62 +63,69 @@ const cardcap = 'Card Capacity';
 /* create card strings */
 
 class Event {
-  String id;
-  String title;
-  String authorId;
-  List adminsIds;
-  List usersIds;
-  String status;
-  String categoryId;
-  String categoryLevel;
-  DateTime createdAt;
-  DateTime updatedAt;
-  String description;
-  String eventPlanId;
-  String eventThumbnail;
-  String location;
-  String supportPhone;
-  List<EventCalendar> calendar;
+  String? id;
+  bool? usepng;
+  String? title;
+  String? authorId;
+  List? adminsIds;
+  List? usersIds;
+  String? status;
+  String? categoryId;
+  String? categoryLevel;
+  DateTime? createdAt;
+  DateTime? updatedAt;
+  String? description;
+  String? eventPlanId;
+  String? eventThumbnail;
+  String? location;
+  String? supportPhone;
+  String? startDate;
+  List<EventCalendar>? calendar;
 
   Event({
-    required this.id,
-    required this.title,
-    required this.authorId,
-    required this.adminsIds,
-    required this.usersIds,
-    required this.categoryId,
-    required this.categoryLevel,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.description,
-    required this.eventPlanId,
-    required this.eventThumbnail,
-    required this.location,
-    required this.status,
-    required this.supportPhone,
+    this.id,
+    this.title,
+    this.authorId,
+    this.adminsIds,
+    this.usersIds,
+    this.categoryId,
+    this.categoryLevel,
+    this.createdAt,
+    this.updatedAt,
+    this.description,
+    this.eventPlanId,
+    this.eventThumbnail,
+    this.location,
+    this.status,
+    this.supportPhone,
+    this.usepng = true,
+    this.startDate,
     this.calendar = const [],
   });
 
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'title': title,
-    'authorId': authorId,
-    'adminsIds': adminsIds,
-    'usersIds': usersIds,
-    'categoryId': categoryId,
-    'categoryLevel': categoryLevel,
-    'createdAt': createdAt.toIso8601String(),
-    'updatedAt': updatedAt.toIso8601String(),
-    'description': description,
-    'eventPlanId': eventPlanId,
-    'eventThumbnail': eventThumbnail,
-    'location': location,
-    'status': status,
-    'supportPhone': supportPhone,
-    'calendar':
-        calendar.map((e) {
-          return e.toMap();
-        }).toList(),
+    if (id != null) 'id': id,
+    if (title != null) 'title': title,
+    if (authorId != null) 'authorId': authorId,
+    if (adminsIds != null) 'adminsIds': adminsIds,
+    if (usersIds != null) 'usersIds': usersIds,
+    if (categoryId != null) 'categoryId': categoryId,
+    if (categoryLevel != null) 'categoryLevel': categoryLevel,
+    if (createdAt != null) 'createdAt': createdAt?.toIso8601String(),
+    if (updatedAt != null) 'updatedAt': updatedAt?.toIso8601String(),
+    if (description != null) 'description': description,
+    if (eventPlanId != null) 'eventPlanId': eventPlanId,
+    if (eventThumbnail != null) 'eventThumbnail': eventThumbnail,
+    if (location != null) 'location': location,
+    if (status != null) 'status': status,
+    if (usepng != null) 'usepng': usepng,
+    if (supportPhone != null) 'supportPhone': supportPhone,
+    if (startDate != null) 'startDate': startDate,
+    if (calendar != null)
+      'calendar':
+          calendar?.map((e) {
+            return e.toMap();
+          }).toList(),
   };
 
   factory Event.fromMap(String id, Map<String, dynamic> map) {
@@ -138,6 +145,8 @@ class Event {
       eventPlanId: map['eventPlanId'] ?? '',
       eventThumbnail: map['eventThumbnail'] ?? '',
       location: map['location'] ?? '',
+      usepng: map['usepng'] ?? true,
+      startDate: map['startDate'] ?? DateTime(1990).toIso8601String(),
       calendar:
           map['calendar'].map<EventCalendar>((e) {
             return EventCalendar.fromMap(e);

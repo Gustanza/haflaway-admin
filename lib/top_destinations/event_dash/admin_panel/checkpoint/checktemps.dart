@@ -65,7 +65,7 @@ Widget buildNoDataView(String message) {
   );
 }
 
-Widget buildErrorState({onPressed}) {
+Widget buildErrorView({onPressed}) {
   return Center(
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -97,8 +97,8 @@ Widget buildErrorState({onPressed}) {
 
 Widget buildListShimmer() {
   return Shimmer.fromColors(
-    baseColor: Colors.grey[300]!,
-    highlightColor: Colors.grey[100]!,
+    baseColor: lqassgradBaseColor,
+    highlightColor: lqassbdrColor!,
     child: ListView.builder(
       padding: const EdgeInsets.all(psm),
       itemCount: 6,
@@ -123,14 +123,14 @@ Widget buildShimmerLoader() {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(height: kToolbarHeight * 2, color: Colors.white),
+        Container(height: kToolbarHeight * 2, color: lqassgradBaseColor),
         const SizedBox(height: 16),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: psm),
           child: Container(
             height: 100,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: lqassgradBaseColor,
               borderRadius: BorderRadius.circular(16),
             ),
           ),
@@ -145,7 +145,7 @@ Widget buildShimmerLoader() {
                 margin: const EdgeInsets.only(bottom: 12),
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: lqassgradBaseColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
               );
@@ -172,10 +172,15 @@ class PinPutty extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: psm * 2),
           child: ClipRRect(
+            borderRadius: BorderRadiusGeometry.circular(bmd),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Card(
+              child: Material(
                 color: lqassgradBaseColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(bmd),
+                  side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: psm,
@@ -224,6 +229,7 @@ class PinPutty extends StatelessWidget {
                           bool isGreen = gkey.currentState?.validate() ?? false;
                           if (isGreen) {
                             String attId = controller.text;
+                            Navigator.of(context).pop();
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (context) {

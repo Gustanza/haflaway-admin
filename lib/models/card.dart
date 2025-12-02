@@ -134,6 +134,7 @@ class CardConfig {
 
   Map<String, dynamic> toMap() {
     return {
+      if (id != null) "id": id,
       'type': type,
       'clearAt': clearAt,
       'eventId': eventId,

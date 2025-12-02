@@ -16,12 +16,11 @@ const atlblemail = "Email of Attendee (Optional)";
 /* pop-options */
 List atActnlist({required KardType kardType}) {
   return [
-    // atActnDwn,
-    // atActnSelAll,
+    atActnSelAll,
     atActnCrt,
-    // atActnImprtFile,
-    // if (kardType == KardType.invitation) atActnImprtCont,
-    // atActnDel,
+    atActnImprtFile,
+    if (kardType == KardType.invitation) atActnImprtCont,
+    atActnDel,
   ];
 }
 
@@ -43,6 +42,7 @@ class Attendee {
   String? attendanceStatus;
   String phone;
   Map messages;
+  String idComment;
   Attendee({
     this.id,
     required this.cards,
@@ -55,14 +55,12 @@ class Attendee {
     required this.fullName,
     required this.phone,
     this.attendanceStatus,
+    this.idComment = 'No Comment',
     required this.messages,
   });
 
   Map<String, dynamic> toMap() => {
-    // "id": id,
-    // "cardId": cardId,
-    // "cardName": cardName,
-    // "cardUrl": cardUrl,
+    if (id != null) "id": id,
     "cards": cards,
     "checkinStatus": checkinStatus,
     "createdAt": createdAt.toIso8601String(),
@@ -70,6 +68,7 @@ class Attendee {
     "fullName": fullName,
     "phone": phone,
     "messages": messages,
+    "idComment": idComment,
     "attendanceStatus": attendanceStatus,
   };
 
@@ -86,7 +85,8 @@ class Attendee {
       fullName: map['fullName'] ?? "",
       phone: map['phone'] ?? "",
       messages: map['messages'] ?? {},
-      attendanceStatus: map['attendanceStatus'] ?? "Pending",
+      idComment: map['idComment'] ?? "No Comment",
+      attendanceStatus: map['attendanceStatus'] ?? "Not Confirmed",
     );
   }
 }

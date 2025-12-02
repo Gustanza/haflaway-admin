@@ -3,99 +3,140 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
-import 'package:haflaway/components/templates.dart' hide buildActionButton;
+import 'package:haflaway/components/templates.dart';
+import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/playground/index.dart';
-import 'package:haflaway/providers/balance_provider.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
+import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/dimensions.dart';
+import 'package:haflaway/utils/globalwids.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
-import 'package:haflaway/top_destinations/event_dash/attendess/attendees.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/eventTools.dart';
-import 'package:provider/provider.dart';
+import 'package:haflaway/top_destinations/event_dash/attendees/attendees.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/eventTools.dart';
 import 'package:shimmer/shimmer.dart';
-import 'checkpoint/in_check.dart';
 
 class AdminPanel extends StatefulWidget {
-  final Event edata;
+  final Event eventO;
   final bool isAdmin;
-  const AdminPanel({super.key, required this.edata, required this.isAdmin});
+  const AdminPanel({super.key, required this.eventO, required this.isAdmin});
 
   @override
   State<AdminPanel> createState() => _AdminPanelState();
 }
 
 class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
+  Event? event;
+  bool isLoading = false;
+  bool hasError = false;
+  int invsCount = 0;
+  int contsCount = 0;
+  int adminsCount = 0;
+  int scannersCount = 0;
   GlobalKey<FormState> key = GlobalKey<FormState>();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-  bool _isScrolled = false;
-  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
-    String userId = widget.edata.authorId;
-    var provider = Provider.of<BalanceProvider>(context, listen: false);
-    provider.startWatchingBalance(userId);
-    provider.startWatchingEventPlan(planId: widget.edata.eventPlanId);
-
-    _scrollController.addListener(_onScroll);
-
     super.initState();
+    loadData();
   }
 
-  @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
+  loadData() async {
+    safeState(() {
+      isLoading = true;
+      hasError = false;
+    });
+    try {
+      DocumentReference<Map<String, dynamic>> eventRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id);
+      CollectionReference<Map<String, dynamic>> attsRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id)
+          .collection(atcol);
+      var result = await Future.wait([eventRef.get(), attsRef.get()]);
+      var eventSnapshot = result[0] as DocumentSnapshot<Map<String, dynamic>>;
+      var attsSnapshot = result[1] as QuerySnapshot<Map<String, dynamic>>;
+      invsCount =
+          attsSnapshot.docs.where((t) {
+            Attendee attendee = Attendee.fromMap(t.id, t.data());
+            return attendee.cards.containsKey(KardType.invitation.name);
+          }).length;
 
-  void _onScroll() {
-    if (_scrollController.offset > 100 && !_isScrolled) {
-      setState(() => _isScrolled = true);
-    } else if (_scrollController.offset <= 100 && _isScrolled) {
-      setState(() => _isScrolled = false);
+      contsCount =
+          attsSnapshot.docs.where((t) {
+            Attendee attendee = Attendee.fromMap(t.id, t.data());
+            return attendee.cards.containsKey(KardType.contribution.name);
+          }).length;
+
+      event = Event.fromMap(eventSnapshot.id, eventSnapshot.data()!);
+      adminsCount = event?.adminsIds?.length ?? 0;
+      scannersCount = event?.usersIds?.length ?? 0;
+      safeState(() {
+        isLoading = false;
+        hasError = false;
+      });
+    } catch (e) {
+      safeState(() {
+        isLoading = false;
+        hasError = true;
+      });
+      debugPrint("Error is: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       backgroundColor: scaback,
       appBar: appBar(
         title: "Dashboard",
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
           },
         ),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f3460)],
-          ),
-        ),
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            SliverToBoxAdapter(child: SizedBox(height: 135)),
-            _buildEventImageCard(),
-            _buildAdminToolsSection(),
-            const SliverPadding(padding: EdgeInsets.only(bottom: p20)),
+        actions: Row(
+          children: [
+            buildActionButton(
+              icon: Icons.edit_document,
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return CreateEvent(event: event);
+                    },
+                  ),
+                );
+                loadData();
+              },
+            ),
           ],
         ),
+      ),
+      body: Ccafold(
+        child:
+            !hasError && isLoading
+                ? buildLoader()
+                : !hasError && !isLoading
+                ? CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(child: SizedBox(height: spaceTiles)),
+                    _buildEventImageCard(),
+                    _buildAdminToolsSection(),
+                    const SliverPadding(padding: EdgeInsets.only(bottom: psm)),
+                  ],
+                )
+                : buildErrorView(),
       ),
     );
   }
@@ -104,9 +145,9 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   SliverToBoxAdapter _buildEventImageCard() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(p20, 0, p20, p20),
+        padding: const EdgeInsets.fromLTRB(psm, 0, psm, psm),
         child: Container(
-          height: 120,
+          height: 250,
           decoration: BoxDecoration(
             border: Border.all(color: Colors.white.withOpacity(0.5)),
             borderRadius: BorderRadius.circular(p20),
@@ -117,18 +158,65 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(p20),
-            child: CachedNetworkImage(
-              imageUrl: widget.edata.eventThumbnail,
-              fit: BoxFit.cover,
-              filterQuality: FilterQuality.high,
-              placeholder:
-                  (context, url) => Shimmer.fromColors(
-                    baseColor: primaryColor,
-                    highlightColor: primaryColor.withValues(alpha: 0.85),
-                    child: Container(color: primaryColor),
+            child: Stack(
+              children: [
+                // Background image
+                CachedNetworkImage(
+                  imageUrl: event?.eventThumbnail ?? "",
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  filterQuality: FilterQuality.high,
+                  placeholder:
+                      (context, url) => Shimmer.fromColors(
+                        baseColor: primaryColor,
+                        highlightColor: primaryColor.withValues(alpha: 0.85),
+                        child: Container(color: primaryColor),
+                      ),
+                  errorWidget:
+                      (context, url, error) => const Icon(Clarity.error_line),
+                ),
+
+                // Gradient overlay
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.0, 0.6, 1.0],
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.3),
+                        Colors.black.withOpacity(0.8),
+                      ],
+                    ),
                   ),
-              errorWidget:
-                  (context, url, error) => const Icon(Clarity.error_line),
+                ),
+
+                // Title text at the bottom
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: Text(
+                    event?.title ?? "",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          offset: Offset(0, 1),
+                          blurRadius: 3,
+                          color: primaryColor,
+                        ),
+                      ],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -139,7 +227,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   Widget _buildAdminToolsSection() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 0),
+        padding: const EdgeInsets.symmetric(horizontal: psm),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -148,93 +236,124 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                 children: [
                   buildGlassListItem(
                     title: "Events Toolkit",
-                    subtitle: "Manage all event messages and alerts",
+                    subtitle: "Manage event's notifications",
                     icon: Clarity.notification_solid,
                     gradient: [
                       const Color(0xFF4CAF50),
                       const Color(0xFF45A047),
                     ],
-                    onTap:
-                        () => Navigator.of(context).push(
+                    onTap: () async {
+                      try {
+                        await Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => InRem(event: widget.edata),
+                            builder: (context) => EventTools(event: event!),
                           ),
-                        ),
-                  ),
-                  buildDivider(),
-                  buildGlassListItem(
-                    title: "Invitations Manager",
-                    subtitle: "Create & Manage Event Invitations",
-                    icon: Clarity.user_solid,
-                    gradient: [
-                      const Color(0xFF2196F3),
-                      const Color(0xFF1976D2),
-                    ],
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (context) => Attendees(
-                                edata: widget.edata,
-                                kardType: KardType.invitation,
-                              ),
-                        ),
-                      );
+                        );
+                        loadData();
+                      } catch (e) {
+                        showToast(isGood: false, msg: e.toString());
+                      }
                     },
                   ),
-                  buildDivider(),
 
-                  buildGlassListItem(
-                    title: "Contributors Manager",
-                    subtitle: "Create & Manage Event Contributors",
-                    icon: Clarity.coin_bag_solid,
-                    gradient: [
-                      const Color.fromARGB(255, 243, 33, 100),
-                      const Color.fromARGB(255, 243, 33, 100),
-                    ],
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (context) => Attendees(
-                                edata: widget.edata,
-                                title: "Contributors",
-                                kardType: KardType.contribution,
+                  buildActionItem(
+                    title: "Invitations",
+                    children: [
+                      ActionItem(
+                        figure: "0",
+                        icon: Clarity.printer_line,
+                        subtitle: "Printed Order",
+                        onPressed: () {},
+                      ),
+                      ActionItem(
+                        figure: "$invsCount",
+                        icon: Clarity.email_line,
+                        subtitle: "Digital Issued",
+                        onPressed: () async {
+                          try {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return Attendees(
+                                    edata: event!,
+                                    kardType: KardType.invitation,
+                                  );
+                                },
                               ),
-                        ),
-                      );
-                    },
-                  ),
-                  buildDivider(),
-                  buildGlassListItem(
-                    title: "Scan & Verify Cards",
-                    subtitle: "Ensure Authenticity of Cards being Showed",
-                    icon: Clarity.shield_check_solid,
-                    gradient: [Colors.teal, Colors.teal],
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (context) => CheckPoints(edata: widget.edata),
-                        ),
-                      );
-                    },
-                  ),
-                  buildDivider(),
-                  buildGlassListItem(
-                    title: "Team Management",
-                    subtitle: "Manage staff permissions and roles",
-                    icon: Clarity.user_solid_alerted,
-                    gradient: [
-                      const Color(0xFFFF9800),
-                      const Color(0xFFF57C00),
+                            );
+                            loadData();
+                          } catch (e) {
+                            showToast(isGood: false, msg: e.toString());
+                          }
+                        },
+                      ),
                     ],
-                    onTap:
-                        () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => Users(eId: widget.edata.id),
-                          ),
-                        ),
+                  ),
+                  const SizedBox(height: spaceTiles),
+                  buildActionItem(
+                    title: "Contacts",
+                    children: [
+                      ActionItem(
+                        figure: "0",
+                        icon: Clarity.printer_line,
+                        subtitle: "Printed Order",
+                        onPressed: () {},
+                      ),
+                      ActionItem(
+                        figure: "$contsCount",
+                        icon: Clarity.users_line,
+                        subtitle: "People reached",
+                        onPressed: () async {
+                          try {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => Attendees(
+                                      edata: event!,
+                                      title: "Contributors",
+                                      kardType: KardType.contribution,
+                                    ),
+                              ),
+                            );
+                            loadData();
+                          } catch (e) {
+                            showToast(isGood: false, msg: e.toString());
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: spaceTiles),
+                  buildActionItem(
+                    title: "Users",
+                    children: [
+                      ActionItem(
+                        figure: "$scannersCount",
+                        icon: Clarity.qr_code_line,
+                        subtitle: "Cards Scanners",
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => Users(eId: event?.id ?? ""),
+                            ),
+                          );
+                          loadData();
+                        },
+                      ),
+                      ActionItem(
+                        figure: "$adminsCount",
+                        icon: Clarity.users_line,
+                        subtitle: "Total Admins",
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => Users(eId: event?.id ?? ""),
+                            ),
+                          );
+                          loadData();
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -243,6 +362,18 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  safeState(runnable) {
+    if (mounted) {
+      setState(() {
+        runnable();
+      });
+    }
+  }
+
+  popper() {
+    Navigator.of(context).pop();
   }
 }
 

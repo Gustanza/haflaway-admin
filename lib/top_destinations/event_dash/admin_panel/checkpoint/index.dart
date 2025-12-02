@@ -24,13 +24,13 @@ class _CheckPointsState extends State<CheckPoints> {
       backgroundColor: scaback,
       appBar: appBar(
         title: "CheckPoints",
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
           },
         ),
-        actions: buildActionButton(
+        actions: appBarActionButton(
           icon: Icons.add,
           onTap: () {
             //
@@ -38,54 +38,44 @@ class _CheckPointsState extends State<CheckPoints> {
         ),
       ),
       body: Ccafold(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: p20),
-            StreamBuilder(
-              stream:
-                  firestore
-                      .collection(ecol)
-                      .doc(widget.edata.id)
-                      .collection(echecksub)
-                      .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  List<CheckPoint> docs =
-                      (snapshot.data as dynamic).docs.map<CheckPoint>((doc) {
-                        return CheckPoint.fromMap(
-                          doc.id,
-                          doc.data() as Map<String, dynamic>,
-                        );
-                      }).toList();
+        child: StreamBuilder(
+          stream:
+              firestore
+                  .collection(ecol)
+                  .doc(widget.edata.id)
+                  .collection(echecksub)
+                  .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              List<CheckPoint> docs =
+                  (snapshot.data as dynamic).docs.map<CheckPoint>((doc) {
+                    return CheckPoint.fromMap(
+                      doc.id,
+                      doc.data() as Map<String, dynamic>,
+                    );
+                  }).toList();
 
-                  if (docs.isEmpty) {
-                    return buildGlassEmptyState();
-                  }
+              if (docs.isEmpty) {
+                return buildGlassEmptyState();
+              }
 
-                  return buildGlassCard(
-                    child: Column(
-                      children: List.generate(docs.length, (index) {
-                        return Column(
-                          children: [
-                            buildGlassCheckpointItem(
-                              context,
-                              widget.edata,
-                              docs[index],
-                            ),
-                            buildDivider(),
-                          ],
-                        );
-                      }),
-                    ),
-                  );
-                } else if (snapshot.hasError) {
-                  return buildGlassErrorView();
-                }
-                return buildGlassShimmerLoader();
-              },
-            ),
-          ],
+              return buildGlassCard(
+                child: ListView(
+                  padding: EdgeInsets.all(psm),
+                  children: List.generate(docs.length, (index) {
+                    return buildGlassCheckpointItem(
+                      context,
+                      widget.edata,
+                      docs[index],
+                    );
+                  }),
+                ),
+              );
+            } else if (snapshot.hasError) {
+              return buildGlassErrorView();
+            }
+            return buildGlassShimmerLoader();
+          },
         ),
       ),
     );

@@ -1,7 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:haflaway/models/attendee.dart';
-import 'package:haflaway/models/event.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:icons_plus/icons_plus.dart';
@@ -25,7 +24,7 @@ showProgress({context}) {
 }
 
 buildLoader() {
-  return const Center(child: CircularProgressIndicator());
+  return const Center(child: CupertinoActivityIndicator(radius: brsm));
 }
 
 buildErr() {
@@ -77,8 +76,8 @@ customSmBtn(Function() callback) {
 
 buildShimmer() {
   return Shimmer.fromColors(
-    baseColor: primaryColor,
-    highlightColor: primaryColor.withOpacity(0.7),
+    baseColor: lqassgradBaseColor,
+    highlightColor: lqassbdrColor,
     child: Container(color: Colors.green),
   );
 }
@@ -125,7 +124,7 @@ buildCard(Kard card, Function() tapd) {
   return Container(
     margin: const EdgeInsets.only(bottom: psm * 0.5),
     decoration: BoxDecoration(
-      color: primaryColor,
+      gradient: lqassgrad,
       borderRadius: BorderRadius.circular(brsm),
     ),
     child: Column(
@@ -157,7 +156,7 @@ buildCard(Kard card, Function() tapd) {
                             top: psm,
                             right: psm,
                             child: MaterialButton(
-                              color: primaryColor,
+                              color: destructiveColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(brsm),
                               ),
@@ -219,10 +218,19 @@ bldDrdDwn({
   DropdownMenuEntry? initialSelection,
 }) {
   return DropdownMenu(
-    label: Text("$lbl"),
+    hintText: "$lbl",
+    // label: Text("$lbl"),
     controller: controller,
     width: double.maxFinite,
     onSelected: onSelected,
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      enabledBorder: inputBorder,
+      border: inputBorder,
+      focusedBorder: inputBorder,
+      disabledBorder: inputBorder,
+      fillColor: lqassgradBaseColor,
+    ),
     dropdownMenuEntries:
         entries.map<DropdownMenuEntry>((e) {
           return DropdownMenuEntry(value: e.key, label: e.value);
@@ -282,68 +290,10 @@ Widget buildField({
 }
 
 validator({lbl, value}) {
-  switch (lbl) {
-    case cardart:
-      if (value.isEmpty) {
-        return "$cardart is required";
-      } else {
-        return null;
-      }
-    case cardname:
-      if (value.isEmpty) {
-        return "$cardname is required";
-      } else {
-        return null;
-      }
-    case cardprice:
-      if (value.isEmpty) {
-        return "$cardprice is required";
-      } else {
-        return null;
-      }
-    case cardcap:
-      if (value.isEmpty) {
-        return "$cardcap is required";
-      } else {
-        return null;
-      }
-
-    case cardcount:
-      if (value.isEmpty) {
-        return "$cardcount is required";
-      } else {
-        return null;
-      }
-    case cardchecks:
-      if (value.isEmpty) {
-        return "$cardchecks are required";
-      } else {
-        return null;
-      }
-
-    case atlblname:
-      if (value.isEmpty) {
-        return "$atlblname is required";
-      } else {
-        return null;
-      }
-
-    case atlblphone:
-      if (value.isEmpty) {
-        return "$atlblphone is required";
-      } else {
-        return null;
-      }
-
-    // case atlblemail:
-    //   if (value.isEmpty) {
-    //     return "$atlblemail is required";
-    //   } else {
-    //     return null;
-    //   }
-
-    default:
-      return null;
+  if (value.isEmpty) {
+    return "This field is required";
+  } else {
+    return null;
   }
 }
 

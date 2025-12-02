@@ -41,7 +41,7 @@ class _ScannerState extends State<Scanner> {
       backgroundColor: scaback,
       appBar: appBar(
         title: "",
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();

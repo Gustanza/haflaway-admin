@@ -28,7 +28,7 @@ class _InvEditorState extends State<InvEditor> {
       backgroundColor: scaback,
       appBar: appBar(
         title: "Messages",
-        leading: buildActionButton(
+        leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
             Navigator.of(context).pop();
@@ -36,7 +36,7 @@ class _InvEditorState extends State<InvEditor> {
         ),
         actions: Row(
           children: [
-            buildActionButton(
+            appBarActionButton(
               onTap: () async {
                 await showCreate();
               },
@@ -89,7 +89,11 @@ class _InvEditorState extends State<InvEditor> {
       itemBuilder: (context, index) {
         return Column(
           children: [
-            buildField(cont: controllers[index]),
+            buildField(
+              isReadOnly: true,
+              showCursor: false,
+              cont: controllers[index],
+            ),
             Row(
               children: [
                 TextButton.icon(

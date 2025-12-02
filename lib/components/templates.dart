@@ -1,6 +1,8 @@
 import 'dart:ui';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
@@ -9,6 +11,8 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/in_c
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
+import 'package:haflaway/utils/globalfns.dart';
+import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/styles.dart';
 
 buildInvite({
@@ -16,24 +20,148 @@ buildInvite({
   Attendee? rdata,
   KardType kardType = KardType.invitation,
   onChanged,
-  onTap,
+  eventId,
 }) {
-  return Container(
-    margin: EdgeInsets.only(bottom: psm * 0.5),
-    decoration: BoxDecoration(
-      color: lqassgradBaseColor,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
-    ),
-    child: ListTile(
-      leading: CupertinoCheckbox(value: containz, onChanged: onChanged),
-      title: Text("${rdata?.fullName}", style: TextStyle(fontSize: fsm - 1)),
-      subtitle: Text("${rdata?.phone}"),
-      trailing: Container(
-        child: Text("${rdata?.cards[kardType.name]?['name']}"),
-      ),
-      onTap: onTap,
-    ),
+  return StatefulBuilder(
+    builder: (context, setState) {
+      return Container(
+        margin: EdgeInsets.only(bottom: psm * 0.5),
+        decoration: BoxDecoration(
+          color: lqassgradBaseColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+        ),
+        padding: EdgeInsets.symmetric(vertical: psm * 0.5),
+        child: ListTile(
+          leading: CupertinoCheckbox(
+            shape: RoundedRectangleBorder(
+              side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+              borderRadius: BorderRadius.circular(50),
+            ),
+            value: containz,
+            onChanged: onChanged,
+          ),
+          title: Text(
+            "${rdata?.fullName}",
+            style: TextStyle(fontSize: fsm - 1),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: psm * 0.5),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(Icons.phone_android, size: icnsm),
+                        const SizedBox(width: psm * 0.5),
+                        Text("${rdata?.phone}"),
+                      ],
+                    ),
+                    const SizedBox(width: psm),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(Icons.card_membership, size: icnsm),
+                        const SizedBox(width: psm * 0.5),
+                        Text("${rdata?.cards[kardType.name]?['name']}"),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: psm * 0.75),
+                Divider(height: 0, thickness: bdrWidthGen),
+                const SizedBox(height: psm * 0.75),
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () async {
+                        await showCommentDialog(
+                          context: context,
+                          atId: rdata?.id,
+                          eventId: eventId,
+                          label: rdata?.idComment,
+                        );
+                      },
+                      child: Icon(Icons.edit_square),
+                    ),
+                    const SizedBox(width: psm * 0.5),
+                    Expanded(
+                      child: Text(
+                        "${rdata?.idComment}",
+                        style: TextStyle(fontSize: fsm),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // onTap: onTap,
+        ),
+      );
+    },
+  );
+}
+
+showCommentDialog({context, eventId, atId, label}) {
+  TextEditingController controller = TextEditingController();
+  if (label != null) controller.text = label;
+
+  return showDialog(
+    context: context,
+    builder: (context) {
+      return glassDialog(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: psm * 3,
+            horizontal: psm * 2,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Add Comment",
+                style: TextStyle(
+                  fontSize: fsm + 4,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: psm),
+              buildField(lbl: label ?? "Comment here", cont: controller),
+              const SizedBox(height: psm * 1.5),
+              SizedBox(
+                width: double.maxFinite,
+                child: buildGlassButton(
+                  text: "Save Comment",
+                  icon: Icons.save,
+                  onPressed: () {
+                    try {
+                      FirebaseFirestore.instance
+                          .collection(ecol)
+                          .doc(eventId)
+                          .collection(atcol)
+                          .doc(atId)
+                          .set({
+                            "idComment": controller.text.trim(),
+                          }, SetOptions(merge: true));
+                    } catch (e) {
+                      showToast(isGood: false, msg: "$e");
+                    }
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
   );
 }
 
@@ -84,7 +212,7 @@ Widget buildListItemCard({
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           transform: Matrix4.identity()..scale(isHovered ? 1.02 : 1.0),
-          margin: const EdgeInsets.only(bottom: psm),
+          margin: const EdgeInsets.only(bottom: psm * 0.65),
           decoration: BoxDecoration(
             gradient: lqassgrad,
             borderRadius: BorderRadius.circular(bmd),
@@ -261,7 +389,13 @@ Widget buildGlassListItem({
   return GestureDetector(
     onTap: onTap,
     child: Container(
-      padding: const EdgeInsets.all(p20),
+      padding: const EdgeInsets.symmetric(horizontal: p20, vertical: psm),
+      margin: EdgeInsets.only(bottom: spaceTiles),
+      decoration: BoxDecoration(
+        gradient: secscagrad,
+        borderRadius: BorderRadius.circular(bmd),
+        border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+      ),
       child: Row(
         children: [
           Container(
@@ -269,13 +403,6 @@ Widget buildGlassListItem({
             decoration: BoxDecoration(
               gradient: LinearGradient(colors: gradient),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: gradient[0].withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
             child: Icon(icon, color: Colors.white, size: 24),
           ),
@@ -325,13 +452,18 @@ Widget buildGlassCheckpointItem(
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) {
-            return InCheckWrapper(checkpoint: checkpoint, eId: edata.id);
+            return InCheckWrapper(checkpoint: checkpoint, eId: edata.id ?? "");
           },
         ),
       );
     },
     child: Container(
       padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: lqassgrad,
+        borderRadius: BorderRadius.circular(bmd),
+        border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+      ),
       child: Row(
         children: [
           Container(
@@ -598,3 +730,85 @@ buildFloatingBtn({
 }
 
 // End of Global Button
+
+buildActionItem({required String title, required List<ActionItem> children}) {
+  return Container(
+    decoration: BoxDecoration(
+      gradient: lqassgrad,
+      border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+      borderRadius: BorderRadius.circular(bsm),
+    ),
+    child: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(psm),
+          child: Text(
+            "${title}",
+            style: TextStyle(fontSize: fsm + 5, fontWeight: FontWeight.bold),
+          ),
+        ),
+        Divider(thickness: 0.1, height: 0),
+        IntrinsicHeight(
+          child: Row(
+            children: List.generate(children.length + 1, (index) {
+              int rindex = index == 0 ? index : index - 1;
+              if (index % 2 == 0) {
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: children[rindex].onPressed,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: psm * 2.5,
+                        vertical: psm * 2,
+                      ),
+                      decoration: BoxDecoration(shape: BoxShape.circle),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "${children[rindex].figure}",
+                                style: TextStyle(
+                                  fontSize: fsm * 2.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              buildActionButton(
+                                icon: children[rindex].icon,
+                                onTap: () {},
+                              ),
+                            ],
+                          ),
+                          Text("${children[rindex].subtitle}"),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                return VerticalDivider(thickness: 0.2, width: 0);
+              }
+            }),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class ActionItem {
+  String figure;
+  IconData icon;
+  String subtitle;
+  Function() onPressed;
+
+  ActionItem({
+    required this.figure,
+    required this.icon,
+    required this.subtitle,
+    required this.onPressed,
+  });
+}

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/utils/colors.dart';
+import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -38,6 +39,22 @@ navnReplaceUntil({context, widget}) {
       },
     ),
     (route) => false,
+  );
+}
+
+showSnack({context, isGood, msg}) {
+  return ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      elevation: p20,
+      showCloseIcon: true,
+      closeIconColor: primaryWhite,
+      duration: Duration(minutes: 5),
+      backgroundColor: isGood ? scaback : Colors.red,
+      content: Text(
+        "$msg",
+        style: TextStyle(color: primaryWhite, fontWeight: FontWeight.bold),
+      ),
+    ),
   );
 }
 

@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/utils/colors.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
@@ -29,10 +31,18 @@ class _CardsState extends State<Cards> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(dsninv)),
+      backgroundColor: scaback,
+      appBar: appBar(title: dsninv, 
+      leading: appBarActionButton(icon: Icons.arrow_back, onTap: (){
+        popper();
+      })
+      ), 
       floatingActionButton: FloatingActionButton(
-        backgroundColor: secondaryColor,
-        foregroundColor: primaryColor,
+        backgroundColor: lqassgradBaseColor,shape: RoundedRectangleBorder(
+          borderRadius: BorderRadiusGeometry.circular(bsm),
+          side: BorderSide(color: lqassbdrColor, width: bdrWidthGen)
+        ),
+        foregroundColor: Colors.white,
         child: const Icon(Icons.add),
         onPressed: () {
           Navigator.of(context).push(
@@ -44,73 +54,78 @@ class _CardsState extends State<Cards> {
           );
         },
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder(
-              stream:
-                  FirebaseFirestore.instance
-                      .collection(ecol)
-                      .doc(widget.eId)
-                      .collection(cardcol)
-                      .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  var docs = (snapshot.data as dynamic).docs;
-                  if (docs.isEmpty) {
-                    return const Center(child: Text('No Cards'));
-                  } else {
-                    List<Kard> cList =
-                        docs.map<Kard>((doc) {
-                          return Kard.fromMap(doc.id, doc.data());
-                        }).toList();
-                    return Column(
-                      children: [
-                        Expanded(
-                          child: PageView.builder(
-                            itemCount: cList.length,
-                            onPageChanged: (value) {
-                              setState(() {
-                                currenpage = value + 1;
-                              });
-                            },
-                            itemBuilder: (context, index) {
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                  top: psm,
-                                  left: psm,
-                                  right: psm,
-                                  bottom: psm * 0.25,
-                                ),
-                                child: buildCard(cList[index], () async {
-                                  await cdelete(cList[index]);
-                                }),
-                              );
-                            },
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.only(bottom: psm),
-                          child: Text(
-                            "$currenpage of ${cList.length} Cards",
-                            style: const TextStyle(
-                              fontSize: fsm,
-                              fontWeight: FontWeight.bold,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: scagrad,
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: StreamBuilder(
+                stream:
+                    FirebaseFirestore.instance
+                        .collection(ecol)
+                        .doc(widget.eId)
+                        .collection(cardcol)
+                        .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    var docs = (snapshot.data as dynamic).docs;
+                    if (docs.isEmpty) {
+                      return const Center(child: Text('No Cards'));
+                    } else {
+                      List<Kard> cList =
+                          docs.map<Kard>((doc) {
+                            return Kard.fromMap(doc.id, doc.data());
+                          }).toList();
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: PageView.builder(
+                              itemCount: cList.length,
+                              onPageChanged: (value) {
+                                setState(() {
+                                  currenpage = value + 1;
+                                });
+                              },
+                              itemBuilder: (context, index) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: psm,
+                                    left: psm,
+                                    right: psm,
+                                    bottom: psm * 0.25,
+                                  ),
+                                  child: buildCard(cList[index], () async {
+                                    await cdelete(cList[index]);
+                                  }),
+                                );
+                              },
                             ),
                           ),
-                        ),
-                      ],
-                    );
+                          Container(
+                            padding: const EdgeInsets.only(bottom: psm),
+                            child: Text(
+                              "$currenpage of ${cList.length} Cards",
+                              style: const TextStyle(
+                                fontSize: fsm,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                  } else if (snapshot.hasError) {
+                    return buildErr();
+                  } else {
+                    return buildLoader();
                   }
-                } else if (snapshot.hasError) {
-                  return buildErr();
-                } else {
-                  return buildLoader();
-                }
-              },
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
