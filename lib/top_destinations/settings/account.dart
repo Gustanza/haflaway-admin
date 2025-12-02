@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/auth/auth.dart';
 import 'package:haflaway/components/appbar.dart';
@@ -306,14 +307,24 @@ class _MyAccountScreenState extends State<MyAccountScreen> {
                   label: "Logout",
                   onPressed: () async {
                     await FirebaseAuth.instance.signOut();
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return Login();
-                        },
-                      ),
-                      (route) => false,
-                    );
+                    if (kIsWeb) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) {
+                            return Login();
+                          },
+                        ),
+                      );
+                    } else {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (context) {
+                            return Login();
+                          },
+                        ),
+                        (route) => false,
+                      );
+                    }
                   },
                 ),
                 const SizedBox(height: psm),

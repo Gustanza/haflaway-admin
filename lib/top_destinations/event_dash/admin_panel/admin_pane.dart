@@ -20,6 +20,7 @@ import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/attendees.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/eventTools.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 
 class AdminPanel extends StatefulWidget {
@@ -107,6 +108,18 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
         ),
         actions: Row(
           children: [
+            buildActionButton(
+              icon: Icons.share,
+              onTap: () async {
+                String link =
+                    "https://haflaway.com/#/cards/${widget.eventO.id}";
+                String message = "Kadi za ${widget.eventO.title}";
+                SharePlus.instance.share(
+                  ShareParams(text: link, title: message),
+                );
+              },
+            ),
+            const SizedBox(width: spaceTiles),
             buildActionButton(
               icon: Icons.edit_document,
               onTap: () async {

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:haflaway/models/event.dart';
@@ -22,24 +23,44 @@ navNormal({context, widget}) async {
 }
 
 navnReplace({context, widget}) {
-  Navigator.of(context).pushReplacement(
-    MaterialPageRoute(
-      builder: (context) {
-        return widget;
-      },
-    ),
-  );
+  if (kIsWeb) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return widget;
+        },
+      ),
+    );
+  } else {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) {
+          return widget;
+        },
+      ),
+    );
+  }
 }
 
 navnReplaceUntil({context, widget}) {
-  Navigator.of(context).pushAndRemoveUntil(
-    MaterialPageRoute(
-      builder: (context) {
-        return widget;
-      },
-    ),
-    (route) => false,
-  );
+  if (kIsWeb) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return widget;
+        },
+      ),
+    );
+  } else {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) {
+          return widget;
+        },
+      ),
+      (route) => false,
+    );
+  }
 }
 
 showSnack({context, isGood, msg}) {
