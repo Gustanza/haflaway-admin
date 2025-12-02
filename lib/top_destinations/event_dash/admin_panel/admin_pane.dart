@@ -270,21 +270,21 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                         icon: Clarity.email_line,
                         subtitle: "Digital Issued",
                         onPressed: () async {
-                          try {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return Attendees(
-                                    edata: event!,
-                                    kardType: KardType.invitation,
-                                  );
-                                },
-                              ),
-                            );
-                            loadData();
-                          } catch (e) {
-                            showToast(isGood: false, msg: e.toString());
-                          }
+                          // try {
+                          //   await Navigator.of(context).push(
+                          //     MaterialPageRoute(
+                          //       builder: (context) {
+                          //         return Attendees(
+                          //           edata: event!,
+                          //           kardType: KardType.invitation,
+                          //         );
+                          //       },
+                          //     ),
+                          //   );
+                          //   loadData();
+                          // } catch (e) {
+                          //   showToast(isGood: false, msg: e.toString());
+                          // }
                         },
                       ),
                     ],
@@ -304,21 +304,21 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                         icon: Clarity.users_line,
                         subtitle: "People reached",
                         onPressed: () async {
-                          try {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => Attendees(
-                                      edata: event!,
-                                      title: "Contributors",
-                                      kardType: KardType.contribution,
-                                    ),
-                              ),
-                            );
-                            loadData();
-                          } catch (e) {
-                            showToast(isGood: false, msg: e.toString());
-                          }
+                          // try {
+                          //   await Navigator.of(context).push(
+                          //     MaterialPageRoute(
+                          //       builder:
+                          //           (context) => Attendees(
+                          //             edata: event!,
+                          //             title: "Contributors",
+                          //             kardType: KardType.contribution,
+                          //           ),
+                          //     ),
+                          //   );
+                          //   loadData();
+                          // } catch (e) {
+                          //   showToast(isGood: false, msg: e.toString());
+                          // }
                         },
                       ),
                     ],

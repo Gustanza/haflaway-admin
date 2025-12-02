@@ -21,10 +21,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 class DhaSearchDelegate extends SearchDelegate {
   String selType = '';
-  final Event edata;
+  final String eventId;
   final KardType kardType;
 
-  DhaSearchDelegate({required this.edata, required this.kardType});
+  DhaSearchDelegate({required this.eventId, required this.kardType});
 
   @override
   String? get searchFieldLabel => "Search";
@@ -61,23 +61,23 @@ class DhaSearchDelegate extends SearchDelegate {
 
   @override
   Widget buildResults(BuildContext context) {
-    return BuildResultsList(query: query, edata: edata, kardType: kardType);
+    return BuildResultsList(query: query, eventId: eventId, kardType: kardType);
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return BuildResultsList(query: query, edata: edata, kardType: kardType);
+    return BuildResultsList(query: query, eventId: eventId, kardType: kardType);
   }
 }
 
 class BuildResultsList extends StatefulWidget {
   final String query;
-  final Event edata;
+  final String eventId;
   final KardType kardType;
   const BuildResultsList({
     super.key,
     required this.query,
-    required this.edata,
+    required this.eventId,
     required this.kardType,
   });
 
@@ -102,7 +102,7 @@ class _BuildResultsListState extends State<BuildResultsList> {
       child: FutureBuilder(
         future: http.get(
           Uri.parse(
-            "${getAttsUrl}/?eventId=${widget.edata.id}&searchKey=${widget.query}",
+            "${getAttsUrl}/?eventId=${widget.eventId}&searchKey=${widget.query}",
           ),
         ),
         builder: (context, snapshot) {
@@ -159,7 +159,7 @@ class _BuildResultsListState extends State<BuildResultsList> {
               onPressed: () async {
                 firestore
                     .collection(ecol)
-                    .doc(widget.edata.id)
+                    .doc(widget.eventId)
                     .collection(atcol)
                     .doc(atId)
                     .delete()
@@ -363,17 +363,17 @@ class _BuildResultsListState extends State<BuildResultsList> {
                                   scale: 0.75,
                                   child: IconButton.outlined(
                                     onPressed: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) {
-                                            return CreateAttendees(
-                                              event: widget.edata,
-                                              kardType: widget.kardType,
-                                              attendee: attendee,
-                                            );
-                                          },
-                                        ),
-                                      );
+                                      // Navigator.of(context).push(
+                                      //   MaterialPageRoute(
+                                      //     builder: (context) {
+                                      //       return CreateAttendees(
+                                      //         event: widget.edata,
+                                      //         kardType: widget.kardType,
+                                      //         attendee: attendee,
+                                      //       );
+                                      //     },
+                                      //   ),
+                                      // );
                                     },
                                     icon: const Icon(
                                       Icons.edit_document,
@@ -505,7 +505,7 @@ class _BuildResultsListState extends State<BuildResultsList> {
       // Perform the update
       await firestore
           .collection(ecol)
-          .doc(widget.edata.id)
+          .doc(widget.eventId)
           .collection(atcol)
           .doc(attendee.id)
           .update({"attendanceStatus": status});

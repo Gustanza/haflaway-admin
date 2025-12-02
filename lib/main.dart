@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:go_router/go_router.dart';
 import 'package:haflaway/firebase_options.dart';
+import 'package:haflaway/models/card.dart';
+import 'package:haflaway/top_destinations/event_dash/attendees/attendees.dart';
 import 'package:haflaway/top_destinations/splash_screen.dart';
 import 'package:haflaway/utils/urls.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -39,17 +41,32 @@ class HfApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: const SplashScreen(),
-      debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
-      theme: ThemeData(colorScheme: ColorScheme.dark()),
-    );
-    // return MaterialApp.router(
-    //   routerConfig: router,
-    //   themeMode: ThemeMode.dark,
+    // return MaterialApp(
+    //   home: const SplashScreen(),
     //   debugShowCheckedModeBanner: false,
+    //   themeMode: ThemeMode.dark,
     //   theme: ThemeData(colorScheme: ColorScheme.dark()),
     // );
+    return MaterialApp.router(
+      routerConfig: router,
+      themeMode: ThemeMode.dark,
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(colorScheme: ColorScheme.dark()),
+    );
   }
 }
+
+var router = GoRouter(
+  routes: [
+    GoRoute(
+      path: '/cards/:eventId',
+      name: 'CardsList',
+      builder: (context, state) {
+        return Attendees(
+          eventId: state.pathParameters['eventId'] ?? "",
+          kardType: KardType.invitation,
+        );
+      },
+    ),
+  ],
+);

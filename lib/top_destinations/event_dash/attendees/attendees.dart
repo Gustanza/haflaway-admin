@@ -35,12 +35,12 @@ import 'package:url_launcher/url_launcher.dart';
 import 'imp_preview.dart';
 
 class Attendees extends StatefulWidget {
-  final Event edata;
+  final String eventId;
   final KardType kardType;
   final String title;
   const Attendees({
     super.key,
-    required this.edata,
+    required this.eventId,
     required this.kardType,
     this.title = "Invitations",
   });
@@ -151,7 +151,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     if (_selectedKardFilter != null && _attendanceFilter != "All") {
       return firestore
           .collection(ecol)
-          .doc(widget.edata.id)
+          .doc(widget.eventId)
           .collection(atcol)
           .where(
             "cards.${widget.kardType.name}.templateCardId",
@@ -164,7 +164,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     } else if (_selectedKardFilter == null && _attendanceFilter != "All") {
       return firestore
           .collection(ecol)
-          .doc(widget.edata.id)
+          .doc(widget.eventId)
           .collection(atcol)
           .where("attendanceStatus", isEqualTo: _attendanceFilter)
           .orderBy("attendanceStatus")
@@ -172,7 +172,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     } else if (_selectedKardFilter != null && _attendanceFilter == "All") {
       return firestore
           .collection(ecol)
-          .doc(widget.edata.id)
+          .doc(widget.eventId)
           .collection(atcol)
           .where(
             "cards.${widget.kardType.name}.templateCardId",
@@ -183,7 +183,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     } else {
       return firestore
           .collection(ecol)
-          .doc(widget.edata.id)
+          .doc(widget.eventId)
           .collection(atcol)
           .orderBy("createdAt", descending: true)
           .limit(pageSize);
@@ -194,7 +194,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     if (_selectedKardFilter != null && _attendanceFilter != "All") {
       return firestore
           .collection(ecol)
-          .doc(widget.edata.id)
+          .doc(widget.eventId)
           .collection(atcol)
           .where(
             "cards.${widget.kardType.name}.templateCardId",
@@ -208,7 +208,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     } else if (_selectedKardFilter == null && _attendanceFilter != "All") {
       return firestore
           .collection(ecol)
-          .doc(widget.edata.id)
+          .doc(widget.eventId)
           .collection(atcol)
           .where("attendanceStatus", isEqualTo: _attendanceFilter)
           .orderBy("attendanceStatus")
@@ -217,7 +217,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     } else if (_selectedKardFilter != null && _attendanceFilter == "All") {
       return firestore
           .collection(ecol)
-          .doc(widget.edata.id)
+          .doc(widget.eventId)
           .collection(atcol)
           .where(
             "cards.${widget.kardType.name}.templateCardId",
@@ -229,7 +229,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     } else {
       return firestore
           .collection(ecol)
-          .doc(widget.edata.id)
+          .doc(widget.eventId)
           .collection(atcol)
           .orderBy("createdAt", descending: true)
           .startAfterDocument(lastDocument!)
@@ -302,7 +302,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       // Perform the update
       await firestore
           .collection(ecol)
-          .doc(widget.edata.id)
+          .doc(widget.eventId)
           .collection(atcol)
           .doc(attendee.id)
           .update({"attendanceStatus": status});
@@ -329,85 +329,85 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     }
   }
 
-  buildToolKitSheet() {
-    return showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return modalBtmSheet(
-          bdrdm: bmd,
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              Text(
-                "Quick Actions",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: fsm + 6),
-              ),
-              const SizedBox(height: psm),
-              buildGlassButton(
-                text: "Create Attendee(s)",
-                icon: Clarity.users_line,
-                onPressed: () async {
-                  String title =
-                      widget.kardType == KardType.invitation
-                          ? "Invitation"
-                          : "Contributor";
-                  await navNormal(
-                    context: context,
-                    widget: CreateAttendees(
-                      event: widget.edata,
-                      title: title,
-                      kardType: widget.kardType,
-                    ),
-                  );
-                  _loadAttendees();
-                  poper();
-                },
-              ),
-              const SizedBox(height: spaceTiles),
-              buildGlassButton(
-                text: "Select/De-select All",
-                icon: Clarity.list_line,
-                onPressed: () async {
-                  selectAll();
-                  poper();
-                },
-              ),
-              const SizedBox(height: spaceTiles),
-              buildGlassButton(
-                text: "Import from File",
-                icon: Clarity.file_group_line,
-                onPressed: () {
-                  poper();
-                  importFile();
-                },
-              ),
-              const SizedBox(height: spaceTiles),
-              buildGlassButton(
-                text: "Import from Contributors",
-                icon: Clarity.dollar_bill_line,
-                onPressed: () {
-                  poper();
-                  showSelectCard();
-                },
-              ),
-              const SizedBox(height: spaceTiles),
-              buildGlassButton(
-                text: "Delete Attendee(s)",
-                icon: Clarity.trash_line,
-                onPressed: () {
-                  poper();
-                  delSelect();
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // buildToolKitSheet() {
+  //   return showModalBottomSheet(
+  //     context: context,
+  //     backgroundColor: Colors.transparent,
+  //     isScrollControlled: true,
+  //     builder: (context) {
+  //       return modalBtmSheet(
+  //         bdrdm: bmd,
+  //         child: ListView(
+  //           shrinkWrap: true,
+  //           children: [
+  //             Text(
+  //               "Quick Actions",
+  //               textAlign: TextAlign.center,
+  //               style: TextStyle(fontSize: fsm + 6),
+  //             ),
+  //             const SizedBox(height: psm),
+  //             buildGlassButton(
+  //               text: "Create Attendee(s)",
+  //               icon: Clarity.users_line,
+  //               onPressed: () async {
+  //                 String title =
+  //                     widget.kardType == KardType.invitation
+  //                         ? "Invitation"
+  //                         : "Contributor";
+  //                 await navNormal(
+  //                   context: context,
+  //                   widget: CreateAttendees(
+  //                     event: widget.edata,
+  //                     title: title,
+  //                     kardType: widget.kardType,
+  //                   ),
+  //                 );
+  //                 _loadAttendees();
+  //                 poper();
+  //               },
+  //             ),
+  //             const SizedBox(height: spaceTiles),
+  //             buildGlassButton(
+  //               text: "Select/De-select All",
+  //               icon: Clarity.list_line,
+  //               onPressed: () async {
+  //                 selectAll();
+  //                 poper();
+  //               },
+  //             ),
+  //             const SizedBox(height: spaceTiles),
+  //             buildGlassButton(
+  //               text: "Import from File",
+  //               icon: Clarity.file_group_line,
+  //               onPressed: () {
+  //                 poper();
+  //                 importFile();
+  //               },
+  //             ),
+  //             const SizedBox(height: spaceTiles),
+  //             buildGlassButton(
+  //               text: "Import from Contributors",
+  //               icon: Clarity.dollar_bill_line,
+  //               onPressed: () {
+  //                 poper();
+  //                 showSelectCard();
+  //               },
+  //             ),
+  //             const SizedBox(height: spaceTiles),
+  //             buildGlassButton(
+  //               text: "Delete Attendee(s)",
+  //               icon: Clarity.trash_line,
+  //               onPressed: () {
+  //                 poper();
+  //                 delSelect();
+  //               },
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   @override
   void didChangeDependencies() {
@@ -421,12 +421,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       backgroundColor: scaback,
       appBar: appBar(
         title: "${widget.title}",
-        leading: appBarActionButton(
-          icon: Icons.arrow_back,
-          onTap: () {
-            Navigator.of(context).pop();
-          },
-        ),
+        // leading: appBarActionButton(
+        //   icon: Icons.arrow_back,
+        //   onTap: () {
+        //     Navigator.of(context).pop();
+        //   },
+        // ),
         actions: Row(
           children: [
             // Elegant filter button with active filter indicator
@@ -443,7 +443,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 showSearch(
                   context: context,
                   delegate: DhaSearchDelegate(
-                    edata: widget.edata,
+                    eventId: widget.eventId,
                     kardType: widget.kardType,
                   ),
                 );
@@ -466,11 +466,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             foregroundColor: Colors.white,
             child: Icon(Clarity.qr_code_line),
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => CheckPoints(edata: widget.edata),
-                ),
-              );
+              // Navigator.of(context).push(
+              //   MaterialPageRoute(
+              //     builder: (context) => CheckPoints(edata: widget.edata),
+              //   ),
+              // );
             },
           ),
           const SizedBox(height: spaceTiles),
@@ -483,7 +483,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             ),
             foregroundColor: Colors.white,
             child: Icon(Clarity.tools_line),
-            onPressed: buildToolKitSheet,
+            onPressed: null,
+            //buildToolKitSheet,
           ),
         ],
       ),
@@ -1069,18 +1070,18 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () async {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return CreateAttendees(
-                                    event: widget.edata,
-                                    kardType: widget.kardType,
-                                    attendee: attendee,
-                                  );
-                                },
-                              ),
-                            );
-                            _loadAttendees();
+                            // await Navigator.of(context).push(
+                            //   MaterialPageRoute(
+                            //     builder: (context) {
+                            //       return CreateAttendees(
+                            //         event: widget.edata,
+                            //         kardType: widget.kardType,
+                            //         attendee: attendee,
+                            //       );
+                            //     },
+                            //   ),
+                            // );
+                            // _loadAttendees();
                           },
                           borderRadius: BorderRadius.circular(6),
                           child: Padding(
@@ -1350,7 +1351,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       var res =
           await firestore
               .collection(ecol)
-              .doc(widget.edata.id)
+              .doc(widget.eventId)
               .collection(cardcol)
               .where("purpose", isEqualTo: widget.kardType.name)
               .get();
@@ -1364,65 +1365,65 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     safeState(() {});
   }
 
-  delSelect() async {
-    var uid = auth.currentUser?.uid;
-    if (uid != widget.edata.authorId) {
-      showToast(isGood: false, msg: "Action not allowed");
-      return;
-    }
-    if (selectList.isEmpty) {
-      showToast(isGood: false, msg: "Select attendee(s) first");
-      return;
-    }
-    return await showCupertinoModalPopup(
-      context: context,
-      builder: (context) {
-        return CupertinoActionSheet(
-          title: const Text("Destructive Action"),
-          message: Text(
-            "You are about to delete ${selectList.length} attendee(s), keep in mind this action is ireversible",
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: fsm),
-          ),
-          actions: [
-            CupertinoActionSheetAction(
-              isDefaultAction: true,
-              child: const Text("Delete", style: TextStyle(color: Colors.red)),
-              onPressed: () async {
-                await del();
-                await _loadAttendees();
-              },
-            ),
-            CupertinoActionSheetAction(
-              child: const Text("Cancel"),
-              onPressed: () {
-                poper();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // delSelect() async {
+  //   var uid = auth.currentUser?.uid;
+  //   if (uid != widget.edata.authorId) {
+  //     showToast(isGood: false, msg: "Action not allowed");
+  //     return;
+  //   }
+  //   if (selectList.isEmpty) {
+  //     showToast(isGood: false, msg: "Select attendee(s) first");
+  //     return;
+  //   }
+  //   return await showCupertinoModalPopup(
+  //     context: context,
+  //     builder: (context) {
+  //       return CupertinoActionSheet(
+  //         title: const Text("Destructive Action"),
+  //         message: Text(
+  //           "You are about to delete ${selectList.length} attendee(s), keep in mind this action is ireversible",
+  //           textAlign: TextAlign.center,
+  //           style: const TextStyle(fontSize: fsm),
+  //         ),
+  //         actions: [
+  //           CupertinoActionSheetAction(
+  //             isDefaultAction: true,
+  //             child: const Text("Delete", style: TextStyle(color: Colors.red)),
+  //             onPressed: () async {
+  //               await del();
+  //               await _loadAttendees();
+  //             },
+  //           ),
+  //           CupertinoActionSheetAction(
+  //             child: const Text("Cancel"),
+  //             onPressed: () {
+  //               poper();
+  //             },
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
-  del() async {
-    try {
-      poper();
-      showToast(isGood: true, msg: "Deleting....");
-      for (var sel in selectList) {
-        firestore
-            .collection(ecol)
-            .doc(widget.edata.id)
-            .collection(atcol)
-            .doc(sel.id)
-            .delete();
-      }
-      selectList = [];
-      showToast(isGood: true, msg: "Success");
-    } catch (e) {
-      showToast(isGood: false, msg: "$e");
-    }
-  }
+  // del() async {
+  //   try {
+  //     poper();
+  //     showToast(isGood: true, msg: "Deleting....");
+  //     for (var sel in selectList) {
+  //       firestore
+  //           .collection(ecol)
+  //           .doc(widget.edata.id)
+  //           .collection(atcol)
+  //           .doc(sel.id)
+  //           .delete();
+  //     }
+  //     selectList = [];
+  //     showToast(isGood: true, msg: "Success");
+  //   } catch (e) {
+  //     showToast(isGood: false, msg: "$e");
+  //   }
+  // }
 
   showQuickStats() {
     return showDialog(
@@ -1430,7 +1431,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       builder: (context) {
         return glassDialog(
           child: quickStats(
-            eventId: widget.edata.id ?? "",
+            eventId: widget.eventId,
             kardType: widget.kardType,
             kards: lcrds,
           ),
@@ -1467,8 +1468,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       lqAssButton(
                         label: lcrds[idx].type,
                         onPressed: () {
-                          Navigator.of(context).pop();
-                          showImportContributor(kard: lcrds[idx]);
+                          // Navigator.of(context).pop();
+                          // showImportContributor(kard: lcrds[idx]);
                         },
                       ),
                       if (idx < lcrds.length - 1) SizedBox(height: psm * 0.5),
@@ -1483,201 +1484,201 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     );
   }
 
-  showImportContributor({required Kard kard}) {
-    return showModalBottomSheet(
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadiusGeometry.only(
-          topLeft: Radius.circular(bmd),
-          topRight: Radius.circular(bmd),
-        ),
-      ),
-      context: context,
-      builder: (context) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.9,
-          child: modalBtmSheet(
-            bdrdm: bmd,
-            child: ImportContributor(kard: kard, event: widget.edata),
-          ),
-        );
-      },
-    );
-  }
+  // showImportContributor({required Kard kard}) {
+  //   return showModalBottomSheet(
+  //     isScrollControlled: true,
+  //     backgroundColor: Colors.transparent,
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadiusGeometry.only(
+  //         topLeft: Radius.circular(bmd),
+  //         topRight: Radius.circular(bmd),
+  //       ),
+  //     ),
+  //     context: context,
+  //     builder: (context) {
+  //       return SizedBox(
+  //         height: MediaQuery.of(context).size.height * 0.9,
+  //         child: modalBtmSheet(
+  //           bdrdm: bmd,
+  //           child: ImportContributor(kard: kard, event: widget.edata),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
-  importFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['xls', 'xlsx', 'xlsm', 'xlsb'],
-    );
-    if (result != null) {
-      file = File(result.files.single.path!);
-      var bytes = file?.readAsBytesSync();
-      var excel = exl.Excel.decodeBytes(bytes!);
-      var tblKey = excel.tables.keys.firstOrNull;
-      var table = excel.tables[tblKey];
+  // importFile() async {
+  //   FilePickerResult? result = await FilePicker.platform.pickFiles(
+  //     type: FileType.custom,
+  //     allowedExtensions: ['xls', 'xlsx', 'xlsm', 'xlsb'],
+  //   );
+  //   if (result != null) {
+  //     file = File(result.files.single.path!);
+  //     var bytes = file?.readAsBytesSync();
+  //     var excel = exl.Excel.decodeBytes(bytes!);
+  //     var tblKey = excel.tables.keys.firstOrNull;
+  //     var table = excel.tables[tblKey];
 
-      var frow = table!.rows.first;
-      Map<dynamic, dynamic> sels = {};
-      for (var cell in frow) {
-        sels[cell!.columnIndex] = cell.value;
-      }
-      await showMatcher(sels);
-    } else {
-      showToast(isGood: false, msg: genErrMsg);
-    }
-  }
+  //     var frow = table!.rows.first;
+  //     Map<dynamic, dynamic> sels = {};
+  //     for (var cell in frow) {
+  //       sels[cell!.columnIndex] = cell.value;
+  //     }
+  //     await showMatcher(sels);
+  //   } else {
+  //     showToast(isGood: false, msg: genErrMsg);
+  //   }
+  // }
 
-  showMatcher(Map<dynamic, dynamic> sels) {
-    if (lcrds.isEmpty) {
-      showToast(isGood: false, msg: "This action requires existing cards");
-      return;
-    }
-    // creating a synthetic map for cards
-    var synCrdmap = {};
-    for (var lcrd in lcrds) {
-      synCrdmap[lcrd.id] = lcrd.type;
-    }
-    // ends here
-    return showModalBottomSheet(
-      backgroundColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadiusGeometry.only(
-          topLeft: Radius.circular(bmd),
-          topRight: Radius.circular(bmd),
-        ),
-      ),
-      context: context,
-      builder: (context) {
-        return modalBtmSheet(
-          bdrdm: bmd,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: psm),
-                Text(
-                  "Import from File",
-                  style: TextStyle(
-                    fontSize: fsm + 4,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(psm),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Name",
-                        style: TextStyle(
-                          fontSize: fsm + 2,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      buildDrop(sels, impname),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(psm),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Phone",
-                        style: TextStyle(
-                          fontSize: fsm + 2,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      buildDrop(sels, impphone),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(psm),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Card",
-                        style: TextStyle(
-                          fontSize: fsm + 2,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      buildDrop(synCrdmap, impcard),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: psm),
-                lqAssButton(
-                  label: "Continue",
-                  onPressed: () async {
-                    if (isGreen()) {
-                      poper();
-                      Map<String, dynamic> mapp = {
-                        'fullName': int.parse(impname.text),
-                        'phone': int.parse(impphone.text),
-                      };
-                      var carddata = lcrds.firstWhere((lcrd) {
-                        return lcrd.id == impcard.text;
-                      });
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) {
-                            return ImpPreview(
-                              mapp: mapp,
-                              xcelFile: file!,
-                              carddata: carddata,
-                              event: widget.edata,
-                              kardType: widget.kardType,
-                            );
-                          },
-                        ),
-                      );
-                      await _loadAttendees();
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // showMatcher(Map<dynamic, dynamic> sels) {
+  //   if (lcrds.isEmpty) {
+  //     showToast(isGood: false, msg: "This action requires existing cards");
+  //     return;
+  //   }
+  //   // creating a synthetic map for cards
+  //   var synCrdmap = {};
+  //   for (var lcrd in lcrds) {
+  //     synCrdmap[lcrd.id] = lcrd.type;
+  //   }
+  //   // ends here
+  //   return showModalBottomSheet(
+  //     backgroundColor: Colors.transparent,
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadiusGeometry.only(
+  //         topLeft: Radius.circular(bmd),
+  //         topRight: Radius.circular(bmd),
+  //       ),
+  //     ),
+  //     context: context,
+  //     builder: (context) {
+  //       return modalBtmSheet(
+  //         bdrdm: bmd,
+  //         child: SingleChildScrollView(
+  //           child: Column(
+  //             children: [
+  //               const SizedBox(height: psm),
+  //               Text(
+  //                 "Import from File",
+  //                 style: TextStyle(
+  //                   fontSize: fsm + 4,
+  //                   fontWeight: FontWeight.bold,
+  //                 ),
+  //               ),
+  //               Padding(
+  //                 padding: const EdgeInsets.all(psm),
+  //                 child: Row(
+  //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                   children: [
+  //                     const Text(
+  //                       "Name",
+  //                       style: TextStyle(
+  //                         fontSize: fsm + 2,
+  //                         fontWeight: FontWeight.w600,
+  //                       ),
+  //                     ),
+  //                     buildDrop(sels, impname),
+  //                   ],
+  //                 ),
+  //               ),
+  //               Padding(
+  //                 padding: const EdgeInsets.all(psm),
+  //                 child: Row(
+  //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                   children: [
+  //                     const Text(
+  //                       "Phone",
+  //                       style: TextStyle(
+  //                         fontSize: fsm + 2,
+  //                         fontWeight: FontWeight.w600,
+  //                       ),
+  //                     ),
+  //                     buildDrop(sels, impphone),
+  //                   ],
+  //                 ),
+  //               ),
+  //               Padding(
+  //                 padding: const EdgeInsets.all(psm),
+  //                 child: Row(
+  //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                   children: [
+  //                     const Text(
+  //                       "Card",
+  //                       style: TextStyle(
+  //                         fontSize: fsm + 2,
+  //                         fontWeight: FontWeight.w600,
+  //                       ),
+  //                     ),
+  //                     buildDrop(synCrdmap, impcard),
+  //                   ],
+  //                 ),
+  //               ),
+  //               const SizedBox(height: psm),
+  //               lqAssButton(
+  //                 label: "Continue",
+  //                 onPressed: () async {
+  //                   if (isGreen()) {
+  //                     poper();
+  //                     Map<String, dynamic> mapp = {
+  //                       'fullName': int.parse(impname.text),
+  //                       'phone': int.parse(impphone.text),
+  //                     };
+  //                     var carddata = lcrds.firstWhere((lcrd) {
+  //                       return lcrd.id == impcard.text;
+  //                     });
+  //                     await Navigator.of(context).push(
+  //                       MaterialPageRoute(
+  //                         builder: (context) {
+  //                           return ImpPreview(
+  //                             mapp: mapp,
+  //                             xcelFile: file!,
+  //                             carddata: carddata,
+  //                             event: widget.edata,
+  //                             kardType: widget.kardType,
+  //                           );
+  //                         },
+  //                       ),
+  //                     );
+  //                     await _loadAttendees();
+  //                   }
+  //                 },
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
-  buildDrop(Map sels, TextEditingController mapcont) {
-    return DropdownMenu(
-      hintText: "Select values",
-      width: MediaQuery.of(context).size.width * 0.4,
-      inputDecorationTheme: const InputDecorationTheme(),
-      onSelected: (value) {
-        mapcont.text = "$value";
-      },
-      dropdownMenuEntries:
-          sels.entries.map((entry) {
-            return DropdownMenuEntry(value: entry.key, label: "${entry.value}");
-          }).toList(),
-    );
-  }
+  // buildDrop(Map sels, TextEditingController mapcont) {
+  //   return DropdownMenu(
+  //     hintText: "Select values",
+  //     width: MediaQuery.of(context).size.width * 0.4,
+  //     inputDecorationTheme: const InputDecorationTheme(),
+  //     onSelected: (value) {
+  //       mapcont.text = "$value";
+  //     },
+  //     dropdownMenuEntries:
+  //         sels.entries.map((entry) {
+  //           return DropdownMenuEntry(value: entry.key, label: "${entry.value}");
+  //         }).toList(),
+  //   );
+  // }
 
-  isGreen() {
-    if (impname.text.isEmpty) {
-      showToast(isGood: false, msg: "Select a column with values for name");
-      return false;
-    } else if (impphone.text.isEmpty) {
-      showToast(isGood: false, msg: "Select a column with values for phone");
-      return false;
-    } else if (impcard.text.isEmpty) {
-      showToast(isGood: false, msg: "Select a card to assign the attendees");
-      return false;
-    } else {
-      return true;
-    }
-  }
+  // isGreen() {
+  //   if (impname.text.isEmpty) {
+  //     showToast(isGood: false, msg: "Select a column with values for name");
+  //     return false;
+  //   } else if (impphone.text.isEmpty) {
+  //     showToast(isGood: false, msg: "Select a column with values for phone");
+  //     return false;
+  //   } else if (impcard.text.isEmpty) {
+  //     showToast(isGood: false, msg: "Select a card to assign the attendees");
+  //     return false;
+  //   } else {
+  //     return true;
+  //   }
+  // }
 
   safeState(runnable) {
     if (mounted) {
