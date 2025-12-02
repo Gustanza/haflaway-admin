@@ -390,7 +390,7 @@ Widget buildGlassListItem({
     onTap: onTap,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: p20, vertical: psm),
-      margin: EdgeInsets.only(bottom: psm * 0.65),
+      margin: EdgeInsets.only(bottom: spaceTiles),
       decoration: BoxDecoration(
         gradient: secscagrad,
         borderRadius: BorderRadius.circular(bmd),

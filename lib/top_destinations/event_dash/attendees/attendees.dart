@@ -8,6 +8,8 @@ import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
+import 'package:haflaway/components/templates.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/importcontr.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/searchdel.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/stats.dart';
@@ -327,6 +329,86 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     }
   }
 
+  buildToolKitSheet() {
+    return showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return modalBtmSheet(
+          bdrdm: bmd,
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Text(
+                "Quick Actions",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: fsm + 6),
+              ),
+              const SizedBox(height: psm),
+              buildGlassButton(
+                text: "Create Attendee(s)",
+                icon: Clarity.users_line,
+                onPressed: () async {
+                  String title =
+                      widget.kardType == KardType.invitation
+                          ? "Invitation"
+                          : "Contributor";
+                  await navNormal(
+                    context: context,
+                    widget: CreateAttendees(
+                      event: widget.edata,
+                      title: title,
+                      kardType: widget.kardType,
+                    ),
+                  );
+                  _loadAttendees();
+                  poper();
+                },
+              ),
+              const SizedBox(height: spaceTiles),
+              buildGlassButton(
+                text: "Select/De-select All",
+                icon: Clarity.list_line,
+                onPressed: () async {
+                  selectAll();
+                  poper();
+                },
+              ),
+              const SizedBox(height: spaceTiles),
+              buildGlassButton(
+                text: "Import from File",
+                icon: Clarity.file_group_line,
+                onPressed: () {
+                  poper();
+                  importFile();
+                },
+              ),
+              const SizedBox(height: spaceTiles),
+              buildGlassButton(
+                text: "Import from Contributors",
+                icon: Clarity.dollar_bill_line,
+                onPressed: () {
+                  poper();
+                  showSelectCard();
+                },
+              ),
+              const SizedBox(height: spaceTiles),
+              buildGlassButton(
+                text: "Delete Attendee(s)",
+                icon: Clarity.trash_line,
+                onPressed: () {
+                  poper();
+                  delSelect();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -347,53 +429,17 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         ),
         actions: Row(
           children: [
-            buildPop(
-              list: atActnlist(kardType: widget.kardType),
-              icon: Clarity.ellipsis_vertical_line,
-              onTap: (value) async {
-                switch (value) {
-                  case atActnCrt:
-                    String title =
-                        widget.kardType == KardType.invitation
-                            ? "Invitation"
-                            : "Contributor";
-                    await navNormal(
-                      context: context,
-                      widget: CreateAttendees(
-                        event: widget.edata,
-                        title: title,
-                        kardType: widget.kardType,
-                      ),
-                    );
-                    _loadAttendees();
-                    break;
-                  case atActnSelAll:
-                    selectAll();
-                    break;
-                  case atActnDel:
-                    delSelect();
-                    break;
-                  case atActnImprtFile:
-                    importFile();
-                    break;
-                  case atActnImprtCont:
-                    showSelectCard();
-                    // showImportContributor();
-                    break;
-                  default:
-                }
-              },
-            ),
-            appBarActionButton(
-              icon: Icons.bar_chart,
-              onTap: () {
+            // Elegant filter button with active filter indicator
+            _buildFilterButton(),
+            IconButton(
+              icon: Icon(Icons.bar_chart),
+              onPressed: () {
                 showQuickStats();
               },
             ),
-            const SizedBox(width: psm),
-            appBarActionButton(
-              icon: Icons.search,
-              onTap: () {
+            IconButton(
+              icon: Icon(Icons.search),
+              onPressed: () {
                 showSearch(
                   context: context,
                   delegate: DhaSearchDelegate(
@@ -405,6 +451,41 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             ),
           ],
         ),
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            mini: true,
+            heroTag: "mini",
+            backgroundColor: lqassgradBaseColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+              side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+            ),
+            foregroundColor: Colors.white,
+            child: Icon(Clarity.qr_code_line),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => CheckPoints(edata: widget.edata),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: spaceTiles),
+          FloatingActionButton(
+            heroTag: "major",
+            backgroundColor: lqassgradBaseColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+              side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+            ),
+            foregroundColor: Colors.white,
+            child: Icon(Clarity.tools_line),
+            onPressed: buildToolKitSheet,
+          ),
+        ],
       ),
       body: Ccafold(
         child:
@@ -430,13 +511,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: psm * 0.5),
-          _buildKardFilterChips(),
-          _buildStatusFilterChips(),
-          const SizedBox(height: psm * 0.5),
           Expanded(
             child: ListView.builder(
-              padding: EdgeInsets.all(0),
+              padding: EdgeInsets.only(top: spaceTiles),
               controller: scrollController,
               itemCount: atdata.length + 1, // +1 for the loading indicator
               itemBuilder: (context, index) {
@@ -474,82 +551,303 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     );
   }
 
-  // Build status filter chips
-  Widget _buildStatusFilterChips() {
-    return Container(
-      height: 42,
-      padding: const EdgeInsets.symmetric(horizontal: psm),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children:
-            _filters.map((filter) {
-              bool isSelected = _attendanceFilter == filter;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: FilterChip(
-                  label: Text(filter),
-                  selected: isSelected,
-                  showCheckmark: false,
-                  shape: filShape(),
-                  onSelected: (selected) {
-                    setState(() {
-                      _attendanceFilter = filter;
-                    });
-                    _loadAttendees();
-                  },
+  // Build elegant filter button for app bar
+  Widget _buildFilterButton() {
+    // Count active filters
+    int activeFiltersCount = 0;
+    if (_selectedKardFilter != null) activeFiltersCount++;
+    if (_attendanceFilter != "All") activeFiltersCount++;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _showFilterBottomSheet(context),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: EdgeInsets.all(8),
+              child: Icon(
+                Icons.tune,
+                color: Colors.white.withValues(alpha: 0.9),
+                size: 24,
+              ),
+            ),
+          ),
+        ),
+        // Active filter indicator badge
+        if (activeFiltersCount > 0)
+          Positioned(
+            top: 4,
+            right: 4,
+            child: Container(
+              padding: EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.redAccent,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              constraints: BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Center(
+                child: Text(
+                  "$activeFiltersCount",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    height: 1,
+                  ),
                 ),
-              );
-            }).toList(),
-      ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
-  Widget _buildKardFilterChips() {
-    if (lcrds.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Container(
-      height: 42,
-      padding: const EdgeInsets.symmetric(horizontal: psm),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          // All cards filter option
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: FilterChip(
-              label: const Text("All Cards"),
-              selected: _selectedKardFilter == null,
-              showCheckmark: false,
-              shape: filShape(),
-              onSelected: (selected) {
-                setState(() {
-                  _selectedKardFilter = null;
-                });
-                _loadAttendees();
-              },
+  // Show elegant filter bottom sheet
+  void _showFilterBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder:
+          (context) => modalBtmSheet(
+            bdrdm: bmd,
+            child: Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.75,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle bar
+                  Container(
+                    margin: EdgeInsets.only(top: 12, bottom: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  // Header
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: psm,
+                      vertical: psm * 0.5,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.tune,
+                          color: Colors.white.withValues(alpha: 0.9),
+                          size: 24,
+                        ),
+                        SizedBox(width: psm * 0.5),
+                        Text(
+                          "Filters",
+                          style: TextStyle(
+                            fontSize: fsm + 4,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Spacer(),
+                        if (_selectedKardFilter != null ||
+                            _attendanceFilter != "All")
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedKardFilter = null;
+                                _attendanceFilter = "All";
+                              });
+                              Navigator.pop(context);
+                              _loadAttendees();
+                            },
+                            child: Text(
+                              "Clear All",
+                              style: TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Divider(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    height: 1,
+                  ),
+                  // Filter sections
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(psm),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Card Type Filter Section
+                          if (lcrds.isNotEmpty) ...[
+                            _buildFilterSection(
+                              title: "Card Type",
+                              icon: Icons.credit_card,
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  // All Cards option
+                                  _buildFilterChip(
+                                    label: "All Cards",
+                                    isSelected: _selectedKardFilter == null,
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedKardFilter = null;
+                                      });
+                                      Navigator.pop(context);
+                                      _loadAttendees();
+                                    },
+                                  ),
+                                  // Individual card options
+                                  ...lcrds.map(
+                                    (kard) => _buildFilterChip(
+                                      label: kard.type,
+                                      isSelected:
+                                          _selectedKardFilter == kard.id,
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedKardFilter =
+                                              _selectedKardFilter == kard.id
+                                                  ? null
+                                                  : kard.id;
+                                        });
+                                        Navigator.pop(context);
+                                        _loadAttendees();
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: psm * 1.5),
+                          ],
+                          // Attendance Status Filter Section
+                          _buildFilterSection(
+                            title: "Attendance Status",
+                            icon: Icons.person,
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children:
+                                  _filters
+                                      .map(
+                                        (filter) => _buildFilterChip(
+                                          label: filter,
+                                          isSelected:
+                                              _attendanceFilter == filter,
+                                          onTap: () {
+                                            setState(() {
+                                              _attendanceFilter = filter;
+                                            });
+                                            Navigator.pop(context);
+                                            _loadAttendees();
+                                          },
+                                        ),
+                                      )
+                                      .toList(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    height: MediaQuery.of(context).padding.bottom + psm * 0.5,
+                  ),
+                ],
+              ),
             ),
           ),
-          // Individual card filters
-          ...lcrds.map((kard) {
-            bool isSelected = _selectedKardFilter == kard.id;
-            return Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: FilterChip(
-                label: Text(kard.type),
-                selected: isSelected,
-                showCheckmark: false,
-                shape: filShape(),
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedKardFilter = selected ? kard.id : null;
-                  });
-                  _loadAttendees();
-                },
+    );
+  }
+
+  // Build filter section header
+  Widget _buildFilterSection({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 18, color: Colors.white.withValues(alpha: 0.8)),
+            SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: fsm + 2,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.9),
               ),
-            );
-          }).toList(),
-        ],
+            ),
+          ],
+        ),
+        SizedBox(height: psm * 0.75),
+        child,
+      ],
+    );
+  }
+
+  // Build elegant filter chip for bottom sheet
+  Widget _buildFilterChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color:
+                isSelected
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : Colors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color:
+                  isSelected
+                      ? Colors.white.withValues(alpha: 0.5)
+                      : Colors.white.withValues(alpha: 0.2),
+              width: isSelected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isSelected) ...[
+                Icon(Icons.check_circle, size: 16, color: Colors.white),
+                SizedBox(width: 6),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: fsm,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: Colors.white.withValues(alpha: isSelected ? 1.0 : 0.8),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -681,18 +979,16 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                               color: Colors.white.withValues(alpha: 0.7),
                             ),
                             SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                crdnm,
-                                style: TextStyle(
-                                  fontSize: fsm - 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                ),
-                                maxLines: 1,
+                            Text(
+                              crdnm,
+                              style: TextStyle(
+                                fontSize: fsm - 1,
+                                overflow: TextOverflow.ellipsis,
+                                color: Colors.white.withValues(alpha: 0.85),
                               ),
+                              maxLines: 1,
                             ),
-                            SizedBox(width: psm * 0.375),
+                            SizedBox(width: psm),
                             Icon(
                               Clarity.mobile_phone_line,
                               size: 12,
@@ -712,6 +1008,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             ),
                           ],
                         ),
+                        SizedBox(height: psm * 0.375),
+                        // Delivery status indicators - SMS & WhatsApp
+                        _buildDeliveryStatusIndicators(attendee),
                       ],
                     ),
                   ),
@@ -803,6 +1102,138 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               _buildAttendanceControls(attendee),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // Build delivery status indicators for SMS and WhatsApp
+  Widget _buildDeliveryStatusIndicators(Attendee attendee) {
+    // Placeholder values - will be replaced with actual data later
+    String smsStatus =
+        "delivered"; // Placeholder: "delivered", "pending", "failed", "sent"
+    String whatsappStatus =
+        "read"; // Placeholder: "delivered", "read", "sent", "failed", "pending"
+
+    return Row(
+      children: [
+        // SMS Status Indicator
+        _buildStatusChip(
+          icon: Icons.sms_outlined,
+          label: "SMS",
+          status: smsStatus,
+        ),
+        SizedBox(width: psm * 0.5),
+        // WhatsApp Status Indicator
+        _buildStatusChip(
+          icon: Icons.chat_bubble_outline,
+          label: "WhatsApp",
+          status: whatsappStatus,
+        ),
+      ],
+    );
+  }
+
+  // Build individual status chip
+  Widget _buildStatusChip({
+    required IconData icon,
+    required String label,
+    required String status,
+  }) {
+    // Determine status color and styling based on status text
+    Color statusColor;
+    Color backgroundColor;
+    IconData statusIcon;
+
+    switch (status.toLowerCase()) {
+      case "delivered":
+      case "read":
+        statusColor = Colors.greenAccent;
+        backgroundColor = Colors.green.withValues(alpha: 0.2);
+        statusIcon = Icons.check_circle;
+        break;
+      case "sent":
+        statusColor = Colors.lightBlueAccent;
+        backgroundColor = Colors.blue.withValues(alpha: 0.2);
+        statusIcon = Icons.send;
+        break;
+      case "pending":
+      case "queued":
+        statusColor = Colors.orangeAccent;
+        backgroundColor = Colors.orange.withValues(alpha: 0.2);
+        statusIcon = Icons.schedule;
+        break;
+      case "failed":
+      case "undelivered":
+        statusColor = Colors.redAccent;
+        backgroundColor = Colors.red.withValues(alpha: 0.2);
+        statusIcon = Icons.error_outline;
+        break;
+      default:
+        statusColor = Colors.grey.shade400;
+        backgroundColor = Colors.grey.withValues(alpha: 0.2);
+        statusIcon = Icons.help_outline;
+    }
+
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: psm * 0.375,
+          vertical: psm * 0.3,
+        ),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: statusColor.withValues(alpha: 0.4),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 13, color: statusColor),
+            SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.95),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            SizedBox(width: 5),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(statusIcon, size: 9, color: statusColor),
+                  SizedBox(width: 3),
+                  Text(
+                    status.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: statusColor,
+                      letterSpacing: 0.5,
+                      height: 1,
+                    ),
+                    maxLines: 1,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/templates.dart';
+import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/dimensions.dart';
+import 'package:haflaway/utils/globalwids.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
 import 'package:haflaway/utils/colors.dart';
@@ -30,9 +32,66 @@ class AdminPanel extends StatefulWidget {
 }
 
 class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
+  Event? event;
+  bool isLoading = false;
+  bool hasError = false;
+  int invsCount = 0;
+  int contsCount = 0;
+  int adminsCount = 0;
+  int scannersCount = 0;
   GlobalKey<FormState> key = GlobalKey<FormState>();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    loadData();
+  }
+
+  loadData() async {
+    safeState(() {
+      isLoading = true;
+      hasError = false;
+    });
+    try {
+      DocumentReference<Map<String, dynamic>> eventRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id);
+      CollectionReference<Map<String, dynamic>> attsRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id)
+          .collection(atcol);
+      var result = await Future.wait([eventRef.get(), attsRef.get()]);
+      var eventSnapshot = result[0] as DocumentSnapshot<Map<String, dynamic>>;
+      var attsSnapshot = result[1] as QuerySnapshot<Map<String, dynamic>>;
+      invsCount =
+          attsSnapshot.docs.where((t) {
+            Attendee attendee = Attendee.fromMap(t.id, t.data());
+            return attendee.cards.containsKey(KardType.invitation.name);
+          }).length;
+
+      contsCount =
+          attsSnapshot.docs.where((t) {
+            Attendee attendee = Attendee.fromMap(t.id, t.data());
+            return attendee.cards.containsKey(KardType.contribution.name);
+          }).length;
+
+      event = Event.fromMap(eventSnapshot.id, eventSnapshot.data()!);
+      adminsCount = event?.adminsIds?.length ?? 0;
+      scannersCount = event?.usersIds?.length ?? 0;
+      safeState(() {
+        isLoading = false;
+        hasError = false;
+      });
+    } catch (e) {
+      safeState(() {
+        isLoading = false;
+        hasError = true;
+      });
+      debugPrint("Error is: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,28 +109,34 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
           children: [
             buildActionButton(
               icon: Icons.edit_document,
-              onTap: () {
-                Navigator.of(context).push(
+              onTap: () async {
+                await Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) {
-                      return CreateEvent(event: widget.eventO);
+                      return CreateEvent(event: event);
                     },
                   ),
                 );
+                loadData();
               },
             ),
           ],
         ),
       ),
       body: Ccafold(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(child: SizedBox(height: psm)),
-            _buildEventImageCard(),
-            _buildAdminToolsSection(),
-            const SliverPadding(padding: EdgeInsets.only(bottom: psm)),
-          ],
-        ),
+        child:
+            !hasError && isLoading
+                ? buildLoader()
+                : !hasError && !isLoading
+                ? CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(child: SizedBox(height: spaceTiles)),
+                    _buildEventImageCard(),
+                    _buildAdminToolsSection(),
+                    const SliverPadding(padding: EdgeInsets.only(bottom: psm)),
+                  ],
+                )
+                : buildErrorView(),
       ),
     );
   }
@@ -97,7 +162,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
               children: [
                 // Background image
                 CachedNetworkImage(
-                  imageUrl: widget.eventO.eventThumbnail ?? "",
+                  imageUrl: event?.eventThumbnail ?? "",
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: double.infinity,
@@ -134,7 +199,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                   left: 20,
                   right: 20,
                   child: Text(
-                    widget.eventO.title ?? "",
+                    event?.title ?? "",
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -177,13 +242,18 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                       const Color(0xFF4CAF50),
                       const Color(0xFF45A047),
                     ],
-                    onTap:
-                        () => Navigator.of(context).push(
+                    onTap: () async {
+                      try {
+                        await Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder:
-                                (context) => EventTools(event: widget.eventO),
+                            builder: (context) => EventTools(event: event!),
                           ),
-                        ),
+                        );
+                        loadData();
+                      } catch (e) {
+                        showToast(isGood: false, msg: e.toString());
+                      }
+                    },
                   ),
 
                   buildActionItem(
@@ -196,19 +266,25 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                         onPressed: () {},
                       ),
                       ActionItem(
-                        figure: "16",
+                        figure: "$invsCount",
                         icon: Clarity.email_line,
                         subtitle: "Digital Issued",
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => Attendees(
-                                    edata: widget.eventO,
+                        onPressed: () async {
+                          try {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return Attendees(
+                                    edata: event!,
                                     kardType: KardType.invitation,
-                                  ),
-                            ),
-                          );
+                                  );
+                                },
+                              ),
+                            );
+                            loadData();
+                          } catch (e) {
+                            showToast(isGood: false, msg: e.toString());
+                          }
                         },
                       ),
                     ],
@@ -224,64 +300,60 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                         onPressed: () {},
                       ),
                       ActionItem(
-                        figure: "16",
+                        figure: "$contsCount",
                         icon: Clarity.users_line,
                         subtitle: "People reached",
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => Attendees(
-                                    edata: widget.eventO,
-                                    title: "Contributors",
-                                    kardType: KardType.contribution,
-                                  ),
-                            ),
-                          );
+                        onPressed: () async {
+                          try {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => Attendees(
+                                      edata: event!,
+                                      title: "Contributors",
+                                      kardType: KardType.contribution,
+                                    ),
+                              ),
+                            );
+                            loadData();
+                          } catch (e) {
+                            showToast(isGood: false, msg: e.toString());
+                          }
                         },
                       ),
                     ],
                   ),
                   const SizedBox(height: spaceTiles),
                   buildActionItem(
-                    title: "Team Management",
+                    title: "Users",
                     children: [
                       ActionItem(
-                        figure: "0",
-                        icon: Clarity.printer_line,
-                        subtitle: "Total Scanners",
-                        onPressed: () {},
-                      ),
-                      ActionItem(
-                        figure: "16",
-                        icon: Clarity.users_line,
-                        subtitle: "Total Admins",
-                        onPressed: () {
-                          Navigator.of(context).push(
+                        figure: "$scannersCount",
+                        icon: Clarity.qr_code_line,
+                        subtitle: "Cards Scanners",
+                        onPressed: () async {
+                          await Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder:
-                                  (context) =>
-                                      Users(eId: widget.eventO.id ?? ""),
+                              builder: (context) => Users(eId: event?.id ?? ""),
                             ),
                           );
+                          loadData();
+                        },
+                      ),
+                      ActionItem(
+                        figure: "$adminsCount",
+                        icon: Clarity.users_line,
+                        subtitle: "Total Admins",
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => Users(eId: event?.id ?? ""),
+                            ),
+                          );
+                          loadData();
                         },
                       ),
                     ],
-                  ),
-                  const SizedBox(height: spaceTiles),
-                  buildGlassListItem(
-                    title: "Scan & Verify Cards",
-                    subtitle: "Ensure Authenticity of Cards",
-                    icon: Clarity.shield_check_solid,
-                    gradient: [Colors.teal, Colors.teal],
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (context) => CheckPoints(edata: widget.eventO),
-                        ),
-                      );
-                    },
                   ),
                 ],
               ),
@@ -290,6 +362,18 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  safeState(runnable) {
+    if (mounted) {
+      setState(() {
+        runnable();
+      });
+    }
+  }
+
+  popper() {
+    Navigator.of(context).pop();
   }
 }
 

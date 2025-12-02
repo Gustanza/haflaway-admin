@@ -55,6 +55,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
   }
 
   loadEvents() async {
+    pageSize = events.isEmpty ? pageSize : events.length;
     safeState(() {
       isLoading = true;
     });
@@ -141,6 +142,14 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
         actions: Row(
           children: [
             appBarActionButton(
+              icon: Icons.refresh,
+              onTap: () {
+                showToast(isGood: true, msg: "Refreshing feed");
+                loadEvents();
+              },
+            ),
+            const SizedBox(width: spaceTiles),
+            appBarActionButton(
               icon: Icons.add,
               onTap: () {
                 Navigator.of(context).push(
@@ -176,7 +185,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                     padding: const EdgeInsets.only(
                       left: psm,
                       right: psm,
-                      top: psm,
+                      top: spaceTiles,
                     ),
                     itemBuilder: (context, index) {
                       if (index == events.length && isLoading) {
