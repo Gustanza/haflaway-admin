@@ -7,6 +7,7 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/event_tile.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/drawer/drawer.dart';
+import 'package:haflaway/top_destinations/eventz/aaaa.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/admin_pane.dart';
 import 'package:haflaway/utils/colors.dart';
@@ -63,6 +64,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       QuerySnapshot<Map<String, dynamic>> res =
           await firestore
               .collection(ecol)
+              .where('adminsIds', arrayContains: uid)
               .orderBy('startDate', descending: true)
               .limit(pageSize)
               .get();
@@ -72,6 +74,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
             return Event.fromMap(e.id, e.data());
           }).toList();
     } catch (e) {
+      print("Shida: $e");
       showToast(isGood: false, msg: "$e");
     }
     safeState(() {
@@ -87,6 +90,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       QuerySnapshot<Map<String, dynamic>> res =
           await firestore
               .collection(ecol)
+              .where('adminsIds', arrayContains: uid)
               .orderBy('startDate', descending: true)
               .startAfterDocument(lastEvent!)
               .limit(pageSize)
@@ -98,6 +102,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
           }).toList();
       events.addAll(tmpevents);
     } catch (e) {
+      print("Shida: $e");
       showToast(isGood: false, msg: "$e");
     }
     safeState(() {
@@ -146,6 +151,20 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
               onTap: () {
                 showToast(isGood: true, msg: "Refreshing feed");
                 loadEvents();
+              },
+            ),
+            appBarActionButton(
+              icon: Icons.next_plan,
+              onTap: () {
+                // showToast(isGood: true, msg: "Refr");
+                // loadEvents();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return InvitationScreen();
+                    },
+                  ),
+                );
               },
             ),
             const SizedBox(width: spaceTiles),

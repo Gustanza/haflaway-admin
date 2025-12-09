@@ -183,7 +183,7 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                     // Status indicator
                     GestureDetector(
                       onTap: () async {
-                        await showPublish(eventId: widget.eventData.id ?? "_");
+                        // await showPublish(eventId: widget.eventData.id ?? "_");
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
