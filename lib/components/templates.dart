@@ -390,7 +390,7 @@ Widget buildGlassListItem({
     onTap: onTap,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: p20, vertical: psm),
-      margin: EdgeInsets.only(bottom: psm * 0.65),
+      margin: EdgeInsets.only(bottom: spaceTiles),
       decoration: BoxDecoration(
         gradient: secscagrad,
         borderRadius: BorderRadius.circular(bmd),
@@ -730,3 +730,85 @@ buildFloatingBtn({
 }
 
 // End of Global Button
+
+buildActionItem({required String title, required List<ActionItem> children}) {
+  return Container(
+    decoration: BoxDecoration(
+      gradient: lqassgrad,
+      border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+      borderRadius: BorderRadius.circular(bsm),
+    ),
+    child: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(psm),
+          child: Text(
+            "${title}",
+            style: TextStyle(fontSize: fsm + 5, fontWeight: FontWeight.bold),
+          ),
+        ),
+        Divider(thickness: 0.1, height: 0),
+        IntrinsicHeight(
+          child: Row(
+            children: List.generate(children.length + 1, (index) {
+              int rindex = index == 0 ? index : index - 1;
+              if (index % 2 == 0) {
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: children[rindex].onPressed,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: psm * 2.5,
+                        vertical: psm * 2,
+                      ),
+                      decoration: BoxDecoration(shape: BoxShape.circle),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "${children[rindex].figure}",
+                                style: TextStyle(
+                                  fontSize: fsm * 2.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              buildActionButton(
+                                icon: children[rindex].icon,
+                                onTap: () {},
+                              ),
+                            ],
+                          ),
+                          Text("${children[rindex].subtitle}"),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                return VerticalDivider(thickness: 0.2, width: 0);
+              }
+            }),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class ActionItem {
+  String figure;
+  IconData icon;
+  String subtitle;
+  Function() onPressed;
+
+  ActionItem({
+    required this.figure,
+    required this.icon,
+    required this.subtitle,
+    required this.onPressed,
+  });
+}

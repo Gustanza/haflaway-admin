@@ -47,7 +47,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
 
   void _scrollListener() {
     if (scrollController.position.pixels >=
-        scrollController.position.maxScrollExtent - 20) {
+        scrollController.position.maxScrollExtent - 40) {
       if (!isLoading) {
         loadMoreEvents();
       }
@@ -55,6 +55,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
   }
 
   loadEvents() async {
+    pageSize = events.isEmpty ? pageSize : events.length;
     safeState(() {
       isLoading = true;
     });
@@ -62,7 +63,6 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       QuerySnapshot<Map<String, dynamic>> res =
           await firestore
               .collection(ecol)
-              .where(eadminsIds, arrayContains: uid)
               .orderBy('startDate', descending: true)
               .limit(pageSize)
               .get();
@@ -87,7 +87,6 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       QuerySnapshot<Map<String, dynamic>> res =
           await firestore
               .collection(ecol)
-              .where(eadminsIds, arrayContains: uid)
               .orderBy('startDate', descending: true)
               .startAfterDocument(lastEvent!)
               .limit(pageSize)
@@ -143,6 +142,14 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
         actions: Row(
           children: [
             appBarActionButton(
+              icon: Icons.refresh,
+              onTap: () {
+                showToast(isGood: true, msg: "Refreshing feed");
+                loadEvents();
+              },
+            ),
+            const SizedBox(width: spaceTiles),
+            appBarActionButton(
               icon: Icons.add,
               onTap: () {
                 Navigator.of(context).push(
@@ -159,9 +166,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          if (!isLoading) {
-            await loadEvents();
-          }
+          await loadEvents();
         },
         child: Ccafold(
           child:
@@ -180,7 +185,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                     padding: const EdgeInsets.only(
                       left: psm,
                       right: psm,
-                      top: psm,
+                      top: spaceTiles,
                     ),
                     itemBuilder: (context, index) {
                       if (index == events.length && isLoading) {
@@ -194,21 +199,19 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                       var evlvl = events[index].categoryLevel;
 
                       return GestureDetector(
-                        onTap: () {
+                        onTap: () async {
                           if (evlvl == '0') {
-                            if (events[index].status != "Published")
-                              return showToast(
-                                isGood: false,
-                                msg: "Event not published",
-                              );
-
-                            navNormal(
-                              context: context,
-                              widget: AdminPanel(
-                                isAdmin: true,
-                                eventO: events[index],
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return AdminPanel(
+                                    isAdmin: true,
+                                    eventO: events[index],
+                                  );
+                                },
                               ),
                             );
+                            loadEvents();
                           }
                         },
                         child: EventTile(eventData: events[index]),

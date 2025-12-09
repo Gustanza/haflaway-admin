@@ -9,6 +9,7 @@ import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/wsap_templates.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
@@ -43,14 +44,19 @@ class SelectTemplateState extends State<SelectTemplate> {
   @override
   Widget build(BuildContext context) {
     var path =
-        widget.kardType == KardType.contribution
+        widget.campaignId == contrCampId
             ? firestore
                 .collection("messageTemplates")
                 .where('category', isEqualTo: "matrimony-contributions")
                 .get()
-            : firestore
+            : widget.campaignId == invCampId
+            ? firestore
                 .collection("messageTemplates")
                 .where('category', isEqualTo: "whatsapp-wedding-invitations")
+                .get()
+            : firestore
+                .collection("messageTemplates")
+                .where('category', isEqualTo: "whatsapp-wedding-save-the-date")
                 .get();
     return Scaffold(
       backgroundColor: scaback,
@@ -180,7 +186,7 @@ class SelectTemplateState extends State<SelectTemplate> {
             children: [
               const SizedBox(height: psm),
               Text(
-                "Confirm Intent",
+                "Complete Action",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: fsm + 4,
@@ -189,7 +195,7 @@ class SelectTemplateState extends State<SelectTemplate> {
               ),
               const SizedBox(height: psm),
               lqAssButton(
-                label: "Execute Action",
+                label: "Send Now",
                 onPressed: () async {
                   List inviteesIds =
                       widget.senderList.map((e) {
@@ -201,9 +207,11 @@ class SelectTemplateState extends State<SelectTemplate> {
                     dynamic response;
                     if (widget.isWhatsApp && groupValue != null) {
                       var _url =
-                          widget.kardType == KardType.contribution
+                          widget.campaignId == contrCampId
                               ? sendWspContr
-                              : sendWspInv;
+                              : widget.campaignId == invCampId
+                              ? sendWspInv
+                              : sendWspSvDt;
                       response = await client.post(
                         Uri.parse(_url),
                         body: jsonEncode({
@@ -226,30 +234,71 @@ class SelectTemplateState extends State<SelectTemplate> {
                         }),
                       );
                     }
+
                     var res = jsonDecode(response.body);
-                    showSnack(
-                      context: context,
-                      isGood: true,
-                      msg: "${res['message']}",
-                    );
+
+                    // showSnack(
+                    //   context: context,
+                    //   isGood: true,
+                    //   msg: "${res['message']}",
+                    // );
                     popper();
+                    popper();
+                    showNotifier(msg: "${res['message']}");
                   } catch (e) {
                     popper();
-                    showSnack(context: context, isGood: false, msg: "$e");
+                    popper();
+                    // showSnack(context: context, isGood: false, msg: "$e");
+                    showNotifier(msg: "Failed due to: $e");
                   }
                   client.close();
-                  popper();
+                  // popper();
                 },
               ),
               const SizedBox(height: spaceTiles),
               lqAssButton(
-                label: "Cancel Action",
+                label: "Cancel",
                 onPressed: () {
                   popper();
                 },
               ),
               const SizedBox(height: psm),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  showNotifier({msg}) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return glassDialog(
+          child: Padding(
+            padding: const EdgeInsets.all(psm),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Information",
+                  style: TextStyle(
+                    fontSize: fsm + 6,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Divider(thickness: 0.25),
+                Text("$msg", textAlign: TextAlign.center),
+                Divider(thickness: 0.25),
+                lqAssButton(
+                  label: "Dismiss",
+                  onPressed: () {
+                    popper();
+                  },
+                ),
+                const SizedBox(height: psm * 0.5),
+              ],
+            ),
           ),
         );
       },

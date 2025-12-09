@@ -6,18 +6,21 @@ import 'package:flutter/material.dart';
 import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/templates.dart';
+import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/dimensions.dart';
+import 'package:haflaway/utils/globalwids.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/attendees.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/eventTools.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 
 class AdminPanel extends StatefulWidget {
@@ -30,9 +33,66 @@ class AdminPanel extends StatefulWidget {
 }
 
 class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
+  Event? event;
+  bool isLoading = false;
+  bool hasError = false;
+  int invsCount = 0;
+  int contsCount = 0;
+  int adminsCount = 0;
+  int scannersCount = 0;
   GlobalKey<FormState> key = GlobalKey<FormState>();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    loadData();
+  }
+
+  loadData() async {
+    safeState(() {
+      isLoading = true;
+      hasError = false;
+    });
+    try {
+      DocumentReference<Map<String, dynamic>> eventRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id);
+      CollectionReference<Map<String, dynamic>> attsRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id)
+          .collection(atcol);
+      var result = await Future.wait([eventRef.get(), attsRef.get()]);
+      var eventSnapshot = result[0] as DocumentSnapshot<Map<String, dynamic>>;
+      var attsSnapshot = result[1] as QuerySnapshot<Map<String, dynamic>>;
+      invsCount =
+          attsSnapshot.docs.where((t) {
+            Attendee attendee = Attendee.fromMap(t.id, t.data());
+            return attendee.cards.containsKey(KardType.invitation.name);
+          }).length;
+
+      contsCount =
+          attsSnapshot.docs.where((t) {
+            Attendee attendee = Attendee.fromMap(t.id, t.data());
+            return attendee.cards.containsKey(KardType.contribution.name);
+          }).length;
+
+      event = Event.fromMap(eventSnapshot.id, eventSnapshot.data()!);
+      adminsCount = event?.adminsIds?.length ?? 0;
+      scannersCount = event?.usersIds?.length ?? 0;
+      safeState(() {
+        isLoading = false;
+        hasError = false;
+      });
+    } catch (e) {
+      safeState(() {
+        isLoading = false;
+        hasError = true;
+      });
+      debugPrint("Error is: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,29 +109,47 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
         actions: Row(
           children: [
             buildActionButton(
+              icon: Icons.share,
+              onTap: () async {
+                String link =
+                    "https://haflaway.com/#/cards/${widget.eventO.id}";
+                String message = "Kadi za ${widget.eventO.title}";
+                SharePlus.instance.share(
+                  ShareParams(text: link, title: message),
+                );
+              },
+            ),
+            const SizedBox(width: spaceTiles),
+            buildActionButton(
               icon: Icons.edit_document,
-              onTap: () {
-                Navigator.of(context).push(
+              onTap: () async {
+                await Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) {
-                      return CreateEvent(event: widget.eventO);
+                      return CreateEvent(event: event);
                     },
                   ),
                 );
+                loadData();
               },
             ),
           ],
         ),
       ),
       body: Ccafold(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(child: SizedBox(height: psm)),
-            _buildEventImageCard(),
-            _buildAdminToolsSection(),
-            const SliverPadding(padding: EdgeInsets.only(bottom: psm)),
-          ],
-        ),
+        child:
+            !hasError && isLoading
+                ? buildLoader()
+                : !hasError && !isLoading
+                ? CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(child: SizedBox(height: spaceTiles)),
+                    _buildEventImageCard(),
+                    _buildAdminToolsSection(),
+                    const SliverPadding(padding: EdgeInsets.only(bottom: psm)),
+                  ],
+                )
+                : buildErrorView(),
       ),
     );
   }
@@ -97,7 +175,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
               children: [
                 // Background image
                 CachedNetworkImage(
-                  imageUrl: widget.eventO.eventThumbnail ?? "",
+                  imageUrl: event?.eventThumbnail ?? "",
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: double.infinity,
@@ -134,7 +212,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                   left: 20,
                   right: 20,
                   child: Text(
-                    widget.eventO.title ?? "",
+                    event?.title ?? "",
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -177,87 +255,118 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                       const Color(0xFF4CAF50),
                       const Color(0xFF45A047),
                     ],
-                    onTap:
-                        () => Navigator.of(context).push(
+                    onTap: () async {
+                      try {
+                        await Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => InRem(event: widget.eventO),
+                            builder: (context) => EventTools(event: event!),
                           ),
-                        ),
+                        );
+                        loadData();
+                      } catch (e) {
+                        showToast(isGood: false, msg: e.toString());
+                      }
+                    },
                   ),
 
-                  buildGlassListItem(
-                    title: "Invitations Manager",
-                    subtitle: "Create & Manage Invitations",
-                    icon: Clarity.user_solid,
-                    gradient: [
-                      const Color(0xFF2196F3),
-                      const Color(0xFF1976D2),
-                    ],
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (context) => Attendees(
-                                edata: widget.eventO,
-                                kardType: KardType.invitation,
+                  buildActionItem(
+                    title: "Invitations",
+                    children: [
+                      ActionItem(
+                        figure: "0",
+                        icon: Clarity.printer_line,
+                        subtitle: "Printed Order",
+                        onPressed: () {},
+                      ),
+                      ActionItem(
+                        figure: "$invsCount",
+                        icon: Clarity.email_line,
+                        subtitle: "Digital Issued",
+                        onPressed: () async {
+                          try {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return Attendees(
+                                    edata: event!,
+                                    kardType: KardType.invitation,
+                                  );
+                                },
                               ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  buildGlassListItem(
-                    title: "Contributors Manager",
-                    subtitle: "Create & Manage Contributors",
-                    icon: Clarity.coin_bag_solid,
-                    gradient: [
-                      const Color.fromARGB(255, 243, 33, 100),
-                      const Color.fromARGB(255, 243, 33, 100),
+                            );
+                            loadData();
+                          } catch (e) {
+                            showToast(isGood: false, msg: e.toString());
+                          }
+                        },
+                      ),
                     ],
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (context) => Attendees(
-                                edata: widget.eventO,
-                                title: "Contributors",
-                                kardType: KardType.contribution,
+                  ),
+                  const SizedBox(height: spaceTiles),
+                  buildActionItem(
+                    title: "Contacts",
+                    children: [
+                      ActionItem(
+                        figure: "0",
+                        icon: Clarity.printer_line,
+                        subtitle: "Printed Order",
+                        onPressed: () {},
+                      ),
+                      ActionItem(
+                        figure: "$contsCount",
+                        icon: Clarity.users_line,
+                        subtitle: "People reached",
+                        onPressed: () async {
+                          try {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => Attendees(
+                                      edata: event!,
+                                      title: "Contributors",
+                                      kardType: KardType.contribution,
+                                    ),
                               ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  buildGlassListItem(
-                    title: "Scan & Verify Cards",
-                    subtitle: "Ensure Authenticity of Cards",
-                    icon: Clarity.shield_check_solid,
-                    gradient: [Colors.teal, Colors.teal],
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder:
-                              (context) => CheckPoints(edata: widget.eventO),
-                        ),
-                      );
-                    },
-                  ),
-
-                  buildGlassListItem(
-                    title: "Team Management",
-                    subtitle: "Manage staff permissions",
-                    icon: Clarity.user_solid_alerted,
-                    gradient: [
-                      const Color(0xFFFF9800),
-                      const Color(0xFFF57C00),
+                            );
+                            loadData();
+                          } catch (e) {
+                            showToast(isGood: false, msg: e.toString());
+                          }
+                        },
+                      ),
                     ],
-                    onTap:
-                        () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder:
-                                (context) => Users(eId: widget.eventO.id ?? ""),
-                          ),
-                        ),
+                  ),
+                  const SizedBox(height: spaceTiles),
+                  buildActionItem(
+                    title: "Users",
+                    children: [
+                      ActionItem(
+                        figure: "$scannersCount",
+                        icon: Clarity.qr_code_line,
+                        subtitle: "Cards Scanners",
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => Users(eId: event?.id ?? ""),
+                            ),
+                          );
+                          loadData();
+                        },
+                      ),
+                      ActionItem(
+                        figure: "$adminsCount",
+                        icon: Clarity.users_line,
+                        subtitle: "Total Admins",
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => Users(eId: event?.id ?? ""),
+                            ),
+                          );
+                          loadData();
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -266,6 +375,18 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  safeState(runnable) {
+    if (mounted) {
+      setState(() {
+        runnable();
+      });
+    }
+  }
+
+  popper() {
+    Navigator.of(context).pop();
   }
 }
 

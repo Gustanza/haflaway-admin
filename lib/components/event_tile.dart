@@ -58,7 +58,7 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                     ),
                     child: SizedBox(
                       width: double.infinity,
-                      height: MediaQuery.of(context).size.height * 0.35,
+                      height: MediaQuery.of(context).size.height * 0.5,
                       child: buildImage(url: widget.eventData.eventThumbnail),
                     ),
                   ),
@@ -146,12 +146,35 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                           size: 16,
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          '${eventfDt}',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                        Expanded(
+                          child: Text(
+                            '${eventfDt}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_pin,
+                          color: Colors.white.withOpacity(0.7),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${widget.eventData.location}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -159,7 +182,9 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                     const SizedBox(height: 12),
                     // Status indicator
                     GestureDetector(
-                      onTap: () async {},
+                      onTap: () async {
+                        await showPublish(eventId: widget.eventData.id ?? "_");
+                      },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,

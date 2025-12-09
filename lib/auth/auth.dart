@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
@@ -175,10 +176,16 @@ class _LoginState extends State<Login> {
   }
 
   goOn() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const NavHost()),
-      (route) => false,
-    );
+    if (kIsWeb) {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => const NavHost()));
+    } else {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const NavHost()),
+        (route) => false,
+      );
+    }
   }
 }
 
