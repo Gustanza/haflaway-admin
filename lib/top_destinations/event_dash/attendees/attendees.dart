@@ -10,6 +10,7 @@ import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/wsap.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/importcontr.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/searchdel.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/stats.dart';
@@ -415,6 +416,105 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     _loadAttendees();
   }
 
+  buildPopupMenu() {
+    return PopupMenuButton(
+      // color: lqassgradBaseColor,
+      icon: Icon(Icons.more_horiz),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadiusGeometry.circular(bsm),
+        side: BorderSide(width: bdrWidthGen, color: lqassbdrColor),
+      ),
+      itemBuilder: (context) {
+        return [
+          PopupMenuItem(
+            onTap: () {
+              showQuickStats();
+            },
+            child: ListTile(
+              leading: Icon(Icons.summarize),
+              title: Text("Taarifa fupi"),
+            ),
+          ),
+
+          PopupMenuItem(
+            onTap: () async {
+              String title =
+                  widget.kardType == KardType.invitation
+                      ? "Invitation"
+                      : "Contributor";
+              await navNormal(
+                context: context,
+                widget: CreateAttendees(
+                  event: widget.edata,
+                  title: title,
+                  kardType: widget.kardType,
+                ),
+              );
+              _loadAttendees();
+            },
+
+            child: ListTile(
+              leading: Icon(Icons.supervised_user_circle_sharp),
+              title: Text("Ongeza Mwalikwa"),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () {
+              selectAll();
+            },
+            child: ListTile(
+              leading: Icon(Icons.select_all),
+              title: Text("Select/De-select All"),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () {
+              importFile();
+            },
+            child: ListTile(
+              leading: Icon(Icons.import_export),
+              title: Text("Import Exceli"),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () {
+              showSelectCard();
+            },
+            child: ListTile(
+              leading: Icon(Icons.import_contacts),
+              title: Text("Import Mchangiaji"),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () {
+              delSelect();
+            },
+            child: ListTile(
+              leading: Icon(Icons.delete_forever),
+              title: Text("Futa Mwalikwa"),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return InvitesIssuers(eventId: widget.edata.id ?? "");
+                  },
+                ),
+              );
+              // _loadAttendees();
+            },
+            child: ListTile(
+              leading: Icon(Icons.email),
+              title: Text("Tuma Mialiko"),
+            ),
+          ),
+        ];
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -431,12 +531,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           children: [
             // Elegant filter button with active filter indicator
             _buildFilterButton(),
-            IconButton(
-              icon: Icon(Icons.bar_chart),
-              onPressed: () {
-                showQuickStats();
-              },
-            ),
             IconButton(
               icon: Icon(Icons.search),
               onPressed: () {
@@ -458,7 +552,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           FloatingActionButton(
             mini: true,
             heroTag: "mini",
-            backgroundColor: lqassgradBaseColor,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadiusGeometry.circular(bmd * 10),
               side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
@@ -476,13 +570,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           const SizedBox(height: spaceTiles),
           FloatingActionButton(
             heroTag: "major",
-            backgroundColor: lqassgradBaseColor,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadiusGeometry.circular(bmd * 10),
               side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
             ),
             foregroundColor: Colors.white,
-            child: Icon(Clarity.tools_line),
+            child: buildPopupMenu(),
             onPressed: buildToolKitSheet,
           ),
         ],
