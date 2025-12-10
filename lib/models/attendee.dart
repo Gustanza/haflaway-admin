@@ -43,6 +43,7 @@ class Attendee {
   String phone;
   Map messages;
   String idComment;
+  List? messageIndexes;
   Attendee({
     this.id,
     required this.cards,
@@ -55,6 +56,7 @@ class Attendee {
     required this.fullName,
     required this.phone,
     this.attendanceStatus,
+    this.messageIndexes = const [],
     this.idComment = 'No Comment',
     required this.messages,
   });
@@ -62,13 +64,14 @@ class Attendee {
   Map<String, dynamic> toMap() => {
     if (id != null) "id": id,
     "cards": cards,
+    "phone": phone,
     "checkinStatus": checkinStatus,
     "createdAt": createdAt.toIso8601String(),
     "email": email,
     "fullName": fullName,
-    "phone": phone,
     "messages": messages,
     "idComment": idComment,
+    "messageIndexes": messageIndexes,
     "attendanceStatus": attendanceStatus,
   };
 
@@ -86,6 +89,7 @@ class Attendee {
       phone: map['phone'] ?? "",
       messages: map['messages'] ?? {},
       idComment: map['idComment'] ?? "No Comment",
+      messageIndexes: map['messageIndexes'] ?? [],
       attendanceStatus: map['attendanceStatus'] ?? "Not Confirmed",
     );
   }

@@ -36,8 +36,8 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                 .doc(widget.eventId)
                 .collection(atcol)
                 .where(
-                  "messageList",
-                  arrayContains: {'channel': 'sms', 'status': 'delivered'},
+                  "messageIndexes",
+                  arrayContains: {'channel': 'whatsapp', 'status': 'read'},
                 )
                 .get(),
         builder: (context, snapshot) {
