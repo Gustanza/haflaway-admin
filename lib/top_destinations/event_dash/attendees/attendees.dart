@@ -11,6 +11,7 @@ import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/wsap.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/importcontr.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/searchdel.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/stats.dart';
@@ -43,7 +44,7 @@ class Attendees extends StatefulWidget {
     super.key,
     required this.edata,
     required this.kardType,
-    this.title = "Invitations",
+    this.title = "Mialiko",
   });
   @override
   State<Attendees> createState() => _AttendeesState();
@@ -94,7 +95,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     // Debug the scroll position
     if (scrollController.position.pixels >=
         scrollController.position.maxScrollExtent - 200) {
-      if (!isLoading && hasMore && scont.text.isEmpty) {
+      if (!isLoading && hasMore) {
         _loadMoreAttendees();
       }
     }
@@ -419,7 +420,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   buildPopupMenu() {
     return PopupMenuButton(
       // color: lqassgradBaseColor,
-      icon: Icon(Icons.more_horiz),
+      icon: Icon(Icons.menu_open),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadiusGeometry.circular(bsm),
         side: BorderSide(width: bdrWidthGen, color: lqassbdrColor),
@@ -435,7 +436,29 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               title: Text("Taarifa fupi"),
             ),
           ),
-
+          PopupMenuItem(
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return InvitesIssuers(
+                      event: widget.edata,
+                      kardType: widget.kardType,
+                      campaignId:
+                          widget.kardType == KardType.invitation
+                              ? invCampId
+                              : contrCampId,
+                    );
+                  },
+                ),
+              );
+              // _loadAttendees();
+            },
+            child: ListTile(
+              leading: Icon(Icons.email),
+              title: Text("Tuma Mialiko"),
+            ),
+          ),
           PopupMenuItem(
             onTap: () async {
               String title =
@@ -454,7 +477,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             },
 
             child: ListTile(
-              leading: Icon(Icons.supervised_user_circle_sharp),
+              leading: Icon(Icons.add_to_queue_sharp),
               title: Text("Ongeza Mwalikwa"),
             ),
           ),
@@ -490,24 +513,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               delSelect();
             },
             child: ListTile(
+              contentPadding: EdgeInsets.symmetric(horizontal: psm),
+              tileColor: Colors.red,
               leading: Icon(Icons.delete_forever),
               title: Text("Futa Mwalikwa"),
-            ),
-          ),
-          PopupMenuItem(
-            onTap: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return InvitesIssuers(eventId: widget.edata.id ?? "");
-                  },
-                ),
-              );
-              // _loadAttendees();
-            },
-            child: ListTile(
-              leading: Icon(Icons.email),
-              title: Text("Tuma Mialiko"),
             ),
           ),
         ];

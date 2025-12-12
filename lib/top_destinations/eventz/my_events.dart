@@ -10,6 +10,7 @@ import 'package:haflaway/top_destinations/drawer/drawer.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/admin_pane.dart';
 import 'package:haflaway/utils/colors.dart';
+import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
@@ -22,7 +23,7 @@ class HaflaWayHome extends StatefulWidget {
 }
 
 class _HaflaWayHomeState extends State<HaflaWayHome> {
-  int pageSize = 5;
+  int pageSize = evPageSize;
   bool isLoading = false;
   List<Event> events = [];
   String? uid = FirebaseAuth.instance.currentUser?.uid;
@@ -55,7 +56,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
   }
 
   loadEvents() async {
-    pageSize = events.isEmpty ? pageSize : events.length;
+    pageSize = events.isEmpty ? evPageSize : events.length;
     safeState(() {
       isLoading = true;
     });

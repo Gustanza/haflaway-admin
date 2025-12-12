@@ -1,15 +1,16 @@
 var shannnels = {
-  "all": "Njia Zote",
-  "sms": "Njia ya SMS",
-  "whatsapp": "Njia ya WhatsApp",
+  "nan": "Chagua Channel",
+  "sms": "Channel ya SMS",
+  "whatsapp": "Channel ya WhatsApp",
 };
 
 var shtates = {
-  "unsent": "Hazijatumwa",
-  "sent": "Zimetumwa",
-  "delivered": "Zimefika",
-  "read": "Zimesomwa",
-  "pending": "Ziko Pending",
-  "undelivered": "Hazijapokelewa",
-  "failed": "Zimefeli",
+  "none": "Chagua Status",
+  "all": "Zote",
+  "sent": "Zilizotumwa",
+  "delivered": "Zilizofika",
+  "read": "Zilizosomwa",
+  "pending": "Zilizo Pending",
+  "undelivered": "Hazikupokelewa",
+  "failed": "Zilizofeli",
 };
