@@ -35,7 +35,7 @@ Widget buildAttendeeCard({
 
   // Calculate message count if messages property exists
   int messageCount = 0;
-  messageCount = (attendee.messages).length;
+  messageCount = (attendee.messageIndexes)?.length ?? 0;
 
   // stful builder
   return StatefulBuilder(

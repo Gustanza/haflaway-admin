@@ -6,7 +6,7 @@ var shannnels = {
 
 var shtates = {
   "none": "Chagua Status",
-  "all": "Zote",
+  "all": "Status Zote",
   "sent": "Zilizotumwa",
   "delivered": "Zilizofika",
   "read": "Zilizosomwa",

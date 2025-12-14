@@ -12,6 +12,7 @@ import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/wsap.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
+import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/importcontr.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/searchdel.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/stats.dart';
@@ -616,7 +617,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         children: [
           Expanded(
             child: ListView.builder(
-              padding: EdgeInsets.only(top: spaceTiles),
+              padding: EdgeInsets.all(spaceTiles),
               controller: scrollController,
               itemCount: atdata.length + 1, // +1 for the loading indicator
               itemBuilder: (context, index) {
@@ -644,8 +645,58 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     return const SizedBox(height: 20);
                   }
                 }
+
                 // Show attendee item
-                return _buildAttendeeCard(atdata[index]);
+                Attendee attendee = atdata[index];
+                var hasKey = selectList.any((test) {
+                  return test.id == attendee.id;
+                });
+                var campaignId =
+                    widget.kardType == KardType.invitation
+                        ? invCampId
+                        : contrCampId;
+                return buildAttendeeCard(
+                  hasKey: hasKey,
+                  attendee: attendee,
+                  kardType: widget.kardType,
+                  eventId: widget.edata.id ?? "_",
+                  campaignId: campaignId,
+                  onEdit: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return CreateAttendees(
+                            event: widget.edata,
+                            kardType: widget.kardType,
+                            attendee: attendee,
+                          );
+                        },
+                      ),
+                    );
+                    _loadAttendees();
+                  },
+                  onSelected: () {
+                    if (hasKey) {
+                      var tmp =
+                          selectList.where((test) {
+                            return test.id != attendee.id;
+                          }).toList();
+                      selectList = tmp;
+                    } else {
+                      selectList.add(attendee);
+                    }
+                    safeState(() {});
+                  },
+                  onStatusChange: (status) {
+                    int index = atdata.indexWhere(
+                      (element) => element.id == attendee.id,
+                    );
+                    if (index != -1) {
+                      atdata[index].attendanceStatus = status;
+                    }
+                    safeState(() {});
+                  },
+                );
               },
             ),
           ),
