@@ -283,7 +283,7 @@ Widget _buildDeliveryStatusIndicators(
       _buildStatusChip(
         label: "SMS",
         status: smsStatus,
-        brandData: Brands.facebook_messenger,
+        brandData: Brands.wechat,
       ),
       SizedBox(width: psm * 0.5),
       // WhatsApp Status Indicator

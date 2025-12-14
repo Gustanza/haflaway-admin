@@ -17,6 +17,7 @@ import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/gen_constants.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
+import 'package:icons_plus/icons_plus.dart';
 
 class InvitesIssuers extends StatefulWidget {
   final Event event;
@@ -163,23 +164,64 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: scaback,
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-          side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
-        ),
-        foregroundColor: Colors.white,
-        child: Icon(Icons.arrow_forward),
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) {
-                return SendPreviewer();
-              },
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            mini: true,
+            heroTag: "mini",
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+              side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
             ),
-          );
-        },
+            foregroundColor: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(psm * 0.5),
+              child: Brand(Brands.wechat),
+            ),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return SendPreviewer(
+                      isWhatsApp: false,
+                      event: widget.event,
+                      kardType: widget.kardType,
+                      senderList: selectList,
+                      campaignId: widget.campaignId,
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+          FloatingActionButton(
+            heroTag: "major",
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+              side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+            ),
+            foregroundColor: Colors.white,
+            child: Brand(Brands.whatsapp),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return SendPreviewer(
+                      isWhatsApp: true,
+                      event: widget.event,
+                      kardType: widget.kardType,
+                      senderList: selectList,
+                      campaignId: widget.campaignId,
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ],
       ),
       appBar: appBar(
         title: "Ratibu Mialiko",
