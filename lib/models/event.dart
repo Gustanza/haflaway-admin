@@ -80,6 +80,7 @@ class Event {
   String? location;
   String? supportPhone;
   String? startDate;
+  String? endDate;
   List<EventCalendar>? calendar;
 
   Event({
@@ -100,6 +101,7 @@ class Event {
     this.supportPhone,
     this.usepng = true,
     this.startDate,
+    this.endDate,
     this.calendar = const [],
   });
 
@@ -121,6 +123,7 @@ class Event {
     if (usepng != null) 'usepng': usepng,
     if (supportPhone != null) 'supportPhone': supportPhone,
     if (startDate != null) 'startDate': startDate,
+    if (endDate != null) 'endDate': endDate,
     if (calendar != null)
       'calendar':
           calendar?.map((e) {
@@ -147,6 +150,7 @@ class Event {
       location: map['location'] ?? '',
       usepng: map['usepng'] ?? true,
       startDate: map['startDate'] ?? DateTime(1990).toIso8601String(),
+      endDate: map['endDate'] ?? DateTime(1991).toIso8601String(),
       calendar:
           map['calendar'].map<EventCalendar>((e) {
             return EventCalendar.fromMap(e);

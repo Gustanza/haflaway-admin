@@ -33,6 +33,8 @@ class CreateEvent extends StatefulWidget {
 class _CreateEventState extends State<CreateEvent> {
   XFile? picha;
   EventPlan? plan;
+  DateTime? evstdt;
+  DateTime? evenddt;
   String phnnumber = '';
   String fEventCatId = '';
   String fEventCatLevel = '';
@@ -42,13 +44,15 @@ class _CreateEventState extends State<CreateEvent> {
   String? uid = FirebaseAuth.instance.currentUser?.uid;
   GlobalKey<FormState> globalKey = GlobalKey<FormState>();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-  final DateFormat dformtr = DateFormat('EEEE, d\'th\', MMMM, yyyy');
+  final DateFormat dformtr = DateFormat('EEEE, d\'th\', MMMM, yyyy, HH:mm');
   final DateFormat tformtr = DateFormat('HH:mm');
   TextEditingController fEventTitleCon = TextEditingController();
   TextEditingController fEventDescCon = TextEditingController();
   TextEditingController fEventCatCon = TextEditingController();
   TextEditingController fEventBillCon = TextEditingController();
   TextEditingController phncont = TextEditingController();
+  TextEditingController stdtcont = TextEditingController();
+  TextEditingController enddtcont = TextEditingController();
   TextEditingController fEventLocationCon = TextEditingController();
 
   @override
@@ -69,6 +73,12 @@ class _CreateEventState extends State<CreateEvent> {
     fEventDescCon.text = event.description ?? "";
     fEventLocationCon.text = event.location ?? "";
     phncont.text = event.supportPhone!.substring(3);
+    evstdt = DateTime.parse(
+      event.startDate ?? DateTime.now().toIso8601String(),
+    );
+    stdtcont.text = dformtr.format(evstdt!);
+    evenddt = DateTime.parse(event.endDate ?? DateTime.now().toIso8601String());
+    enddtcont.text = dformtr.format(evenddt!);
     eventDays = event.calendar!;
     safeState(() {});
     getCatsList();
@@ -174,25 +184,25 @@ class _CreateEventState extends State<CreateEvent> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: psm),
-                    const Text(
-                      'Add event title',
-                      style: TextStyle(
-                        fontSize: fsm,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: psm * 0.3),
+                    const SizedBox(height: spaceTiles),
+                    // const Text(
+                    //   'Add event title',
+                    //   style: TextStyle(
+                    //     fontSize: fsm,
+                    //     fontWeight: FontWeight.bold,
+                    //   ),
+                    // ),
+                    // const SizedBox(height: psm * 0.3),
                     buildField(lbl: eptitle, cont: fEventTitleCon),
-                    const SizedBox(height: psm),
-                    const Text(
-                      'Add event category',
-                      style: TextStyle(
-                        fontSize: fsm,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: psm * 0.3),
+                    const SizedBox(height: spaceTiles),
+                    // const Text(
+                    //   'Add event category',
+                    //   style: TextStyle(
+                    //     fontSize: fsm,
+                    //     fontWeight: FontWeight.bold,
+                    //   ),
+                    // ),
+                    // const SizedBox(height: psm * 0.3),
                     buildField(
                       isReadOnly: true,
                       showCursor: false,
@@ -202,35 +212,35 @@ class _CreateEventState extends State<CreateEvent> {
                         showSelectCats();
                       },
                     ),
-                    const SizedBox(height: psm),
-                    const Text(
-                      'Add event description',
-                      style: TextStyle(
-                        fontSize: fsm,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: psm * 0.3),
+                    const SizedBox(height: spaceTiles),
+                    // const Text(
+                    //   'Add event description',
+                    //   style: TextStyle(
+                    //     fontSize: fsm,
+                    //     fontWeight: FontWeight.bold,
+                    //   ),
+                    // ),
+                    // const SizedBox(height: psm * 0.3),
                     buildField(lbl: epdescription, cont: fEventDescCon),
-                    const SizedBox(height: psm),
-                    const Text(
-                      'Add event location',
-                      style: TextStyle(
-                        fontSize: fsm,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: psm * 0.3),
+                    const SizedBox(height: spaceTiles),
+                    // const Text(
+                    //   'Add event location',
+                    //   style: TextStyle(
+                    //     fontSize: fsm,
+                    //     fontWeight: FontWeight.bold,
+                    //   ),
+                    // ),
+                    // const SizedBox(height: psm * 0.3),
                     buildField(lbl: eplocation, cont: fEventLocationCon),
-                    const SizedBox(height: psm),
-                    const Text(
-                      'Select event plan',
-                      style: TextStyle(
-                        fontSize: fsm,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: psm * 0.3),
+                    const SizedBox(height: spaceTiles),
+                    // const Text(
+                    //   'Select event plan',
+                    //   style: TextStyle(
+                    //     fontSize: fsm,
+                    //     fontWeight: FontWeight.bold,
+                    //   ),
+                    // ),
+                    // const SizedBox(height: psm * 0.3),
                     buildField(
                       isReadOnly: true,
                       showCursor: false,
@@ -250,76 +260,129 @@ class _CreateEventState extends State<CreateEvent> {
                         }
                       },
                     ),
-                    const SizedBox(height: psm * 0.70),
-                    const Text(
-                      'Phone number',
-                      style: TextStyle(
-                        fontSize: fsm,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: psm * 0.3),
+                    const SizedBox(height: spaceTiles),
+                    // const Text(
+                    //   'Phone number',
+                    //   style: TextStyle(
+                    //     fontSize: fsm,
+                    //     fontWeight: FontWeight.bold,
+                    //   ),
+                    // ),
+                    // const SizedBox(height: psm * 0.3),
                     buildPhone(mobileCont: phncont),
-                    ListTile(
-                      contentPadding: const EdgeInsets.only(left: 0, right: 0),
-                      title: const Text(
-                        'Add days of event',
-                        style: TextStyle(
-                          fontSize: fsm,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      trailing: IconButton(
-                        onPressed: () async {
-                          EventCalendar? evd = await dtPicky(context: context);
-                          if (evd != null) {
+                    // const Text(
+                    //   'Start date & time',
+                    //   style: TextStyle(
+                    //     fontSize: fsm,
+                    //     fontWeight: FontWeight.bold,
+                    //   ),
+                    // ),
+                    // const SizedBox(height: psm * 0.3),
+                    buildField(
+                      isReadOnly: true,
+                      showCursor: false,
+                      cont: stdtcont,
+                      lbl: "Event start date",
+                      isTapped: () async {
+                        try {
+                          evstdt = await dtPicker(context: context);
+                          if (evstdt != null) {
                             setState(() {
-                              eventDays.add(evd);
+                              stdtcont.text = dformtr.format(evstdt!);
                             });
                           }
-                        },
-                        icon: const Icon(Clarity.plus_circle_line),
-                      ),
+                        } catch (e) {
+                          showToast(isGood: false, msg: "$e");
+                        }
+                      },
                     ),
-                    if (eventDays.isNotEmpty)
-                      Column(
-                        children: List.generate(eventDays.length, (idx) {
-                          var edt = dformtr.format(eventDays[idx].eventDate);
-                          var est = tformtr.format(eventDays[idx].startTime);
-                          var eet = tformtr.format(eventDays[idx].endTime);
-                          return Container(
-                            padding: EdgeInsets.only(left: psm, right: psm),
-                            decoration: BoxDecoration(
-                              gradient: secscagrad,
-                              border: Border.all(
-                                color: lqassbdrColor,
-                                width: bdrWidthGen,
-                              ),
-                              borderRadius: BorderRadius.circular(bsm),
-                            ),
-                            child: ListTile(
-                              title: Text(edt),
-                              contentPadding: EdgeInsets.zero,
-                              tileColor: lqassgradBaseColor,
-                              shape: RoundedRectangleBorder(
-                                side: BorderSide(color: lqassgradBaseColor),
-                                borderRadius: BorderRadiusGeometry.circular(
-                                  bmd,
-                                ),
-                              ),
-                              subtitle: Text("$est - $eet"),
-                              trailing: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    eventDays.removeAt(idx);
-                                  });
-                                },
-                                icon: const Icon(Icons.close),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
+                    const SizedBox(height: spaceTiles),
+                    // const Text(
+                    //   'End date & time',
+                    //   style: TextStyle(
+                    //     fontSize: fsm,
+                    //     fontWeight: FontWeight.bold,
+                    //   ),
+                    // ),
+                    // const SizedBox(height: psm * 0.3),
+                    buildField(
+                      isReadOnly: true,
+                      showCursor: false,
+                      cont: enddtcont,
+                      lbl: "Event end date",
+                      isTapped: () async {
+                        try {
+                          evenddt = await dtPicker(context: context);
+                          if (evenddt != null) {
+                            setState(() {
+                              enddtcont.text = dformtr.format(evenddt!);
+                            });
+                          }
+                        } catch (e) {
+                          showToast(isGood: false, msg: "$e");
+                        }
+                      },
+                    ),
+                    // ListTile(
+                    //   contentPadding: const EdgeInsets.only(left: 0, right: 0),
+                    //   title: const Text(
+                    //     'Add days of event',
+                    //     style: TextStyle(
+                    //       fontSize: fsm,
+                    //       fontWeight: FontWeight.bold,
+                    //     ),
+                    //   ),
+                    //   trailing: IconButton(
+                    //     onPressed: () async {
+                    //       EventCalendar? evd = await dtPicky(context: context);
+                    //       if (evd != null) {
+                    //         setState(() {
+                    //           eventDays.add(evd);
+                    //         });
+                    //       }
+                    //     },
+                    //     icon: const Icon(Clarity.plus_circle_line),
+                    //   ),
+                    // ),
+                    // if (eventDays.isNotEmpty)
+                    //   Column(
+                    //     children: List.generate(eventDays.length, (idx) {
+                    //       var edt = dformtr.format(eventDays[idx].eventDate);
+                    //       var est = tformtr.format(eventDays[idx].startTime);
+                    //       var eet = tformtr.format(eventDays[idx].endTime);
+                    //       return Container(
+                    //         padding: EdgeInsets.only(left: psm, right: psm),
+                    //         decoration: BoxDecoration(
+                    //           gradient: secscagrad,
+                    //           border: Border.all(
+                    //             color: lqassbdrColor,
+                    //             width: bdrWidthGen,
+                    //           ),
+                    //           borderRadius: BorderRadius.circular(bsm),
+                    //         ),
+                    //         child: ListTile(
+                    //           title: Text(edt),
+                    //           contentPadding: EdgeInsets.zero,
+                    //           tileColor: lqassgradBaseColor,
+                    //           shape: RoundedRectangleBorder(
+                    //             side: BorderSide(color: lqassgradBaseColor),
+                    //             borderRadius: BorderRadiusGeometry.circular(
+                    //               bmd,
+                    //             ),
+                    //           ),
+                    //           subtitle: Text("$est - $eet"),
+                    //           trailing: IconButton(
+                    //             onPressed: () {
+                    //               setState(() {
+                    //                 eventDays.removeAt(idx);
+                    //               });
+                    //             },
+                    //             icon: const Icon(Icons.close),
+                    //           ),
+                    //         ),
+                    //       );
+                    //     }),
+                    //   ),
                   ]),
                 ),
               ),
@@ -520,9 +583,10 @@ class _CreateEventState extends State<CreateEvent> {
           description: fEventDescCon.text.trim(),
           eventPlanId: plan?.id ?? null,
           eventThumbnail: dwnURL,
-          calendar: eventDays,
+          // calendar: eventDays,
           location: fEventLocationCon.text.trim(),
-          startDate: eventDays.first.eventDate.toIso8601String(),
+          startDate: evstdt?.toIso8601String(),
+          endDate: evenddt?.toIso8601String(),
         );
         batch.set(evRef, event.toMap(), SetOptions(merge: true));
         batch.commit();
@@ -544,10 +608,12 @@ class _CreateEventState extends State<CreateEvent> {
     if (picha == null && widget.event == null) {
       showToast(isGood: false, msg: "Thumbnail is required");
       return false;
-    } else if (eventDays.isEmpty) {
-      showToast(isGood: false, msg: "Calendar for event required");
-      return false;
-    } else {
+    }
+    // else if (eventDays.isEmpty) {
+    //   showToast(isGood: false, msg: "Calendar for event required");
+    //   return false;
+    // }
+    else {
       return true;
     }
   }
