@@ -12,7 +12,6 @@ import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/send_previewer.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/send_search_deleg.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/crtattendees.dart';
-import 'package:haflaway/utils/attstates.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
@@ -49,6 +48,9 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   String selChannel = shannnels.keys.first;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   ScrollController scrollController = ScrollController();
+  int currentPage = 1;
+  int? totalPages;
+  List<DocumentSnapshot> pageDocuments = []; // Track documents for each page
   @override
   void initState() {
     super.initState();
@@ -105,26 +107,36 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     safeState(() {
       isLoading = true;
       hasMore = true;
+      currentPage = 1;
+      pageDocuments = [];
     });
     try {
       attendeesList = [];
-      pageSize = attendeesList.isEmpty ? atsPageSize : atStatesList.length;
+      pageSize = atsPageSize;
       var invSnapshots = await whereQwrBuilder(getMore: false).get();
       var doks = invSnapshots.docs;
       if (doks.isEmpty) {
         safeState(() {
           isLoading = false;
           hasMore = false;
+          totalPages = 1;
         });
         return;
       }
       lastDocument = doks.last;
+      pageDocuments = [doks.last];
       attendeesList =
           doks.map<Attendee>((item) {
             return Attendee.fromMap(item.id, item.data());
           }).toList();
       safeState(() {
         isLoading = false;
+        // Estimate total pages if we got a full page
+        if (doks.length == pageSize) {
+          totalPages = null; // Unknown, show "?"
+        } else {
+          totalPages = currentPage;
+        }
       });
     } catch (e) {
       safeState(() {
@@ -145,15 +157,118 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         safeState(() {
           isLoading = false;
           hasMore = false;
+          totalPages = currentPage; // We've reached the end
         });
         return;
       }
       lastDocument = doks.last;
+      pageDocuments.add(doks.last);
       var list =
           doks.map<Attendee>((item) {
             return Attendee.fromMap(item.id, item.data());
           }).toList();
       attendeesList.addAll(list);
+      safeState(() {
+        isLoading = false;
+        currentPage++;
+        // Update total pages if we got less than pageSize
+        if (doks.length < pageSize) {
+          totalPages = currentPage;
+        }
+      });
+    } catch (e) {
+      safeState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  goToPage(int targetPage) async {
+    if (targetPage < 1 || (totalPages != null && targetPage > totalPages!)) {
+      return;
+    }
+    if (targetPage == currentPage) return;
+
+    safeState(() {
+      isLoading = true;
+    });
+
+    try {
+      if (targetPage > currentPage) {
+        // Go forward: load more pages until we reach target
+        while (currentPage < targetPage && hasMore) {
+          var invSnapshots = await whereQwrBuilder(getMore: true).get();
+          var doks = invSnapshots.docs;
+          if (doks.isEmpty) {
+            safeState(() {
+              hasMore = false;
+              totalPages = currentPage;
+            });
+            break;
+          }
+          lastDocument = doks.last;
+          pageDocuments.add(doks.last);
+          var list =
+              doks.map<Attendee>((item) {
+                return Attendee.fromMap(item.id, item.data());
+              }).toList();
+          attendeesList.addAll(list);
+          safeState(() {
+            currentPage++;
+            if (doks.length < pageSize) {
+              totalPages = currentPage;
+            }
+          });
+        }
+      } else {
+        // Go backward: reset and load up to target page
+        safeState(() {
+          attendeesList = [];
+          currentPage = 1;
+          lastDocument = null;
+          pageDocuments = [];
+          hasMore = true;
+        });
+
+        // Load pages sequentially up to target
+        for (int page = 1; page < targetPage; page++) {
+          Query query;
+          if (page == 1) {
+            query = whereQwrBuilder(getMore: false);
+          } else {
+            query = whereQwrBuilder(getMore: true);
+          }
+          var invSnapshots = await query.get();
+          var doks = invSnapshots.docs;
+          if (doks.isEmpty) {
+            safeState(() {
+              hasMore = false;
+              totalPages = currentPage;
+            });
+            break;
+          }
+          lastDocument = doks.last;
+          pageDocuments.add(doks.last);
+          var list =
+              doks.map<Attendee>((item) {
+                return Attendee.fromMap(
+                  item.id,
+                  item.data() as Map<String, dynamic>,
+                );
+              }).toList();
+          if (page == 1) {
+            attendeesList = list;
+          } else {
+            attendeesList.addAll(list);
+          }
+          safeState(() {
+            currentPage = page + 1;
+            if (doks.length < pageSize) {
+              totalPages = currentPage;
+            }
+          });
+        }
+      }
       safeState(() {
         isLoading = false;
       });
@@ -249,43 +364,62 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: scaback,
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            mini: true,
-            heroTag: "mini",
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-              side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
-            ),
-            foregroundColor: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(psm * 0.5),
-              child: Brand(Brands.wechat),
-            ),
-            onPressed: () async {
-              await pushToSend(isWhatsApp: false, prefix: "sms");
-            },
-          ),
-          FloatingActionButton(
-            heroTag: "major",
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-              side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
-            ),
-            foregroundColor: Colors.white,
-            child: Brand(Brands.whatsapp),
-            onPressed: () async {
-              await pushToSend(isWhatsApp: true, prefix: "whatsapp");
-            },
-          ),
-        ],
-      ),
+      // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton:
+          attendeesList.isNotEmpty
+              ? Container(
+                // color: Colors.red,
+                margin: const EdgeInsets.only(bottom: psm * 4.25),
+                padding: EdgeInsets.symmetric(horizontal: psm),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  // mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    FloatingActionButton(
+                      mini: true,
+                      heroTag: "mini",
+                      backgroundColor:
+                          Theme.of(context).scaffoldBackgroundColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+                        side: BorderSide(
+                          color: lqassbdrColor,
+                          width: bdrWidthGen,
+                        ),
+                      ),
+                      foregroundColor: Colors.white,
+                      child: Padding(
+                        padding: const EdgeInsets.all(psm * 0.5),
+                        child: Brand(Brands.wechat),
+                      ),
+                      onPressed: () async {
+                        await pushToSend(isWhatsApp: false, prefix: "sms");
+                      },
+                    ),
+                    // const SizedBox(width: spaceTiles * 0.5),
+                    FloatingActionButton(
+                      heroTag: "major",
+                      backgroundColor:
+                          Theme.of(context).scaffoldBackgroundColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+                        side: BorderSide(
+                          color: lqassbdrColor,
+                          width: bdrWidthGen,
+                        ),
+                      ),
+                      foregroundColor: Colors.white,
+                      child: Brand(Brands.whatsapp),
+                      onPressed: () async {
+                        await pushToSend(isWhatsApp: true, prefix: "whatsapp");
+                      },
+                    ),
+                  ],
+                ),
+              )
+              : null,
       appBar: appBar(
-        title: "Ratibu Mialiko",
+        title: "Ratibu Mialikor",
         leading: buildActionButton(
           icon: Icons.arrow_back,
           onTap: () {
@@ -374,6 +508,8 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                         )
                         : buildMialiko(),
               ),
+              // Pagination Controls
+              if (attendeesList.isNotEmpty) buildPaginationControls(),
             ],
           ),
         ),
@@ -551,5 +687,169 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
 
   popper() {
     Navigator.of(context).pop();
+  }
+
+  Widget buildPaginationControls() {
+    return Container(
+      margin: EdgeInsets.only(top: spaceTiles),
+      padding: EdgeInsets.symmetric(horizontal: psm, vertical: psm * 0.75),
+      decoration: BoxDecoration(
+        gradient: lqassgrad,
+        borderRadius: BorderRadius.circular(bsm),
+        border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Previous Button
+          GestureDetector(
+            onTap:
+                currentPage > 1 && !isLoading
+                    ? () => goToPage(currentPage - 1)
+                    : null,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient:
+                    currentPage > 1 && !isLoading
+                        ? primaryGrad
+                        : LinearGradient(
+                          colors: [
+                            Colors.grey.withOpacity(0.3),
+                            Colors.grey.withOpacity(0.2),
+                          ],
+                        ),
+                borderRadius: BorderRadius.circular(bsm),
+                border: Border.all(
+                  color:
+                      currentPage > 1 && !isLoading
+                          ? lqassbdrColor
+                          : Colors.grey.withOpacity(0.3),
+                  width: bdrWidthGen,
+                ),
+              ),
+              child: Icon(
+                Icons.chevron_left_rounded,
+                color:
+                    currentPage > 1 && !isLoading
+                        ? primaryWhite
+                        : Colors.grey.withOpacity(0.5),
+                size: 28,
+              ),
+            ),
+          ),
+          SizedBox(width: psm * 1.5),
+          // Page Display
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: psm * 1.5,
+              vertical: psm * 0.75,
+            ),
+            decoration: BoxDecoration(
+              gradient: secscagrad,
+              borderRadius: BorderRadius.circular(bsm),
+              border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Page ",
+                  style: TextStyle(
+                    fontSize: fsm + 1,
+                    color: mWhite,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: psm * 0.75),
+                  decoration: BoxDecoration(
+                    gradient: primaryGrad,
+                    borderRadius: BorderRadius.circular(bxsm),
+                  ),
+                  child: Text(
+                    "$currentPage",
+                    style: TextStyle(
+                      fontSize: fsm + 2,
+                      color: primaryWhite,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  " of ",
+                  style: TextStyle(
+                    fontSize: fsm + 1,
+                    color: mWhite,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: psm * 0.75),
+                  decoration: BoxDecoration(
+                    gradient:
+                        totalPages != null
+                            ? primaryGrad
+                            : LinearGradient(
+                              colors: [
+                                Colors.amber.withOpacity(0.3),
+                                Colors.orange.withOpacity(0.2),
+                              ],
+                            ),
+                    borderRadius: BorderRadius.circular(bxsm),
+                  ),
+                  child: Text(
+                    totalPages != null ? "$totalPages" : "?",
+                    style: TextStyle(
+                      fontSize: fsm + 2,
+                      color: primaryWhite,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: psm * 1.5),
+          // Next Button
+          GestureDetector(
+            onTap:
+                hasMore && !isLoading ? () => goToPage(currentPage + 1) : null,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient:
+                    hasMore && !isLoading
+                        ? primaryGrad
+                        : LinearGradient(
+                          colors: [
+                            Colors.grey.withOpacity(0.3),
+                            Colors.grey.withOpacity(0.2),
+                          ],
+                        ),
+                borderRadius: BorderRadius.circular(bsm),
+                border: Border.all(
+                  color:
+                      hasMore && !isLoading
+                          ? lqassbdrColor
+                          : Colors.grey.withOpacity(0.3),
+                  width: bdrWidthGen,
+                ),
+              ),
+              child: Icon(
+                Icons.chevron_right_rounded,
+                color:
+                    hasMore && !isLoading
+                        ? primaryWhite
+                        : Colors.grey.withOpacity(0.5),
+                size: 28,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

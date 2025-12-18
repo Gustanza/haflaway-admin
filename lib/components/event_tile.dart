@@ -28,9 +28,9 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    var dt = widget.eventData.calendar?.first.eventDate;
-    var eventDate = dformtr.format(dt!);
-    var eventfDt = formatDate(dtime: dt);
+    var dt = widget.eventData.startDate;
+    var eventDate = dformtr.format(DateTime.parse(dt!));
+    var eventfDt = formatDate(dtime: DateTime.parse(dt!));
 
     return Container(
       margin: const EdgeInsets.only(bottom: psm - 2),
@@ -252,7 +252,7 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                     .doc(eventId)
                     .update({"status": "Draft"})
                     .then((e) {
-                      showToast(isGood: false, msg: "Event set as Draft");
+                      showToast(isGood: true, msg: "Event set as Draft");
                     })
                     .catchError((e) {
                       showToast(isGood: false, msg: "$e");
@@ -268,7 +268,7 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                     .doc(eventId)
                     .update({"status": "Published"})
                     .then((e) {
-                      showToast(isGood: false, msg: "Event has been published");
+                      showToast(isGood: true, msg: "Event has been published");
                     })
                     .catchError((e) {
                       showToast(isGood: false, msg: "$e");

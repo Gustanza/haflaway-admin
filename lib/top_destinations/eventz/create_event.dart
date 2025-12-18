@@ -7,7 +7,6 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/urls.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:haflaway/models/checkpoint.dart';
@@ -36,6 +35,7 @@ class _CreateEventState extends State<CreateEvent> {
   DateTime? evstdt;
   DateTime? evenddt;
   String phnnumber = '';
+  bool isLoading = false;
   String fEventCatId = '';
   String fEventCatLevel = '';
   List<EventPlan> eventPlans = [];
@@ -60,9 +60,8 @@ class _CreateEventState extends State<CreateEvent> {
     super.initState();
     if (widget.event != null) {
       bindData();
-    } else {
-      getCatsList();
     }
+    getCatsList();
   }
 
   bindData() async {
@@ -80,8 +79,6 @@ class _CreateEventState extends State<CreateEvent> {
     evenddt = DateTime.parse(event.endDate ?? DateTime.now().toIso8601String());
     enddtcont.text = dformtr.format(evenddt!);
     eventDays = event.calendar!;
-    safeState(() {});
-    getCatsList();
   }
 
   @override
@@ -108,288 +105,301 @@ class _CreateEventState extends State<CreateEvent> {
           ],
         ),
       ),
-      body: Form(
-        key: globalKey,
-        child: Container(
-          decoration: BoxDecoration(gradient: scagrad),
-          child: CustomScrollView(
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.all(psm),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    const Text(
-                      'Add thumbnail',
-                      style: TextStyle(
-                        fontSize: fsm,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: psm * 0.3),
-                    Stack(
-                      children: [
-                        Container(
-                          height: 200,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            gradient: lqassgrad,
-                            border: Border.all(
-                              color: lqassbdrColor,
-                              width: bdrWidthGen,
-                            ),
-                            borderRadius: BorderRadius.circular(bmd),
-                            image:
-                                picha != null
-                                    ? DecorationImage(
-                                      image: FileImage(File(picha!.path)),
-                                      fit: BoxFit.cover,
-                                    )
-                                    : event != null
-                                    ? DecorationImage(
-                                      image: NetworkImage(
-                                        event.eventThumbnail ?? "",
-                                      ),
-                                      fit: BoxFit.cover,
-                                    )
-                                    : null,
-                          ),
-                        ),
-                        Positioned(
+      body:
+          !isLoading
+              ? Form(
+                key: globalKey,
+                child: Container(
+                  decoration: BoxDecoration(gradient: scagrad),
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.only(
                           left: psm,
+                          right: psm,
+                          top: spaceTiles,
                           bottom: psm,
-                          child: IconButton.outlined(
-                            onPressed: () async {
-                              picha = await ImagePicker().pickImage(
-                                source: ImageSource.gallery,
-                              );
-                              if (picha != null) {
-                                safeState(() {});
-                              }
-                            },
-                            icon: const Icon(Icons.image),
-                          ),
                         ),
-                        if (picha != null)
-                          Positioned(
-                            right: psm,
-                            bottom: psm,
-                            child: IconButton.outlined(
-                              onPressed: () {
-                                safeState(() {
-                                  picha = null;
-                                });
-                              },
-                              icon: Icon(Icons.delete),
+                        sliver: SliverList(
+                          delegate: SliverChildListDelegate([
+                            const Text(
+                              'Add thumbnail',
+                              style: TextStyle(
+                                fontSize: fsm,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: spaceTiles),
-                    // const Text(
-                    //   'Add event title',
-                    //   style: TextStyle(
-                    //     fontSize: fsm,
-                    //     fontWeight: FontWeight.bold,
-                    //   ),
-                    // ),
-                    // const SizedBox(height: psm * 0.3),
-                    buildField(lbl: eptitle, cont: fEventTitleCon),
-                    const SizedBox(height: spaceTiles),
-                    // const Text(
-                    //   'Add event category',
-                    //   style: TextStyle(
-                    //     fontSize: fsm,
-                    //     fontWeight: FontWeight.bold,
-                    //   ),
-                    // ),
-                    // const SizedBox(height: psm * 0.3),
-                    buildField(
-                      isReadOnly: true,
-                      showCursor: false,
-                      cont: fEventCatCon,
-                      lbl: epcategory,
-                      isTapped: () {
-                        showSelectCats();
-                      },
-                    ),
-                    const SizedBox(height: spaceTiles),
-                    // const Text(
-                    //   'Add event description',
-                    //   style: TextStyle(
-                    //     fontSize: fsm,
-                    //     fontWeight: FontWeight.bold,
-                    //   ),
-                    // ),
-                    // const SizedBox(height: psm * 0.3),
-                    buildField(lbl: epdescription, cont: fEventDescCon),
-                    const SizedBox(height: spaceTiles),
-                    // const Text(
-                    //   'Add event location',
-                    //   style: TextStyle(
-                    //     fontSize: fsm,
-                    //     fontWeight: FontWeight.bold,
-                    //   ),
-                    // ),
-                    // const SizedBox(height: psm * 0.3),
-                    buildField(lbl: eplocation, cont: fEventLocationCon),
-                    const SizedBox(height: spaceTiles),
-                    // const Text(
-                    //   'Select event plan',
-                    //   style: TextStyle(
-                    //     fontSize: fsm,
-                    //     fontWeight: FontWeight.bold,
-                    //   ),
-                    // ),
-                    // const SizedBox(height: psm * 0.3),
-                    buildField(
-                      isReadOnly: true,
-                      showCursor: false,
-                      cont: fEventBillCon,
-                      lbl: epbilolan,
-                      isTapped: () async {
-                        plan = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const BillScreen(),
-                          ),
-                        );
-                        if (plan != null) {
-                          setState(() {
-                            fEventBillCon.text = plan!.name;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: spaceTiles),
-                    // const Text(
-                    //   'Phone number',
-                    //   style: TextStyle(
-                    //     fontSize: fsm,
-                    //     fontWeight: FontWeight.bold,
-                    //   ),
-                    // ),
-                    // const SizedBox(height: psm * 0.3),
-                    buildPhone(mobileCont: phncont),
-                    // const Text(
-                    //   'Start date & time',
-                    //   style: TextStyle(
-                    //     fontSize: fsm,
-                    //     fontWeight: FontWeight.bold,
-                    //   ),
-                    // ),
-                    // const SizedBox(height: psm * 0.3),
-                    buildField(
-                      isReadOnly: true,
-                      showCursor: false,
-                      cont: stdtcont,
-                      lbl: "Event start date",
-                      isTapped: () async {
-                        try {
-                          evstdt = await dtPicker(context: context);
-                          if (evstdt != null) {
-                            setState(() {
-                              stdtcont.text = dformtr.format(evstdt!);
-                            });
-                          }
-                        } catch (e) {
-                          showToast(isGood: false, msg: "$e");
-                        }
-                      },
-                    ),
-                    const SizedBox(height: spaceTiles),
-                    // const Text(
-                    //   'End date & time',
-                    //   style: TextStyle(
-                    //     fontSize: fsm,
-                    //     fontWeight: FontWeight.bold,
-                    //   ),
-                    // ),
-                    // const SizedBox(height: psm * 0.3),
-                    buildField(
-                      isReadOnly: true,
-                      showCursor: false,
-                      cont: enddtcont,
-                      lbl: "Event end date",
-                      isTapped: () async {
-                        try {
-                          evenddt = await dtPicker(context: context);
-                          if (evenddt != null) {
-                            setState(() {
-                              enddtcont.text = dformtr.format(evenddt!);
-                            });
-                          }
-                        } catch (e) {
-                          showToast(isGood: false, msg: "$e");
-                        }
-                      },
-                    ),
-                    // ListTile(
-                    //   contentPadding: const EdgeInsets.only(left: 0, right: 0),
-                    //   title: const Text(
-                    //     'Add days of event',
-                    //     style: TextStyle(
-                    //       fontSize: fsm,
-                    //       fontWeight: FontWeight.bold,
-                    //     ),
-                    //   ),
-                    //   trailing: IconButton(
-                    //     onPressed: () async {
-                    //       EventCalendar? evd = await dtPicky(context: context);
-                    //       if (evd != null) {
-                    //         setState(() {
-                    //           eventDays.add(evd);
-                    //         });
-                    //       }
-                    //     },
-                    //     icon: const Icon(Clarity.plus_circle_line),
-                    //   ),
-                    // ),
-                    // if (eventDays.isNotEmpty)
-                    //   Column(
-                    //     children: List.generate(eventDays.length, (idx) {
-                    //       var edt = dformtr.format(eventDays[idx].eventDate);
-                    //       var est = tformtr.format(eventDays[idx].startTime);
-                    //       var eet = tformtr.format(eventDays[idx].endTime);
-                    //       return Container(
-                    //         padding: EdgeInsets.only(left: psm, right: psm),
-                    //         decoration: BoxDecoration(
-                    //           gradient: secscagrad,
-                    //           border: Border.all(
-                    //             color: lqassbdrColor,
-                    //             width: bdrWidthGen,
-                    //           ),
-                    //           borderRadius: BorderRadius.circular(bsm),
-                    //         ),
-                    //         child: ListTile(
-                    //           title: Text(edt),
-                    //           contentPadding: EdgeInsets.zero,
-                    //           tileColor: lqassgradBaseColor,
-                    //           shape: RoundedRectangleBorder(
-                    //             side: BorderSide(color: lqassgradBaseColor),
-                    //             borderRadius: BorderRadiusGeometry.circular(
-                    //               bmd,
-                    //             ),
-                    //           ),
-                    //           subtitle: Text("$est - $eet"),
-                    //           trailing: IconButton(
-                    //             onPressed: () {
-                    //               setState(() {
-                    //                 eventDays.removeAt(idx);
-                    //               });
-                    //             },
-                    //             icon: const Icon(Icons.close),
-                    //           ),
-                    //         ),
-                    //       );
-                    //     }),
-                    //   ),
-                  ]),
+                            const SizedBox(height: psm * 0.3),
+                            Stack(
+                              children: [
+                                Container(
+                                  height: 200,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    gradient: lqassgrad,
+                                    border: Border.all(
+                                      color: lqassbdrColor,
+                                      width: bdrWidthGen,
+                                    ),
+                                    borderRadius: BorderRadius.circular(bmd),
+                                    image:
+                                        picha != null
+                                            ? DecorationImage(
+                                              image: FileImage(
+                                                File(picha!.path),
+                                              ),
+                                              fit: BoxFit.cover,
+                                            )
+                                            : event != null
+                                            ? DecorationImage(
+                                              image: NetworkImage(
+                                                event.eventThumbnail ?? "",
+                                              ),
+                                              fit: BoxFit.cover,
+                                            )
+                                            : null,
+                                  ),
+                                ),
+                                Positioned(
+                                  left: psm,
+                                  bottom: psm,
+                                  child: IconButton.outlined(
+                                    onPressed: () async {
+                                      picha = await ImagePicker().pickImage(
+                                        source: ImageSource.gallery,
+                                      );
+                                      if (picha != null) {
+                                        safeState(() {});
+                                      }
+                                    },
+                                    icon: const Icon(Icons.image),
+                                  ),
+                                ),
+                                if (picha != null)
+                                  Positioned(
+                                    right: psm,
+                                    bottom: psm,
+                                    child: IconButton.outlined(
+                                      onPressed: () {
+                                        safeState(() {
+                                          picha = null;
+                                        });
+                                      },
+                                      icon: Icon(Icons.delete),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: spaceTiles),
+                            // const Text(
+                            //   'Add event title',
+                            //   style: TextStyle(
+                            //     fontSize: fsm,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            // ),
+                            // const SizedBox(height: psm * 0.3),
+                            buildField(lbl: eptitle, cont: fEventTitleCon),
+                            const SizedBox(height: spaceTiles),
+                            // const Text(
+                            //   'Add event category',
+                            //   style: TextStyle(
+                            //     fontSize: fsm,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            // ),
+                            // const SizedBox(height: psm * 0.3),
+                            buildField(
+                              isReadOnly: true,
+                              showCursor: false,
+                              cont: fEventCatCon,
+                              lbl: epcategory,
+                              isTapped: () {
+                                showSelectCats();
+                              },
+                            ),
+                            const SizedBox(height: spaceTiles),
+                            // const Text(
+                            //   'Add event description',
+                            //   style: TextStyle(
+                            //     fontSize: fsm,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            // ),
+                            // const SizedBox(height: psm * 0.3),
+                            buildField(lbl: epdescription, cont: fEventDescCon),
+                            const SizedBox(height: spaceTiles),
+                            // const Text(
+                            //   'Add event location',
+                            //   style: TextStyle(
+                            //     fontSize: fsm,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            // ),
+                            // const SizedBox(height: psm * 0.3),
+                            buildField(
+                              lbl: eplocation,
+                              cont: fEventLocationCon,
+                            ),
+                            const SizedBox(height: spaceTiles),
+                            // const Text(
+                            //   'Select event plan',
+                            //   style: TextStyle(
+                            //     fontSize: fsm,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            // ),
+                            // const SizedBox(height: psm * 0.3),
+                            buildField(
+                              isReadOnly: true,
+                              showCursor: false,
+                              cont: fEventBillCon,
+                              lbl: epbilolan,
+                              isTapped: () async {
+                                plan = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const BillScreen(),
+                                  ),
+                                );
+                                if (plan != null) {
+                                  setState(() {
+                                    fEventBillCon.text = plan!.name;
+                                  });
+                                }
+                              },
+                            ),
+                            const SizedBox(height: spaceTiles),
+                            // const Text(
+                            //   'Phone number',
+                            //   style: TextStyle(
+                            //     fontSize: fsm,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            // ),
+                            // const SizedBox(height: psm * 0.3),
+                            buildPhone(mobileCont: phncont),
+                            // const Text(
+                            //   'Start date & time',
+                            //   style: TextStyle(
+                            //     fontSize: fsm,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            // ),
+                            // const SizedBox(height: psm * 0.3),
+                            buildField(
+                              isReadOnly: true,
+                              showCursor: false,
+                              cont: stdtcont,
+                              lbl: "Event start date",
+                              isTapped: () async {
+                                try {
+                                  evstdt = await dtPicker(context: context);
+                                  if (evstdt != null) {
+                                    setState(() {
+                                      stdtcont.text = dformtr.format(evstdt!);
+                                    });
+                                  }
+                                } catch (e) {
+                                  showToast(isGood: false, msg: "$e");
+                                }
+                              },
+                            ),
+                            const SizedBox(height: spaceTiles),
+                            // const Text(
+                            //   'End date & time',
+                            //   style: TextStyle(
+                            //     fontSize: fsm,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            // ),
+                            // const SizedBox(height: psm * 0.3),
+                            buildField(
+                              isReadOnly: true,
+                              showCursor: false,
+                              cont: enddtcont,
+                              lbl: "Event end date",
+                              isTapped: () async {
+                                try {
+                                  evenddt = await dtPicker(context: context);
+                                  if (evenddt != null) {
+                                    setState(() {
+                                      enddtcont.text = dformtr.format(evenddt!);
+                                    });
+                                  }
+                                } catch (e) {
+                                  showToast(isGood: false, msg: "$e");
+                                }
+                              },
+                            ),
+                            // ListTile(
+                            //   contentPadding: const EdgeInsets.only(left: 0, right: 0),
+                            //   title: const Text(
+                            //     'Add days of event',
+                            //     style: TextStyle(
+                            //       fontSize: fsm,
+                            //       fontWeight: FontWeight.bold,
+                            //     ),
+                            //   ),
+                            //   trailing: IconButton(
+                            //     onPressed: () async {
+                            //       EventCalendar? evd = await dtPicky(context: context);
+                            //       if (evd != null) {
+                            //         setState(() {
+                            //           eventDays.add(evd);
+                            //         });
+                            //       }
+                            //     },
+                            //     icon: const Icon(Clarity.plus_circle_line),
+                            //   ),
+                            // ),
+                            // if (eventDays.isNotEmpty)
+                            //   Column(
+                            //     children: List.generate(eventDays.length, (idx) {
+                            //       var edt = dformtr.format(eventDays[idx].eventDate);
+                            //       var est = tformtr.format(eventDays[idx].startTime);
+                            //       var eet = tformtr.format(eventDays[idx].endTime);
+                            //       return Container(
+                            //         padding: EdgeInsets.only(left: psm, right: psm),
+                            //         decoration: BoxDecoration(
+                            //           gradient: secscagrad,
+                            //           border: Border.all(
+                            //             color: lqassbdrColor,
+                            //             width: bdrWidthGen,
+                            //           ),
+                            //           borderRadius: BorderRadius.circular(bsm),
+                            //         ),
+                            //         child: ListTile(
+                            //           title: Text(edt),
+                            //           contentPadding: EdgeInsets.zero,
+                            //           tileColor: lqassgradBaseColor,
+                            //           shape: RoundedRectangleBorder(
+                            //             side: BorderSide(color: lqassgradBaseColor),
+                            //             borderRadius: BorderRadiusGeometry.circular(
+                            //               bmd,
+                            //             ),
+                            //           ),
+                            //           subtitle: Text("$est - $eet"),
+                            //           trailing: IconButton(
+                            //             onPressed: () {
+                            //               setState(() {
+                            //                 eventDays.removeAt(idx);
+                            //               });
+                            //             },
+                            //             icon: const Icon(Icons.close),
+                            //           ),
+                            //         ),
+                            //       );
+                            //     }),
+                            //   ),
+                          ]),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
+              )
+              : buildLoader(),
     );
   }
 
@@ -438,6 +448,9 @@ class _CreateEventState extends State<CreateEvent> {
   }
 
   getCatsList() async {
+    safeState(() {
+      isLoading = true;
+    });
     try {
       QuerySnapshot<Map<String, dynamic>> catSnaps =
           await firestore.collection(ecatcol).get();
@@ -480,7 +493,9 @@ class _CreateEventState extends State<CreateEvent> {
     } catch (e) {
       return showToast(isGood: false, msg: "Failed to get data");
     }
-    safeState(() {});
+    safeState(() {
+      isLoading = false;
+    });
   }
 
   buildSheetBody() {
@@ -571,15 +586,15 @@ class _CreateEventState extends State<CreateEvent> {
         Event event = Event(
           id: evRef.id,
           title: fEventTitleCon.text.trim(),
-          authorId: uid!,
-          adminsIds: [uid!],
+          authorId: eventt == null ? uid! : null,
+          adminsIds: eventt == null ? [uid!] : null,
           usersIds: eventt == null ? [] : null,
           status: estatus,
           supportPhone: phnnumber,
           categoryId: fEventCatId,
           categoryLevel: fEventCatLevel,
           createdAt: eventt == null ? DateTime.now() : null,
-          updatedAt: eventt == null ? DateTime.now() : null,
+          updatedAt: DateTime.now(),
           description: fEventDescCon.text.trim(),
           eventPlanId: plan?.id ?? null,
           eventThumbnail: dwnURL,
@@ -593,8 +608,8 @@ class _CreateEventState extends State<CreateEvent> {
         popper();
         popper();
       } catch (e) {
-        debugPrint("Error: $e");
         popper();
+        debugPrint("shida_ni: $e");
         showToast(isGood: false, msg: gErrMsg);
       }
     }
