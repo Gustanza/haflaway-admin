@@ -39,6 +39,8 @@ class InvitesIssuers extends StatefulWidget {
 
 class _InvitesIssuersState extends State<InvitesIssuers> {
   bool hasMore = true;
+  int totalDocs = 0;
+  int maxpgno = 1;
   bool isLoading = false;
   int pageSize = atsPageSize;
   DocumentSnapshot? lastDocument;
@@ -112,7 +114,14 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     try {
       attendeesList = [];
       pageSize = atsPageSize;
+      var obj = firestore
+          .collection(ecol)
+          .doc(widget.event.id)
+          .collection(atcol);
       var invSnapshots = await whereQwrBuilder(getMore: false).get();
+      AggregateQuerySnapshot aqs = await obj.count().get();
+      totalDocs = aqs.count ?? 0;
+      maxpgno = (totalDocs / pageSize).toDouble().ceil();
       var doks = invSnapshots.docs;
       if (doks.isEmpty) {
         safeState(() {
@@ -753,14 +762,6 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  "Page ",
-                  style: TextStyle(
-                    fontSize: fsm + 1,
-                    color: mWhite,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: psm * 0.75),
                   decoration: BoxDecoration(
@@ -799,7 +800,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                     borderRadius: BorderRadius.circular(bxsm),
                   ),
                   child: Text(
-                    totalPages != null ? "$totalPages" : "?",
+                    "${maxpgno}",
                     style: TextStyle(
                       fontSize: fsm + 2,
                       color: primaryWhite,
