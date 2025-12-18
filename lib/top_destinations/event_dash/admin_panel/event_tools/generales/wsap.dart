@@ -71,8 +71,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   whereQwrBuilder({getMore}) {
     var obj = firestore.collection(ecol).doc(widget.event.id).collection(atcol);
     if (!getMore) {
-      if ((selChannel == "sms" || selChannel == "whatsapp") &&
-          selStatus == "all") {
+      if ((selChannel == "all") && selStatus == "all") {
         return obj.orderBy("createdAt", descending: true).limit(pageSize);
       } else {
         return obj
