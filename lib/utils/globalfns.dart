@@ -126,6 +126,37 @@ datePicker({context}) async {
   );
 }
 
+dtPicker({context}) async {
+  // Pick a date
+  DateTime? pickedDate = await showDatePicker(
+    context: context,
+    initialDate: DateTime.now(),
+    firstDate: DateTime(2000),
+    lastDate: DateTime(2101),
+    helpText: "Select start date",
+  );
+
+  if (pickedDate == null) return null; // User canceled
+
+  // Pick a time
+  TimeOfDay? spickedTime = await showTimePicker(
+    helpText: "Select start time",
+    context: context,
+    initialTime: const TimeOfDay(hour: 00, minute: 00),
+  );
+
+  if (spickedTime == null) return null; // User canceled
+
+  // Success
+  return DateTime(
+    pickedDate.year,
+    pickedDate.month,
+    pickedDate.day,
+    spickedTime.hour,
+    spickedTime.minute,
+  );
+}
+
 dtPicky({context}) async {
   // Pick a date
   DateTime? pickedDate = await showDatePicker(

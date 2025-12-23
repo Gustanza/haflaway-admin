@@ -10,6 +10,9 @@ import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/wsap.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
+import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/importcontr.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/searchdel.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/stats.dart';
@@ -42,7 +45,7 @@ class Attendees extends StatefulWidget {
     super.key,
     required this.edata,
     required this.kardType,
-    this.title = "Invitations",
+    this.title = "Mialiko",
   });
   @override
   State<Attendees> createState() => _AttendeesState();
@@ -93,7 +96,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     // Debug the scroll position
     if (scrollController.position.pixels >=
         scrollController.position.maxScrollExtent - 200) {
-      if (!isLoading && hasMore && scont.text.isEmpty) {
+      if (!isLoading && hasMore) {
         _loadMoreAttendees();
       }
     }
@@ -415,6 +418,113 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     _loadAttendees();
   }
 
+  buildPopupMenu() {
+    return PopupMenuButton(
+      // color: lqassgradBaseColor,
+      icon: Icon(Icons.menu_open),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadiusGeometry.circular(bsm),
+        side: BorderSide(width: bdrWidthGen, color: lqassbdrColor),
+      ),
+      itemBuilder: (context) {
+        return [
+          PopupMenuItem(
+            onTap: () {
+              showQuickStats();
+            },
+            child: ListTile(
+              leading: Icon(Icons.summarize),
+              title: Text("Taarifa fupi"),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return InvitesIssuers(
+                      event: widget.edata,
+                      kardType: widget.kardType,
+                      campaignId:
+                          widget.kardType == KardType.invitation
+                              ? invCampId
+                              : contrCampId,
+                    );
+                  },
+                ),
+              );
+              // _loadAttendees();
+            },
+            child: ListTile(
+              leading: Icon(Icons.email),
+              title: Text("Tuma Mialiko"),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () async {
+              String title =
+                  widget.kardType == KardType.invitation
+                      ? "Invitation"
+                      : "Contributor";
+              await navNormal(
+                context: context,
+                widget: CreateAttendees(
+                  event: widget.edata,
+                  title: title,
+                  kardType: widget.kardType,
+                ),
+              );
+              _loadAttendees();
+            },
+
+            child: ListTile(
+              leading: Icon(Icons.add_to_queue_sharp),
+              title: Text("Ongeza Mwalikwa"),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () {
+              selectAll();
+            },
+            child: ListTile(
+              leading: Icon(Icons.select_all),
+              title: Text("Select/De-select All"),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () {
+              importFile();
+            },
+            child: ListTile(
+              leading: Icon(Icons.import_export),
+              title: Text("Import Exceli"),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () {
+              showSelectCard();
+            },
+            child: ListTile(
+              leading: Icon(Icons.import_contacts),
+              title: Text("Import Mchangiaji"),
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () {
+              delSelect();
+            },
+            child: ListTile(
+              contentPadding: EdgeInsets.symmetric(horizontal: psm),
+              tileColor: Colors.red,
+              leading: Icon(Icons.delete_forever),
+              title: Text("Futa Mwalikwa"),
+            ),
+          ),
+        ];
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -431,12 +541,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           children: [
             // Elegant filter button with active filter indicator
             _buildFilterButton(),
-            IconButton(
-              icon: Icon(Icons.bar_chart),
-              onPressed: () {
-                showQuickStats();
-              },
-            ),
             IconButton(
               icon: Icon(Icons.search),
               onPressed: () {
@@ -458,7 +562,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           FloatingActionButton(
             mini: true,
             heroTag: "mini",
-            backgroundColor: lqassgradBaseColor,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadiusGeometry.circular(bmd * 10),
               side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
@@ -476,13 +580,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           const SizedBox(height: spaceTiles),
           FloatingActionButton(
             heroTag: "major",
-            backgroundColor: lqassgradBaseColor,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadiusGeometry.circular(bmd * 10),
               side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
             ),
             foregroundColor: Colors.white,
-            child: Icon(Clarity.tools_line),
+            child: buildPopupMenu(),
             onPressed: buildToolKitSheet,
           ),
         ],
@@ -513,7 +617,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         children: [
           Expanded(
             child: ListView.builder(
-              padding: EdgeInsets.only(top: spaceTiles),
+              padding: EdgeInsets.all(spaceTiles),
               controller: scrollController,
               itemCount: atdata.length + 1, // +1 for the loading indicator
               itemBuilder: (context, index) {
@@ -541,8 +645,58 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     return const SizedBox(height: 20);
                   }
                 }
+
                 // Show attendee item
-                return _buildAttendeeCard(atdata[index]);
+                Attendee attendee = atdata[index];
+                var hasKey = selectList.any((test) {
+                  return test.id == attendee.id;
+                });
+                var campaignId =
+                    widget.kardType == KardType.invitation
+                        ? invCampId
+                        : contrCampId;
+                return buildAttendeeCard(
+                  hasKey: hasKey,
+                  attendee: attendee,
+                  kardType: widget.kardType,
+                  eventId: widget.edata.id ?? "_",
+                  campaignId: campaignId,
+                  onEdit: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return CreateAttendees(
+                            event: widget.edata,
+                            kardType: widget.kardType,
+                            attendee: attendee,
+                          );
+                        },
+                      ),
+                    );
+                    _loadAttendees();
+                  },
+                  onSelected: () {
+                    if (hasKey) {
+                      var tmp =
+                          selectList.where((test) {
+                            return test.id != attendee.id;
+                          }).toList();
+                      selectList = tmp;
+                    } else {
+                      selectList.add(attendee);
+                    }
+                    safeState(() {});
+                  },
+                  onStatusChange: (status) {
+                    int index = atdata.indexWhere(
+                      (element) => element.id == attendee.id,
+                    );
+                    if (index != -1) {
+                      atdata[index].attendanceStatus = status;
+                    }
+                    safeState(() {});
+                  },
+                );
               },
             ),
           ),
