@@ -3,10 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/components/Ccafold.dart';
+import 'package:haflaway/components/buttons.dart';
+import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/send_previewer.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/crtattendees.dart';
 import 'package:haflaway/utils/colors.dart';
@@ -105,6 +108,122 @@ class _BuildResultsListState extends State<BuildResultsList> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   List<Attendee> selectList = [];
   List<Attendee> attendeesList = [];
+  pushToSend({String? prefix, bool? isWhatsApp}) async {
+    if (selectList.isEmpty)
+      return showToast(isGood: false, msg: "Chagua Walengwa");
+    int replen =
+        selectList.where((selItem) {
+          var pattern = "${prefix}_${widget.campaignId}";
+          List msgIndxs = selItem.messageIndexes ?? [];
+          for (var msgIndx in msgIndxs) {
+            if (msgIndx.startsWith(pattern)) {
+              return true;
+            }
+          }
+          return false;
+        }).length;
+    if (replen > 0) {
+      _showNotifier(
+        title: "Ujumbe Muhimu",
+        subtitle:
+            "Inaonyesha jumla ya waalikwa $replen washatumiwa ujumbe wa aina hii, Je unahitaji kurudia kutuma tena?",
+        actionStr1: "Rudia Kutuma",
+        onTap1: () async {
+          popper();
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) {
+                return SendPreviewer(
+                  isWhatsApp: isWhatsApp ?? false,
+                  event: widget.event,
+                  kardType: widget.kardType,
+                  senderList: selectList,
+                  campaignId: widget.campaignId,
+                );
+              },
+            ),
+          );
+        },
+        actionStr2: "Sitisha",
+        onTap2: () {
+          popper();
+        },
+      );
+    } else {
+      // popper();
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) {
+            return SendPreviewer(
+              isWhatsApp: isWhatsApp ?? false,
+              event: widget.event,
+              kardType: widget.kardType,
+              senderList: selectList,
+              campaignId: widget.campaignId,
+            );
+          },
+        ),
+      );
+    }
+  }
+
+  _showNotifier({
+    String? title,
+    String? subtitle,
+    String? actionStr1,
+    String? actionStr2,
+    Function()? onTap1,
+    Function()? onTap2,
+  }) {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return glassDialog(
+          child: Padding(
+            padding: const EdgeInsets.all(psm),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(psm * 0.75),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.info_outline, size: 32, color: Colors.blue),
+                ),
+                SizedBox(height: psm * 0.75),
+                Text(
+                  "$title",
+                  style: TextStyle(
+                    fontSize: fsm + 6,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Divider(thickness: 0.25),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: psm * 0.5),
+                  child: Text(
+                    "$subtitle",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: fsm + 1),
+                  ),
+                ),
+                Divider(thickness: 0.25),
+                SizedBox(height: psm * 0.25),
+                lqAssButton(label: "$actionStr1", onPressed: onTap1),
+                if (actionStr2 != null) SizedBox(height: spaceTiles),
+                if (actionStr2 != null)
+                  lqAssButton(label: "$actionStr2", onPressed: onTap2),
+                const SizedBox(height: psm * 0.5),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.query.isEmpty) {
@@ -115,15 +234,47 @@ class _BuildResultsListState extends State<BuildResultsList> {
       );
     }
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-          side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+      floatingActionButton: Container(
+        // color: Colors.red,
+        // margin: const EdgeInsets.only(bottom: psm * ),
+        padding: EdgeInsets.symmetric(horizontal: psm),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          // mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            FloatingActionButton(
+              mini: true,
+              heroTag: "mini",
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+                side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+              ),
+              foregroundColor: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(psm * 0.5),
+                child: Brand(Brands.wechat),
+              ),
+              onPressed: () async {
+                pushToSend(isWhatsApp: false, prefix: "sms");
+              },
+            ),
+            // const SizedBox(width: spaceTiles * 0.5),
+            FloatingActionButton(
+              heroTag: "major",
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+                side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+              ),
+              foregroundColor: Colors.white,
+              child: Brand(Brands.whatsapp),
+              onPressed: () async {
+                pushToSend(isWhatsApp: true, prefix: "whatsapp");
+              },
+            ),
+          ],
         ),
-        foregroundColor: Colors.white,
-        child: Icon(Icons.arrow_forward),
-        onPressed: () {},
       ),
       body: Ccafold(
         child: FutureBuilder(

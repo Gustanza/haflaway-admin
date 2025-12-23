@@ -38,253 +38,109 @@ class InvitesIssuers extends StatefulWidget {
 }
 
 class _InvitesIssuersState extends State<InvitesIssuers> {
-  bool hasMore = true;
   int totalDocs = 0;
   int maxpgno = 1;
-  bool isLoading = false;
   int pageSize = atsPageSize;
-  DocumentSnapshot? lastDocument;
   List<Attendee> selectList = [];
-  List<Attendee> attendeesList = [];
   String selStatus = shtates.keys.first;
   String selChannel = shannnels.keys.first;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-  ScrollController scrollController = ScrollController();
   int currentPage = 1;
-  int? totalPages;
-  List<DocumentSnapshot> pageDocuments = []; // Track documents for each page
+
+  // Cursor stack: stores the last document of each page for backward navigation
+  // Index 0 = last doc of page 1, Index 1 = last doc of page 2, etc.
+  List<DocumentSnapshot?> pageCursors = [];
+
+  // Current stream for the active page
+  Stream<QuerySnapshot>? currentStream;
+
+  // Track last document from current stream for forward navigation
+  DocumentSnapshot? currentPageLastDoc;
+
   @override
   void initState() {
     super.initState();
-    loadAttendees();
-    // Add scroll listener for pagination
-    scrollController.addListener(_scrollListener);
+    _initializeStream();
+    _loadTotalCount();
   }
 
-  _scrollListener() {
-    if (scrollController.position.pixels ==
-        scrollController.position.maxScrollExtent) {
-      if (!isLoading && hasMore) {
-        loadMoreAttendees();
-      }
-    }
+  void _initializeStream() {
+    currentStream = _buildStreamForPage(currentPage);
   }
 
-  whereQwrBuilder({getMore}) {
-    var obj = firestore.collection(ecol).doc(widget.event.id).collection(atcol);
-    if (!getMore) {
-      if ((selChannel == "all") && selStatus == "all") {
-        return obj.orderBy("createdAt", descending: true).limit(pageSize);
-      } else {
-        return obj
-            .where(
-              "messageIndexes",
-              arrayContains: "${selChannel}_${widget.campaignId}_${selStatus}",
-            )
-            .orderBy("messageIndexes")
-            .limit(pageSize);
-      }
-    } else {
-      if ((selChannel == "sms" || selChannel == "whatsapp") &&
-          selStatus == "all") {
-        return obj
-            .orderBy("createdAt", descending: true)
-            .startAfterDocument(lastDocument!)
-            .limit(pageSize);
-      } else {
-        return obj
-            .where(
-              "messageIndexes",
-              arrayContains: "${selChannel}_${widget.campaignId}_${selStatus}",
-            )
-            .orderBy("messageIndexes")
-            .startAfterDocument(lastDocument!)
-            .limit(pageSize);
-      }
-    }
-  }
-
-  loadAttendees() async {
-    safeState(() {
-      isLoading = true;
-      hasMore = true;
-      currentPage = 1;
-      pageDocuments = [];
-    });
+  void _loadTotalCount() async {
     try {
-      attendeesList = [];
-      pageSize = atsPageSize;
       var obj = firestore
           .collection(ecol)
           .doc(widget.event.id)
           .collection(atcol);
-      var invSnapshots = await whereQwrBuilder(getMore: false).get();
       AggregateQuerySnapshot aqs = await obj.count().get();
-      totalDocs = aqs.count ?? 0;
-      maxpgno = (totalDocs / pageSize).toDouble().ceil();
-      var doks = invSnapshots.docs;
-      if (doks.isEmpty) {
-        safeState(() {
-          isLoading = false;
-          hasMore = false;
-          totalPages = 1;
+      if (mounted) {
+        setState(() {
+          totalDocs = aqs.count ?? 0;
+          maxpgno = (totalDocs / pageSize).ceil();
+          if (maxpgno == 0) maxpgno = 1;
         });
-        return;
       }
-      lastDocument = doks.last;
-      pageDocuments = [doks.last];
-      attendeesList =
-          doks.map<Attendee>((item) {
-            return Attendee.fromMap(item.id, item.data());
-          }).toList();
-      safeState(() {
-        isLoading = false;
-        // Estimate total pages if we got a full page
-        if (doks.length == pageSize) {
-          totalPages = null; // Unknown, show "?"
-        } else {
-          totalPages = currentPage;
-        }
-      });
     } catch (e) {
-      safeState(() {
-        isLoading = false;
-      });
+      debugPrint("Count error: $e");
     }
   }
 
-  loadMoreAttendees() async {
-    safeState(() {
-      isLoading = true;
-      hasMore = true;
-    });
-    try {
-      var invSnapshots = await whereQwrBuilder(getMore: true).get();
-      var doks = invSnapshots.docs;
-      if (doks.isEmpty) {
-        safeState(() {
-          isLoading = false;
-          hasMore = false;
-          totalPages = currentPage; // We've reached the end
-        });
-        return;
+  Stream<QuerySnapshot> _buildStreamForPage(int page) {
+    var obj = firestore.collection(ecol).doc(widget.event.id).collection(atcol);
+    Query query;
+    query = obj.orderBy("createdAt", descending: true);
+    // For page 1, no cursor needed
+    // For page 2+, use cursor from previous page (stored at index page-2)
+    if (page > 1 && pageCursors.length >= (page - 1)) {
+      DocumentSnapshot? cursor = pageCursors[page - 2];
+      if (cursor != null) {
+        query = query.startAfterDocument(cursor);
       }
-      lastDocument = doks.last;
-      pageDocuments.add(doks.last);
-      var list =
-          doks.map<Attendee>((item) {
-            return Attendee.fromMap(item.id, item.data());
-          }).toList();
-      attendeesList.addAll(list);
-      safeState(() {
-        isLoading = false;
-        currentPage++;
-        // Update total pages if we got less than pageSize
-        if (doks.length < pageSize) {
-          totalPages = currentPage;
-        }
-      });
-    } catch (e) {
-      safeState(() {
-        isLoading = false;
-      });
     }
+
+    return query.limit(pageSize).snapshots();
   }
 
-  goToPage(int targetPage) async {
-    if (targetPage < 1 || (totalPages != null && targetPage > totalPages!)) {
-      return;
-    }
-    if (targetPage == currentPage) return;
+  void goToNextPage(QuerySnapshot currentSnapshot) {
+    if (currentSnapshot.docs.isEmpty) return;
 
-    safeState(() {
-      isLoading = true;
-    });
+    // Store the last document of current page in cursor stack
+    DocumentSnapshot lastDoc = currentSnapshot.docs.last;
 
-    try {
-      if (targetPage > currentPage) {
-        // Go forward: load more pages until we reach target
-        while (currentPage < targetPage && hasMore) {
-          var invSnapshots = await whereQwrBuilder(getMore: true).get();
-          var doks = invSnapshots.docs;
-          if (doks.isEmpty) {
-            safeState(() {
-              hasMore = false;
-              totalPages = currentPage;
-            });
-            break;
-          }
-          lastDocument = doks.last;
-          pageDocuments.add(doks.last);
-          var list =
-              doks.map<Attendee>((item) {
-                return Attendee.fromMap(item.id, item.data());
-              }).toList();
-          attendeesList.addAll(list);
-          safeState(() {
-            currentPage++;
-            if (doks.length < pageSize) {
-              totalPages = currentPage;
-            }
-          });
-        }
-      } else {
-        // Go backward: reset and load up to target page
-        safeState(() {
-          attendeesList = [];
-          currentPage = 1;
-          lastDocument = null;
-          pageDocuments = [];
-          hasMore = true;
-        });
-
-        // Load pages sequentially up to target
-        for (int page = 1; page < targetPage; page++) {
-          Query query;
-          if (page == 1) {
-            query = whereQwrBuilder(getMore: false);
-          } else {
-            query = whereQwrBuilder(getMore: true);
-          }
-          var invSnapshots = await query.get();
-          var doks = invSnapshots.docs;
-          if (doks.isEmpty) {
-            safeState(() {
-              hasMore = false;
-              totalPages = currentPage;
-            });
-            break;
-          }
-          lastDocument = doks.last;
-          pageDocuments.add(doks.last);
-          var list =
-              doks.map<Attendee>((item) {
-                return Attendee.fromMap(
-                  item.id,
-                  item.data() as Map<String, dynamic>,
-                );
-              }).toList();
-          if (page == 1) {
-            attendeesList = list;
-          } else {
-            attendeesList.addAll(list);
-          }
-          safeState(() {
-            currentPage = page + 1;
-            if (doks.length < pageSize) {
-              totalPages = currentPage;
-            }
-          });
-        }
+    // If we're on a new page we haven't visited, add its cursor
+    if (currentPage == pageCursors.length + 1) {
+      pageCursors.add(lastDoc);
+    } else {
+      // Update existing cursor for current page
+      if (currentPage > 1) {
+        pageCursors[currentPage - 1] = lastDoc;
       }
-      safeState(() {
-        isLoading = false;
-      });
-    } catch (e) {
-      safeState(() {
-        isLoading = false;
-      });
     }
+
+    // Navigate to next page
+    setState(() {
+      currentPage++;
+      currentStream = _buildStreamForPage(currentPage);
+      currentPageLastDoc = null; // Reset for new page
+    });
+  }
+
+  void goToPreviousPage() {
+    if (currentPage <= 1) return;
+
+    // Remove cursors beyond current page (cleanup)
+    if (pageCursors.length >= currentPage) {
+      pageCursors = pageCursors.sublist(0, currentPage - 1);
+    }
+
+    // Navigate to previous page
+    setState(() {
+      currentPage--;
+      currentStream = _buildStreamForPage(currentPage);
+      currentPageLastDoc = null; // Reset for new page
+    });
   }
 
   pushToSend({String? prefix, bool? isWhatsApp}) async {
@@ -309,7 +165,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         actionStr1: "Rudia Kutuma",
         onTap1: () async {
           popper();
-          bool? rezort = await Navigator.of(context).push(
+          Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) {
                 return SendPreviewer(
@@ -322,17 +178,6 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               },
             ),
           );
-          if (rezort != null)
-            _showNotifier(
-              title: "Taarifa Muhimu",
-              subtitle:
-                  "Ili kupata delivery status kwa ufasaha zaidi unashauriwa kusubiri angalau dakika mbili kati ya jumbe unazotuma kisha refresh kabla ya kuendelea na zoezi lingine",
-              actionStr1: "Refresh Sasa",
-              onTap1: () {
-                loadAttendees();
-                popper();
-              },
-            );
         },
         actionStr2: "Sitisha",
         onTap2: () {
@@ -340,8 +185,8 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         },
       );
     } else {
-      popper();
-      bool? rezort = await Navigator.of(context).push(
+      // popper();
+      Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) {
             return SendPreviewer(
@@ -354,17 +199,6 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           },
         ),
       );
-      if (rezort != null)
-        _showNotifier(
-          title: "Taarifa Muhimu",
-          subtitle:
-              "Ili kupata delivery status kwa ufasaha zaidi unashauriwa kusubiri angalau dakika mbili kati ya jumbe unazotuma kisha refresh kabla ya kuendelea na zoezi lingine",
-          actionStr1: "Refresh Sasa",
-          onTap1: () {
-            loadAttendees();
-            popper();
-          },
-        );
     }
   }
 
@@ -373,61 +207,64 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     return Scaffold(
       backgroundColor: scaback,
       // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton:
-          attendeesList.isNotEmpty
-              ? Container(
-                // color: Colors.red,
-                margin: const EdgeInsets.only(bottom: psm * 4.25),
-                padding: EdgeInsets.symmetric(horizontal: psm),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  // mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    FloatingActionButton(
-                      mini: true,
-                      heroTag: "mini",
-                      backgroundColor:
-                          Theme.of(context).scaffoldBackgroundColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-                        side: BorderSide(
-                          color: lqassbdrColor,
-                          width: bdrWidthGen,
-                        ),
+      floatingActionButton: StreamBuilder<QuerySnapshot>(
+        stream: currentStream,
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+            return Container(
+              // color: Colors.red,
+              margin: const EdgeInsets.only(bottom: psm * 4.25),
+              padding: EdgeInsets.symmetric(horizontal: psm),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                // mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  FloatingActionButton(
+                    mini: true,
+                    heroTag: "mini",
+                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+                      side: BorderSide(
+                        color: lqassbdrColor,
+                        width: bdrWidthGen,
                       ),
-                      foregroundColor: Colors.white,
-                      child: Padding(
-                        padding: const EdgeInsets.all(psm * 0.5),
-                        child: Brand(Brands.wechat),
-                      ),
-                      onPressed: () async {
-                        await pushToSend(isWhatsApp: false, prefix: "sms");
-                      },
                     ),
-                    // const SizedBox(width: spaceTiles * 0.5),
-                    FloatingActionButton(
-                      heroTag: "major",
-                      backgroundColor:
-                          Theme.of(context).scaffoldBackgroundColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-                        side: BorderSide(
-                          color: lqassbdrColor,
-                          width: bdrWidthGen,
-                        ),
-                      ),
-                      foregroundColor: Colors.white,
-                      child: Brand(Brands.whatsapp),
-                      onPressed: () async {
-                        await pushToSend(isWhatsApp: true, prefix: "whatsapp");
-                      },
+                    foregroundColor: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(psm * 0.5),
+                      child: Brand(Brands.wechat),
                     ),
-                  ],
-                ),
-              )
-              : null,
+                    onPressed: () async {
+                      pushToSend(isWhatsApp: false, prefix: "sms");
+                    },
+                  ),
+                  // const SizedBox(width: spaceTiles * 0.5),
+                  FloatingActionButton(
+                    heroTag: "major",
+                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+                      side: BorderSide(
+                        color: lqassbdrColor,
+                        width: bdrWidthGen,
+                      ),
+                    ),
+                    foregroundColor: Colors.white,
+                    child: Brand(Brands.whatsapp),
+                    onPressed: () async {
+                      pushToSend(isWhatsApp: true, prefix: "whatsapp");
+                    },
+                  ),
+                ],
+              ),
+            );
+          }
+          return SizedBox.shrink();
+        },
+      ),
       appBar: appBar(
-        title: "Ratibu Mialikor",
+        title: "Ratibu Mialiko",
         leading: buildActionButton(
           icon: Icons.arrow_back,
           onTap: () {
@@ -436,12 +273,6 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         ),
         actions: Row(
           children: [
-            IconButton(
-              onPressed: () {
-                loadAttendees();
-              },
-              icon: Icon(Icons.refresh),
-            ),
             IconButton(
               onPressed: () {
                 showSearch(
@@ -459,11 +290,11 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         ),
       ),
       body: Ccafold(
-        child: Padding(
-          padding: EdgeInsets.all(spaceTiles),
-          child: Column(
-            children: [
-              Row(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(spaceTiles),
+              child: Row(
                 children: [
                   buildDropDwn(shannnels, (value) {
                     safeState(() {
@@ -477,83 +308,149 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                     safeState(() {
                       selStatus = value;
                     });
-                    loadAttendees();
                   }),
                 ],
               ),
+            ),
 
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  "Chaguzi: ${selectList.length} kati ya ${attendeesList.length}",
-                ),
-                trailing: TextButton(
-                  onPressed: () {
-                    if (selectList.length != attendeesList.length) {
-                      selectList = attendeesList;
-                    } else {
-                      selectList = [];
-                    }
-                    safeState(() {});
-                  },
-                  child: Text(
-                    selectList.length != attendeesList.length
-                        ? "Chagua Yote"
-                        : "Ondoa Yote",
-                  ),
-                ),
-              ),
-              Expanded(
-                child:
-                    attendeesList.isEmpty && isLoading
-                        ? buildLoader()
-                        : attendeesList.isEmpty && !isLoading
-                        ? BuildNoDt(
-                          string: "Hakuna Data",
-                          isRefreshed: () async {
-                            await loadAttendees();
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: spaceTiles),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: currentStream,
+                builder: (context, snapshot) {
+                  int totalCount =
+                      snapshot.hasData ? snapshot.data!.docs.length : 0;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      "Chaguzi: ${selectList.length} kati ya $totalCount",
+                    ),
+                    trailing: StreamBuilder<QuerySnapshot>(
+                      stream: currentStream,
+                      builder: (context, snapshot) {
+                        int totalCount =
+                            snapshot.hasData ? snapshot.data!.docs.length : 0;
+                        return TextButton(
+                          onPressed: () {
+                            if (selectList.length != totalCount) {
+                              // Select all from current page
+                              List<Attendee> currentPageAttendees =
+                                  snapshot.hasData
+                                      ? snapshot.data!.docs.map<Attendee>((
+                                        doc,
+                                      ) {
+                                        return Attendee.fromMap(
+                                          doc.id,
+                                          doc.data() as Map<String, dynamic>,
+                                        );
+                                      }).toList()
+                                      : [];
+                              selectList = currentPageAttendees;
+                            } else {
+                              selectList = [];
+                            }
+                            safeState(() {});
                           },
-                        )
-                        : buildMialiko(),
+                          child: Text(
+                            selectList.length != totalCount
+                                ? "Chagua Yote"
+                                : "Ondoa Yote",
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
-              // Pagination Controls
-              if (attendeesList.isNotEmpty) buildPaginationControls(),
-            ],
-          ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(spaceTiles),
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: currentStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return buildLoader();
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          "Error: ${snapshot.error}",
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      );
+                    }
+
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return BuildNoDt(
+                        string: "Hakuna Data",
+                        isRefreshed: () async {},
+                      );
+                    }
+
+                    // Store last document for forward navigation
+                    QuerySnapshot querySnapshot = snapshot.data!;
+                    if (querySnapshot.docs.isNotEmpty) {
+                      currentPageLastDoc = querySnapshot.docs.last;
+                    }
+
+                    // Convert to Attendee list
+                    List<Attendee> attendeesList =
+                        querySnapshot.docs
+                            .where((t) {
+                              Attendee attendee = Attendee.fromMap(
+                                t.id,
+                                t.data() as Map<String, dynamic>,
+                              );
+
+                              if (selStatus == "unsent") {
+                                var dhakey =
+                                    "${selChannel}_${widget.campaignId}";
+                                return attendee.messageIndexes?.every((indx) {
+                                      return !indx.startsWith(dhakey);
+                                    }) ??
+                                    false;
+                              }
+                              var thkey =
+                                  "${selChannel}_${widget.campaignId}_${selStatus}";
+                              return attendee.messageIndexes?.contains(thkey) ??
+                                  false;
+                            })
+                            .map<Attendee>((doc) {
+                              return Attendee.fromMap(
+                                doc.id,
+                                doc.data() as Map<String, dynamic>,
+                              );
+                            })
+                            .toList();
+
+                    return buildMialiko(attendeesList: attendeesList);
+                  },
+                ),
+              ),
+            ),
+            // Pagination Controls
+            StreamBuilder<QuerySnapshot>(
+              stream: currentStream,
+              builder: (context, snapshot) {
+                if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                  return buildPaginationControls(snapshot.data!);
+                }
+                return SizedBox.shrink();
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 
-  buildMialiko() {
+  buildMialiko({required List<Attendee> attendeesList}) {
     return ListView(
       padding: EdgeInsets.zero,
-      controller: scrollController,
       children: [
-        ...List.generate(attendeesList.length + 1, (indx) {
-          if (indx == attendeesList.length) {
-            if (isLoading) {
-              return const Padding(
-                padding: EdgeInsets.all(psm),
-                child: Center(child: CupertinoActivityIndicator(radius: psm)),
-              );
-            } else if (!hasMore && attendeesList.isNotEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(psm),
-                child: Center(
-                  child: Text(
-                    "Hakuna Data Zaidi",
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-              );
-            } else {
-              return const SizedBox(height: psm);
-            }
-          }
+        ...List.generate(attendeesList.length, (indx) {
           Attendee attendee = attendeesList[indx];
           var hasKey = selectList.any((test) {
             return test.id == attendee.id;
@@ -576,7 +473,6 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                   },
                 ),
               );
-              loadAttendees();
             },
             onSelected: () {
               if (hasKey) {
@@ -697,13 +593,13 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     Navigator.of(context).pop();
   }
 
-  Widget buildPaginationControls() {
+  Widget buildPaginationControls(QuerySnapshot snapshot) {
+    bool hasMore = snapshot.docs.length == pageSize;
     return Container(
-      margin: EdgeInsets.only(top: spaceTiles),
       padding: EdgeInsets.symmetric(horizontal: psm, vertical: psm * 0.75),
       decoration: BoxDecoration(
         gradient: lqassgrad,
-        borderRadius: BorderRadius.circular(bsm),
+        // borderRadius: BorderRadius.circular(bsm),
         border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
       ),
       child: Row(
@@ -711,16 +607,13 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         children: [
           // Previous Button
           GestureDetector(
-            onTap:
-                currentPage > 1 && !isLoading
-                    ? () => goToPage(currentPage - 1)
-                    : null,
+            onTap: currentPage > 1 ? () => goToPreviousPage() : null,
             child: Container(
               width: 48,
               height: 48,
               decoration: BoxDecoration(
                 gradient:
-                    currentPage > 1 && !isLoading
+                    currentPage > 1
                         ? primaryGrad
                         : LinearGradient(
                           colors: [
@@ -731,7 +624,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                 borderRadius: BorderRadius.circular(bsm),
                 border: Border.all(
                   color:
-                      currentPage > 1 && !isLoading
+                      currentPage > 1
                           ? lqassbdrColor
                           : Colors.grey.withOpacity(0.3),
                   width: bdrWidthGen,
@@ -740,7 +633,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               child: Icon(
                 Icons.chevron_left_rounded,
                 color:
-                    currentPage > 1 && !isLoading
+                    currentPage > 1
                         ? primaryWhite
                         : Colors.grey.withOpacity(0.5),
                 size: 28,
@@ -788,15 +681,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: psm * 0.75),
                   decoration: BoxDecoration(
-                    gradient:
-                        totalPages != null
-                            ? primaryGrad
-                            : LinearGradient(
-                              colors: [
-                                Colors.amber.withOpacity(0.3),
-                                Colors.orange.withOpacity(0.2),
-                              ],
-                            ),
+                    gradient: primaryGrad,
                     borderRadius: BorderRadius.circular(bxsm),
                   ),
                   child: Text(
@@ -814,14 +699,13 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           SizedBox(width: psm * 1.5),
           // Next Button
           GestureDetector(
-            onTap:
-                hasMore && !isLoading ? () => goToPage(currentPage + 1) : null,
+            onTap: hasMore ? () => goToNextPage(snapshot) : null,
             child: Container(
               width: 48,
               height: 48,
               decoration: BoxDecoration(
                 gradient:
-                    hasMore && !isLoading
+                    hasMore
                         ? primaryGrad
                         : LinearGradient(
                           colors: [
@@ -831,19 +715,13 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                         ),
                 borderRadius: BorderRadius.circular(bsm),
                 border: Border.all(
-                  color:
-                      hasMore && !isLoading
-                          ? lqassbdrColor
-                          : Colors.grey.withOpacity(0.3),
+                  color: hasMore ? lqassbdrColor : Colors.grey.withOpacity(0.3),
                   width: bdrWidthGen,
                 ),
               ),
               child: Icon(
                 Icons.chevron_right_rounded,
-                color:
-                    hasMore && !isLoading
-                        ? primaryWhite
-                        : Colors.grey.withOpacity(0.5),
+                color: hasMore ? primaryWhite : Colors.grey.withOpacity(0.5),
                 size: 28,
               ),
             ),

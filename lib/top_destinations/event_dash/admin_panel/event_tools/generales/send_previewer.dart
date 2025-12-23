@@ -65,7 +65,12 @@ class SendPreviewerState extends State<SendPreviewer> {
     return Scaffold(
       appBar: appBar(
         title: "Kamilisha kutuma",
-        leading: buildActionButton(icon: Icons.arrow_back, onTap: popper),
+        leading: buildActionButton(
+          icon: Icons.arrow_back,
+          onTap: () {
+            popper();
+          },
+        ),
       ),
       backgroundColor: scaback,
       body: Container(

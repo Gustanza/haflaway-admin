@@ -1,11 +1,11 @@
 var shannnels = {
-  "all": "Channel Zote",
+  // "all": "Channel Zote",
   "sms": "Channel ya SMS",
   "whatsapp": "Channel ya WhatsApp",
 };
 
 var shtates = {
-  "all": "Status Zote",
+  "unsent": "Hazijatumwa/unsent",
   "sent": "Zilizotumwa",
   "delivered": "Zilizofika",
   "read": "Zilizosomwa",

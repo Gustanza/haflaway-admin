@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -129,7 +130,7 @@ class _CreateEventState extends State<CreateEvent> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: psm * 0.3),
+                            const SizedBox(height: spaceTiles),
                             Stack(
                               children: [
                                 Container(
@@ -152,7 +153,7 @@ class _CreateEventState extends State<CreateEvent> {
                                             )
                                             : event != null
                                             ? DecorationImage(
-                                              image: NetworkImage(
+                                              image: CachedNetworkImageProvider(
                                                 event.eventThumbnail ?? "",
                                               ),
                                               fit: BoxFit.cover,
@@ -191,24 +192,24 @@ class _CreateEventState extends State<CreateEvent> {
                               ],
                             ),
                             const SizedBox(height: spaceTiles),
-                            // const Text(
-                            //   'Add event title',
-                            //   style: TextStyle(
-                            //     fontSize: fsm,
-                            //     fontWeight: FontWeight.bold,
-                            //   ),
-                            // ),
-                            // const SizedBox(height: psm * 0.3),
+                            const Text(
+                              'Add event title',
+                              style: TextStyle(
+                                fontSize: fsm,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: spaceTiles),
                             buildField(lbl: eptitle, cont: fEventTitleCon),
                             const SizedBox(height: spaceTiles),
-                            // const Text(
-                            //   'Add event category',
-                            //   style: TextStyle(
-                            //     fontSize: fsm,
-                            //     fontWeight: FontWeight.bold,
-                            //   ),
-                            // ),
-                            // const SizedBox(height: psm * 0.3),
+                            const Text(
+                              'Add event category',
+                              style: TextStyle(
+                                fontSize: fsm,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: spaceTiles),
                             buildField(
                               isReadOnly: true,
                               showCursor: false,
@@ -219,37 +220,37 @@ class _CreateEventState extends State<CreateEvent> {
                               },
                             ),
                             const SizedBox(height: spaceTiles),
-                            // const Text(
-                            //   'Add event description',
-                            //   style: TextStyle(
-                            //     fontSize: fsm,
-                            //     fontWeight: FontWeight.bold,
-                            //   ),
-                            // ),
-                            // const SizedBox(height: psm * 0.3),
+                            const Text(
+                              'Add event description',
+                              style: TextStyle(
+                                fontSize: fsm,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: spaceTiles),
                             buildField(lbl: epdescription, cont: fEventDescCon),
                             const SizedBox(height: spaceTiles),
-                            // const Text(
-                            //   'Add event location',
-                            //   style: TextStyle(
-                            //     fontSize: fsm,
-                            //     fontWeight: FontWeight.bold,
-                            //   ),
-                            // ),
-                            // const SizedBox(height: psm * 0.3),
+                            const Text(
+                              'Add event location',
+                              style: TextStyle(
+                                fontSize: fsm,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: spaceTiles),
                             buildField(
                               lbl: eplocation,
                               cont: fEventLocationCon,
                             ),
                             const SizedBox(height: spaceTiles),
-                            // const Text(
-                            //   'Select event plan',
-                            //   style: TextStyle(
-                            //     fontSize: fsm,
-                            //     fontWeight: FontWeight.bold,
-                            //   ),
-                            // ),
-                            // const SizedBox(height: psm * 0.3),
+                            const Text(
+                              'Select event plan',
+                              style: TextStyle(
+                                fontSize: fsm,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: spaceTiles),
                             buildField(
                               isReadOnly: true,
                               showCursor: false,
@@ -270,23 +271,23 @@ class _CreateEventState extends State<CreateEvent> {
                               },
                             ),
                             const SizedBox(height: spaceTiles),
-                            // const Text(
-                            //   'Phone number',
-                            //   style: TextStyle(
-                            //     fontSize: fsm,
-                            //     fontWeight: FontWeight.bold,
-                            //   ),
-                            // ),
-                            // const SizedBox(height: psm * 0.3),
+                            const Text(
+                              'Phone number',
+                              style: TextStyle(
+                                fontSize: fsm,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: spaceTiles),
                             buildPhone(mobileCont: phncont),
-                            // const Text(
-                            //   'Start date & time',
-                            //   style: TextStyle(
-                            //     fontSize: fsm,
-                            //     fontWeight: FontWeight.bold,
-                            //   ),
-                            // ),
-                            // const SizedBox(height: psm * 0.3),
+                            const Text(
+                              'Start date & time',
+                              style: TextStyle(
+                                fontSize: fsm,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: spaceTiles),
                             buildField(
                               isReadOnly: true,
                               showCursor: false,
@@ -306,14 +307,14 @@ class _CreateEventState extends State<CreateEvent> {
                               },
                             ),
                             const SizedBox(height: spaceTiles),
-                            // const Text(
-                            //   'End date & time',
-                            //   style: TextStyle(
-                            //     fontSize: fsm,
-                            //     fontWeight: FontWeight.bold,
-                            //   ),
-                            // ),
-                            // const SizedBox(height: psm * 0.3),
+                            const Text(
+                              'End date & time',
+                              style: TextStyle(
+                                fontSize: fsm,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: spaceTiles),
                             buildField(
                               isReadOnly: true,
                               showCursor: false,

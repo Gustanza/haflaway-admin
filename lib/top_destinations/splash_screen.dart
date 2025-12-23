@@ -189,63 +189,63 @@ class _SplashScreenState extends State<SplashScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Main Logo Container with Multiple Effects
-                  AnimatedBuilder(
-                    animation: _pulseAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _pulseAnimation.value,
-                        child: Container(
-                          width: 160,
-                          height: 160,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                primaryColor.withOpacity(0.9),
-                                secondaryColor.withOpacity(0.8),
-                                Colors.purple.withOpacity(0.6),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(40),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(40),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.3),
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(40),
-                                ),
-                                child: Center(
-                                  child: AnimatedBuilder(
-                                    animation: _rotateAnimation,
-                                    builder: (context, child) {
-                                      return Transform.rotate(
-                                        angle:
-                                            _rotateAnimation.value *
-                                            2 *
-                                            3.14159,
-                                        child: Icon(
-                                          size: 80,
-                                          Icons.qr_code_scanner,
-                                          color: Colors.white,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                  // AnimatedBuilder(
+                  //   animation: _pulseAnimation,
+                  //   builder: (context, child) {
+                  //     return Transform.scale(
+                  //       scale: _pulseAnimation.value,
+                  //       child: Container(
+                  //         width: 160,
+                  //         height: 160,
+                  //         decoration: BoxDecoration(
+                  //           gradient: LinearGradient(
+                  //             colors: [
+                  //               primaryColor.withOpacity(0.9),
+                  //               secondaryColor.withOpacity(0.8),
+                  //               Colors.purple.withOpacity(0.6),
+                  //             ],
+                  //           ),
+                  //           borderRadius: BorderRadius.circular(40),
+                  //         ),
+                  //         child: ClipRRect(
+                  //           borderRadius: BorderRadius.circular(40),
+                  //           child: BackdropFilter(
+                  //             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  //             child: Container(
+                  //               decoration: BoxDecoration(
+                  //                 border: Border.all(
+                  //                   color: Colors.white.withOpacity(0.3),
+                  //                   width: 1,
+                  //                 ),
+                  //                 borderRadius: BorderRadius.circular(40),
+                  //               ),
+                  //               child: Center(
+                  //                 child: AnimatedBuilder(
+                  //                   animation: _rotateAnimation,
+                  //                   builder: (context, child) {
+                  //                     return Transform.rotate(
+                  //                       angle:
+                  //                           _rotateAnimation.value *
+                  //                           2 *
+                  //                           3.14159,
+                  //                       child: Icon(
+                  //                         size: 80,
+                  //                         Icons.qr_code_scanner,
+                  //                         color: Colors.white,
+                  //                       ),
+                  //                     );
+                  //                   },
+                  //                 ),
+                  //               ),
+                  //             ),
+                  //           ),
+                  //         ),
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
 
-                  const SizedBox(height: psm * 3),
+                  // const SizedBox(height: psm * 3),
 
                   // App Name with Glassmorphism
                   Container(
