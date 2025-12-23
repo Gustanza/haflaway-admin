@@ -64,6 +64,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       QuerySnapshot<Map<String, dynamic>> res =
           await firestore
               .collection(ecol)
+              .where("adminsIds", arrayContains: uid)
               .orderBy('startDate', descending: true)
               .limit(pageSize)
               .get();
@@ -88,6 +89,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       QuerySnapshot<Map<String, dynamic>> res =
           await firestore
               .collection(ecol)
+              .where("adminsIds", arrayContains: uid)
               .orderBy('startDate', descending: true)
               .startAfterDocument(lastEvent!)
               .limit(pageSize)
