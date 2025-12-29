@@ -11,6 +11,7 @@ import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalwids.dart';
@@ -158,7 +159,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   SliverToBoxAdapter _buildEventImageCard() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(psm, 0, psm, psm),
+        padding: const EdgeInsets.fromLTRB(psm, 0, psm, spaceTiles),
         child: Container(
           height: 250,
           decoration: BoxDecoration(
@@ -270,18 +271,12 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                   ),
 
                   buildActionItem(
-                    title: "Invitations",
+                    title: "Mialiko ya Digital",
                     children: [
-                      ActionItem(
-                        figure: "0",
-                        icon: Clarity.printer_line,
-                        subtitle: "Printed Order",
-                        onPressed: () {},
-                      ),
                       ActionItem(
                         figure: "$invsCount",
                         icon: Clarity.email_line,
-                        subtitle: "Digital Issued",
+                        subtitle: "Kadi Zote",
                         onPressed: () async {
                           try {
                             await Navigator.of(context).push(
@@ -298,6 +293,20 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                           } catch (e) {
                             showToast(isGood: false, msg: e.toString());
                           }
+                        },
+                      ),
+                      ActionItem(
+                        figure: "$invsCount",
+                        icon: Clarity.qr_code_line,
+                        subtitle: "Skani Kadi",
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      CheckPoints(edata: widget.eventO),
+                            ),
+                          );
                         },
                       ),
                     ],
