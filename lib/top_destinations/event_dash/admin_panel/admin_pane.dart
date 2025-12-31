@@ -100,7 +100,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: scaback,
       appBar: appBar(
-        title: "Dashboard",
+        title: "Kituo cha Udhibiti",
         leading: appBarActionButton(
           icon: Icons.arrow_back,
           onTap: () {
@@ -159,7 +159,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   SliverToBoxAdapter _buildEventImageCard() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(psm, 0, psm, spaceTiles),
+        padding: const EdgeInsets.fromLTRB(psm, 0, psm, spaceTiles + 1.2),
         child: Container(
           height: 250,
           decoration: BoxDecoration(

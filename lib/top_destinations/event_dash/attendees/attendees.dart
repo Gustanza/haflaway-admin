@@ -7,9 +7,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/buttons.dart';
+import 'package:haflaway/components/custom_popup_btn.dart';
 import 'package:haflaway/components/sheets.dart';
-import 'package:haflaway/components/templates.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/wsap.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
@@ -22,8 +21,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/utils/attstates.dart';
 import 'package:haflaway/utils/constants.dart';
-import 'package:haflaway/utils/helpers.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/card.dart';
@@ -33,8 +30,7 @@ import 'package:haflaway/utils/errorstrs.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/styles.dart';
-import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'imp_preview.dart';
 
 class Attendees extends StatefulWidget {
@@ -45,7 +41,7 @@ class Attendees extends StatefulWidget {
     super.key,
     required this.edata,
     required this.kardType,
-    this.title = "Mialiko",
+    this.title = "Ratibu Mialiko",
   });
   @override
   State<Attendees> createState() => _AttendeesState();
@@ -290,136 +286,84 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     }
   }
 
-  // Update attendance status
-  Future<void> _updateAttendanceStatus(Attendee attendee, String status) async {
-    try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(child: CircularProgressIndicator());
-        },
-      );
-
-      // Perform the update
-      await firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .doc(attendee.id)
-          .update({"attendanceStatus": status});
-
-      // Update local state
-      int index = atList.indexWhere((element) => element.id == attendee.id);
-      if (index != -1) {
-        atList[index].attendanceStatus = status;
-      }
-
-      // Close loading dialog
-      Navigator.pop(context);
-
-      // Show success message
-      showToast(isGood: true, msg: "Attendance status updated to $status");
-
-      // Trigger UI refresh
-      setState(() {});
-    } catch (e) {
-      // Close loading dialog
-      Navigator.pop(context);
-
-      showToast(isGood: false, msg: "Error updating attendance status: $e");
-    }
-  }
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _loadAttendees();
   }
 
-  buildPopupMenu() {
-    return PopupMenuButton(
-      // color: lqassgradBaseColor,
-      icon: Icon(Icons.menu_open),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadiusGeometry.circular(bsm),
-        side: BorderSide(width: bdrWidthGen, color: lqassbdrColor),
-      ),
-      itemBuilder: (context) {
-        return [
-          PopupMenuItem(
-            onTap: () {
-              showQuickStats();
-            },
-            child: ListTile(
-              leading: Icon(Icons.summarize),
-              title: Text("Taarifa fupi"),
-            ),
-          ),
-          PopupMenuItem(
-            onTap: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return InvitesIssuers(
-                      event: widget.edata,
-                      kardType: widget.kardType,
-                      campaignId:
-                          widget.kardType == KardType.invitation
-                              ? invCampId
-                              : contrCampId,
-                    );
-                  },
-                ),
-              );
-              _loadAttendees();
-            },
-            child: ListTile(
-              leading: Icon(Icons.email),
-              title: Text("Tuma Mialiko"),
-            ),
-          ),
-          PopupMenuItem(
-            onTap: () {
-              selectAll();
-            },
-            child: ListTile(
-              leading: Icon(Icons.select_all),
-              title: Text("Select/De-select All"),
-            ),
-          ),
-          PopupMenuItem(
-            onTap: () {
-              importFile();
-            },
-            child: ListTile(
-              leading: Icon(Icons.import_export),
-              title: Text("Import Exceli"),
-            ),
-          ),
-          PopupMenuItem(
-            onTap: () {
-              showSelectCard();
-            },
-            child: ListTile(
-              leading: Icon(Icons.import_contacts),
-              title: Text("Import Mchangiaji"),
-            ),
-          ),
-          PopupMenuItem(
-            onTap: () {
-              delSelect();
-            },
-            child: ListTile(
-              contentPadding: EdgeInsets.symmetric(horizontal: psm),
-              tileColor: Colors.red,
-              leading: Icon(Icons.delete_forever),
-              title: Text("Futa Mwalikwa"),
-            ),
-          ),
-        ];
-      },
+  getMainBuild() {
+    return bildPopupMenu(
+      icon: Icon(Icons.exit_to_app_outlined),
+      popItems: [
+        PopClickers(
+          leading: Icon(Icons.summarize),
+          title: Text("Taarifa fupi"),
+          onTap: showQuickStats,
+        ),
+        PopClickers(
+          leading: Icon(Icons.send_time_extension),
+          title: Text("Tuma Mialiko"),
+          onTap: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) {
+                  return InvitesIssuers(
+                    event: widget.edata,
+                    kardType: widget.kardType,
+                    campaignId:
+                        widget.kardType == KardType.invitation
+                            ? invCampId
+                            : contrCampId,
+                  );
+                },
+              ),
+            );
+            _loadAttendees();
+          },
+        ),
+      ],
+    );
+  }
+
+  getMiniBuild() {
+    return bildPopupMenu(
+      icon: Icon(Icons.group_add),
+      popItems: [
+        PopClickers(
+          leading: Icon(Icons.group_add),
+          title: Text("Ongeza Mwalikwa"),
+          onTap: () async {
+            String title =
+                widget.kardType == KardType.invitation
+                    ? "Invitation"
+                    : "Contributor";
+            await navNormal(
+              context: context,
+              widget: CreateAttendees(
+                event: widget.edata,
+                title: title,
+                kardType: widget.kardType,
+              ),
+            );
+            _loadAttendees();
+          },
+        ),
+        PopClickers(
+          leading: Icon(Icons.note_add_rounded),
+          title: Text("Pandisha Faili"),
+          onTap: () {
+            importFile();
+          },
+        ),
+        PopClickers(
+          leading: Icon(Icons.monetization_on_sharp),
+          title: Text("Pandisha Mchangiaji"),
+          onTap: () {
+            showSelectCard();
+          },
+        ),
+      ],
     );
   }
 
@@ -428,29 +372,50 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: scaback,
       appBar: appBar(
-        title: "${widget.title}",
+        title:
+            selectList.isEmpty
+                ? "${widget.title}"
+                : "Chaguzi: ${selectList.length}",
         leading: appBarActionButton(
-          icon: Icons.arrow_back,
+          icon: selectList.isEmpty ? Icons.arrow_back : Icons.close,
           onTap: () {
-            Navigator.of(context).pop();
+            if (selectList.isEmpty) {
+              Navigator.of(context).pop();
+            } else {
+              safeState(() {
+                selectList = [];
+              });
+            }
           },
         ),
         actions: Row(
           children: [
-            // Elegant filter button with active filter indicator
-            _buildFilterButton(),
-            IconButton(
-              icon: Icon(Icons.search),
-              onPressed: () {
-                showSearch(
-                  context: context,
-                  delegate: DhaSearchDelegate(
-                    edata: widget.edata,
-                    kardType: widget.kardType,
-                  ),
-                );
-              },
-            ),
+            if (selectList.isEmpty) _buildFilterButton(),
+            if (selectList.isEmpty)
+              IconButton(
+                icon: Icon(Icons.search),
+                onPressed: () {
+                  showSearch(
+                    context: context,
+                    delegate: DhaSearchDelegate(
+                      edata: widget.edata,
+                      kardType: widget.kardType,
+                    ),
+                  );
+                },
+              ),
+            if (selectList.isNotEmpty)
+              FilledButton.icon(
+                style: ButtonStyle(
+                  foregroundColor: WidgetStatePropertyAll(Colors.white),
+                  backgroundColor: WidgetStatePropertyAll(lqassgradBaseColor),
+                ),
+                onPressed: () {
+                  delSelect();
+                },
+                label: Text("Delete"),
+                icon: Icon(Clarity.trash_solid),
+              ),
           ],
         ),
       ),
@@ -466,22 +431,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
             ),
             foregroundColor: Colors.white,
-            child: Icon(Icons.person_add_alt),
-            onPressed: () async {
-              String title =
-                  widget.kardType == KardType.invitation
-                      ? "Invitation"
-                      : "Contributor";
-              await navNormal(
-                context: context,
-                widget: CreateAttendees(
-                  event: widget.edata,
-                  title: title,
-                  kardType: widget.kardType,
-                ),
-              );
-              _loadAttendees();
-            },
+            child: getMiniBuild(),
+            onPressed: null,
           ),
           const SizedBox(height: spaceTiles),
           FloatingActionButton(
@@ -492,7 +443,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
             ),
             foregroundColor: Colors.white,
-            child: buildPopupMenu(),
+            child: getMainBuild(),
             onPressed: null,
           ),
         ],

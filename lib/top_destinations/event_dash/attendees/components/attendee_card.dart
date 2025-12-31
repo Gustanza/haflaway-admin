@@ -41,7 +41,7 @@ Widget buildAttendeeCard({
   return StatefulBuilder(
     builder: (context, setState) {
       return GestureDetector(
-        onTap: onSelected,
+        onLongPress: onSelected,
         child: Container(
           margin: EdgeInsets.only(bottom: psm * 0.5),
           decoration: BoxDecoration(
