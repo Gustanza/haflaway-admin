@@ -7,9 +7,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/buttons.dart';
+import 'package:haflaway/components/custom_popup_btn.dart';
 import 'package:haflaway/components/sheets.dart';
-import 'package:haflaway/components/templates.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/wsap.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
@@ -22,8 +21,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/utils/attstates.dart';
 import 'package:haflaway/utils/constants.dart';
-import 'package:haflaway/utils/helpers.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/card.dart';
@@ -33,8 +30,7 @@ import 'package:haflaway/utils/errorstrs.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/styles.dart';
-import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'imp_preview.dart';
 
 class Attendees extends StatefulWidget {
@@ -45,7 +41,7 @@ class Attendees extends StatefulWidget {
     super.key,
     required this.edata,
     required this.kardType,
-    this.title = "Mialiko",
+    this.title = "Ratibu Mialiko",
   });
   @override
   State<Attendees> createState() => _AttendeesState();
@@ -290,238 +286,84 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     }
   }
 
-  // Update attendance status
-  Future<void> _updateAttendanceStatus(Attendee attendee, String status) async {
-    try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(child: CircularProgressIndicator());
-        },
-      );
-
-      // Perform the update
-      await firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .doc(attendee.id)
-          .update({"attendanceStatus": status});
-
-      // Update local state
-      int index = atList.indexWhere((element) => element.id == attendee.id);
-      if (index != -1) {
-        atList[index].attendanceStatus = status;
-      }
-
-      // Close loading dialog
-      Navigator.pop(context);
-
-      // Show success message
-      showToast(isGood: true, msg: "Attendance status updated to $status");
-
-      // Trigger UI refresh
-      setState(() {});
-    } catch (e) {
-      // Close loading dialog
-      Navigator.pop(context);
-
-      showToast(isGood: false, msg: "Error updating attendance status: $e");
-    }
-  }
-
-  buildToolKitSheet() {
-    return showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return modalBtmSheet(
-          bdrdm: bmd,
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              Text(
-                "Quick Actions",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: fsm + 6),
-              ),
-              const SizedBox(height: psm),
-              buildGlassButton(
-                text: "Create Attendee(s)",
-                icon: Clarity.users_line,
-                onPressed: () async {
-                  String title =
-                      widget.kardType == KardType.invitation
-                          ? "Invitation"
-                          : "Contributor";
-                  await navNormal(
-                    context: context,
-                    widget: CreateAttendees(
-                      event: widget.edata,
-                      title: title,
-                      kardType: widget.kardType,
-                    ),
-                  );
-                  _loadAttendees();
-                  poper();
-                },
-              ),
-              const SizedBox(height: spaceTiles),
-              buildGlassButton(
-                text: "Select/De-select All",
-                icon: Clarity.list_line,
-                onPressed: () async {
-                  selectAll();
-                  poper();
-                },
-              ),
-              const SizedBox(height: spaceTiles),
-              buildGlassButton(
-                text: "Import from File",
-                icon: Clarity.file_group_line,
-                onPressed: () {
-                  poper();
-                  importFile();
-                },
-              ),
-              const SizedBox(height: spaceTiles),
-              buildGlassButton(
-                text: "Import from Contributors",
-                icon: Clarity.dollar_bill_line,
-                onPressed: () {
-                  poper();
-                  showSelectCard();
-                },
-              ),
-              const SizedBox(height: spaceTiles),
-              buildGlassButton(
-                text: "Delete Attendee(s)",
-                icon: Clarity.trash_line,
-                onPressed: () {
-                  poper();
-                  delSelect();
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _loadAttendees();
   }
 
-  buildPopupMenu() {
-    return PopupMenuButton(
-      // color: lqassgradBaseColor,
-      icon: Icon(Icons.menu_open),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadiusGeometry.circular(bsm),
-        side: BorderSide(width: bdrWidthGen, color: lqassbdrColor),
-      ),
-      itemBuilder: (context) {
-        return [
-          PopupMenuItem(
-            onTap: () {
-              showQuickStats();
-            },
-            child: ListTile(
-              leading: Icon(Icons.summarize),
-              title: Text("Taarifa fupi"),
-            ),
-          ),
-          PopupMenuItem(
-            onTap: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return InvitesIssuers(
-                      event: widget.edata,
-                      kardType: widget.kardType,
-                      campaignId:
-                          widget.kardType == KardType.invitation
-                              ? invCampId
-                              : contrCampId,
-                    );
-                  },
-                ),
-              );
-              // _loadAttendees();
-            },
-            child: ListTile(
-              leading: Icon(Icons.email),
-              title: Text("Tuma Mialiko"),
-            ),
-          ),
-          PopupMenuItem(
-            onTap: () async {
-              String title =
-                  widget.kardType == KardType.invitation
-                      ? "Invitation"
-                      : "Contributor";
-              await navNormal(
-                context: context,
-                widget: CreateAttendees(
-                  event: widget.edata,
-                  title: title,
-                  kardType: widget.kardType,
-                ),
-              );
-              _loadAttendees();
-            },
+  getMainBuild() {
+    return bildPopupMenu(
+      icon: Icon(Icons.exit_to_app_outlined),
+      popItems: [
+        PopClickers(
+          leading: Icon(Icons.summarize),
+          title: Text("Taarifa fupi"),
+          onTap: showQuickStats,
+        ),
+        PopClickers(
+          leading: Icon(Icons.send_time_extension),
+          title: Text("Tuma Mialiko"),
+          onTap: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) {
+                  return InvitesIssuers(
+                    event: widget.edata,
+                    kardType: widget.kardType,
+                    campaignId:
+                        widget.kardType == KardType.invitation
+                            ? invCampId
+                            : contrCampId,
+                  );
+                },
+              ),
+            );
+            _loadAttendees();
+          },
+        ),
+      ],
+    );
+  }
 
-            child: ListTile(
-              leading: Icon(Icons.add_to_queue_sharp),
-              title: Text("Ongeza Mwalikwa"),
-            ),
-          ),
-          PopupMenuItem(
-            onTap: () {
-              selectAll();
-            },
-            child: ListTile(
-              leading: Icon(Icons.select_all),
-              title: Text("Select/De-select All"),
-            ),
-          ),
-          PopupMenuItem(
-            onTap: () {
-              importFile();
-            },
-            child: ListTile(
-              leading: Icon(Icons.import_export),
-              title: Text("Import Exceli"),
-            ),
-          ),
-          PopupMenuItem(
-            onTap: () {
-              showSelectCard();
-            },
-            child: ListTile(
-              leading: Icon(Icons.import_contacts),
-              title: Text("Import Mchangiaji"),
-            ),
-          ),
-          PopupMenuItem(
-            onTap: () {
-              delSelect();
-            },
-            child: ListTile(
-              contentPadding: EdgeInsets.symmetric(horizontal: psm),
-              tileColor: Colors.red,
-              leading: Icon(Icons.delete_forever),
-              title: Text("Futa Mwalikwa"),
-            ),
-          ),
-        ];
-      },
+  getMiniBuild() {
+    return bildPopupMenu(
+      icon: Icon(Icons.group_add),
+      popItems: [
+        PopClickers(
+          leading: Icon(Icons.group_add),
+          title: Text("Ongeza Mwalikwa"),
+          onTap: () async {
+            String title =
+                widget.kardType == KardType.invitation
+                    ? "Invitation"
+                    : "Contributor";
+            await navNormal(
+              context: context,
+              widget: CreateAttendees(
+                event: widget.edata,
+                title: title,
+                kardType: widget.kardType,
+              ),
+            );
+            _loadAttendees();
+          },
+        ),
+        PopClickers(
+          leading: Icon(Icons.note_add_rounded),
+          title: Text("Pandisha Faili"),
+          onTap: () {
+            importFile();
+          },
+        ),
+        PopClickers(
+          leading: Icon(Icons.monetization_on_sharp),
+          title: Text("Pandisha Mchangiaji"),
+          onTap: () {
+            showSelectCard();
+          },
+        ),
+      ],
     );
   }
 
@@ -530,29 +372,50 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: scaback,
       appBar: appBar(
-        title: "${widget.title}",
+        title:
+            selectList.isEmpty
+                ? "${widget.title}"
+                : "Chaguzi: ${selectList.length}",
         leading: appBarActionButton(
-          icon: Icons.arrow_back,
+          icon: selectList.isEmpty ? Icons.arrow_back : Icons.close,
           onTap: () {
-            Navigator.of(context).pop();
+            if (selectList.isEmpty) {
+              Navigator.of(context).pop();
+            } else {
+              safeState(() {
+                selectList = [];
+              });
+            }
           },
         ),
         actions: Row(
           children: [
-            // Elegant filter button with active filter indicator
-            _buildFilterButton(),
-            IconButton(
-              icon: Icon(Icons.search),
-              onPressed: () {
-                showSearch(
-                  context: context,
-                  delegate: DhaSearchDelegate(
-                    edata: widget.edata,
-                    kardType: widget.kardType,
-                  ),
-                );
-              },
-            ),
+            if (selectList.isEmpty) _buildFilterButton(),
+            if (selectList.isEmpty)
+              IconButton(
+                icon: Icon(Icons.search),
+                onPressed: () {
+                  showSearch(
+                    context: context,
+                    delegate: DhaSearchDelegate(
+                      edata: widget.edata,
+                      kardType: widget.kardType,
+                    ),
+                  );
+                },
+              ),
+            if (selectList.isNotEmpty)
+              FilledButton.icon(
+                style: ButtonStyle(
+                  foregroundColor: WidgetStatePropertyAll(Colors.white),
+                  backgroundColor: WidgetStatePropertyAll(lqassgradBaseColor),
+                ),
+                onPressed: () {
+                  delSelect();
+                },
+                label: Text("Delete"),
+                icon: Icon(Clarity.trash_solid),
+              ),
           ],
         ),
       ),
@@ -568,14 +431,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
             ),
             foregroundColor: Colors.white,
-            child: Icon(Clarity.qr_code_line),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => CheckPoints(edata: widget.edata),
-                ),
-              );
-            },
+            child: getMiniBuild(),
+            onPressed: null,
           ),
           const SizedBox(height: spaceTiles),
           FloatingActionButton(
@@ -586,8 +443,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
             ),
             foregroundColor: Colors.white,
-            child: buildPopupMenu(),
-            onPressed: buildToolKitSheet,
+            child: getMainBuild(),
+            onPressed: null,
           ),
         ],
       ),
@@ -1000,488 +857,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Build attendee card
-  Widget _buildAttendeeCard(Attendee attendee) {
-    var fullname = attendee.fullName;
-    var attrCrdMap = attendee.cards[widget.kardType.name];
-    AttributeCard? attributeCard;
-    attributeCard =
-        attrCrdMap != null ? AttributeCard.fromMap(map: attrCrdMap) : null;
-    String crdnm =
-        attributeCard != null ? attributeCard.name ?? "Not Set" : "Not Set";
-
-    var hasKey = selectList.any((test) {
-      return test.id == attendee.id;
-    });
-
-    // Calculate message count if messages property exists
-    int messageCount = 0;
-    messageCount = (attendee.messages).length;
-
-    return GestureDetector(
-      onTap: () {
-        // Toggle selection on tap
-        if (hasKey) {
-          var tmp =
-              selectList.where((test) {
-                return test.id != attendee.id;
-              }).toList();
-          selectList = tmp;
-        } else {
-          selectList.add(attendee);
-        }
-        setState(() {});
-      },
-      child: Container(
-        margin: EdgeInsets.only(left: psm, right: psm, bottom: psm * 0.5),
-        decoration: BoxDecoration(
-          gradient: lqassgrad,
-          border:
-              !hasKey
-                  ? lqassbdr
-                  : Border.all(color: Colors.redAccent, width: bdrWidthGen),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(psm * 0.625),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Top row: Avatar, Name, Actions
-              Row(
-                children: [
-                  // Avatar with message badge
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Hero(
-                        tag: "avatar-${attendee.id}",
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.25),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.account_circle,
-                            size: 24,
-                            color: Colors.white.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ),
-                      if (messageCount > 0)
-                        Positioned(
-                          top: -2,
-                          right: -2,
-                          child: Container(
-                            padding: EdgeInsets.all(messageCount > 9 ? 3 : 4),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 1.5,
-                              ),
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 14,
-                              minHeight: 14,
-                            ),
-                            child: Text(
-                              messageCount > 99 ? "99+" : "$messageCount",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                                height: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  SizedBox(width: psm * 0.5),
-                  // Name and info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          fullname,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: fsm + 1,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(height: psm * 0.25),
-                        // Card name and phone in compact row
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.event,
-                              size: 12,
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              crdnm,
-                              style: TextStyle(
-                                fontSize: fsm - 1,
-                                overflow: TextOverflow.ellipsis,
-                                color: Colors.white.withValues(alpha: 0.85),
-                              ),
-                              maxLines: 1,
-                            ),
-                            SizedBox(width: psm),
-                            Icon(
-                              Clarity.mobile_phone_line,
-                              size: 12,
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
-                            SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                attendee.phone,
-                                style: TextStyle(
-                                  fontSize: fsm - 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                ),
-                                maxLines: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: psm * 0.375),
-                        // Delivery status indicators - SMS & WhatsApp
-                        _buildDeliveryStatusIndicators(attendee),
-                      ],
-                    ),
-                  ),
-                  // Action buttons - compact
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // View card button
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            var vcrd = attendee.cards[widget.kardType.name];
-                            if (vcrd != null) {
-                              AttributeCard attrCrd = AttributeCard.fromMap(
-                                map: vcrd,
-                              );
-                              try {
-                                launchUrl(Uri.parse(attrCrd.url ?? ""));
-                              } catch (e) {
-                                showToast(isGood: false, msg: "$e");
-                              }
-                            } else {
-                              showToast(isGood: false, msg: "Unable to View");
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(6),
-                          child: Padding(
-                            padding: EdgeInsets.all(6),
-                            child: Icon(
-                              Clarity.eye_show_line,
-                              size: icnsm + 2,
-                              color: Colors.white.withValues(alpha: 0.8),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Call button
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => callNumber(attendee.phone),
-                          borderRadius: BorderRadius.circular(6),
-                          child: Padding(
-                            padding: EdgeInsets.all(6),
-                            child: Icon(
-                              Icons.call,
-                              size: icnsm + 2,
-                              color: Colors.white.withValues(alpha: 0.8),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Edit button
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () async {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return CreateAttendees(
-                                    event: widget.edata,
-                                    kardType: widget.kardType,
-                                    attendee: attendee,
-                                  );
-                                },
-                              ),
-                            );
-                            _loadAttendees();
-                          },
-                          borderRadius: BorderRadius.circular(6),
-                          child: Padding(
-                            padding: EdgeInsets.all(6),
-                            child: Icon(
-                              Icons.edit,
-                              size: icnsm + 2,
-                              color: Colors.white.withValues(alpha: 0.8),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(height: psm * 0.5),
-              // Attendance controls - compact
-              _buildAttendanceControls(attendee),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Build delivery status indicators for SMS and WhatsApp
-  Widget _buildDeliveryStatusIndicators(Attendee attendee) {
-    // Placeholder values - will be replaced with actual data later
-    String smsStatus =
-        "delivered"; // Placeholder: "delivered", "pending", "failed", "sent"
-    String whatsappStatus =
-        "read"; // Placeholder: "delivered", "read", "sent", "failed", "pending"
-
-    return Row(
-      children: [
-        // SMS Status Indicator
-        _buildStatusChip(
-          icon: Icons.sms_outlined,
-          label: "SMS",
-          status: smsStatus,
-        ),
-        SizedBox(width: psm * 0.5),
-        // WhatsApp Status Indicator
-        _buildStatusChip(
-          icon: Icons.chat_bubble_outline,
-          label: "WhatsApp",
-          status: whatsappStatus,
-        ),
-      ],
-    );
-  }
-
-  // Build individual status chip
-  Widget _buildStatusChip({
-    required IconData icon,
-    required String label,
-    required String status,
-  }) {
-    // Determine status color and styling based on status text
-    Color statusColor;
-    Color backgroundColor;
-    IconData statusIcon;
-
-    switch (status.toLowerCase()) {
-      case "delivered":
-      case "read":
-        statusColor = Colors.greenAccent;
-        backgroundColor = Colors.green.withValues(alpha: 0.2);
-        statusIcon = Icons.check_circle;
-        break;
-      case "sent":
-        statusColor = Colors.lightBlueAccent;
-        backgroundColor = Colors.blue.withValues(alpha: 0.2);
-        statusIcon = Icons.send;
-        break;
-      case "pending":
-      case "queued":
-        statusColor = Colors.orangeAccent;
-        backgroundColor = Colors.orange.withValues(alpha: 0.2);
-        statusIcon = Icons.schedule;
-        break;
-      case "failed":
-      case "undelivered":
-        statusColor = Colors.redAccent;
-        backgroundColor = Colors.red.withValues(alpha: 0.2);
-        statusIcon = Icons.error_outline;
-        break;
-      default:
-        statusColor = Colors.grey.shade400;
-        backgroundColor = Colors.grey.withValues(alpha: 0.2);
-        statusIcon = Icons.help_outline;
-    }
-
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: psm * 0.375,
-          vertical: psm * 0.3,
-        ),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: statusColor.withValues(alpha: 0.4),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 13, color: statusColor),
-            SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white.withValues(alpha: 0.95),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            SizedBox(width: 5),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(statusIcon, size: 9, color: statusColor),
-                  SizedBox(width: 3),
-                  Text(
-                    status.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold,
-                      color: statusColor,
-                      letterSpacing: 0.5,
-                      height: 1,
-                    ),
-                    maxLines: 1,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Build attendance controls
-  Widget _buildAttendanceControls(Attendee attendee) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: psm * 0.5,
-        vertical: psm * 0.375,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.15),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildStatusButton(
-            attendee,
-            atconfstate,
-            Icons.check_circle,
-            Colors.green,
-            attendee.attendanceStatus == atconfstate,
-          ),
-          _buildStatusButton(
-            attendee,
-            atnotconfstate,
-            Icons.schedule,
-            Colors.grey,
-            attendee.attendanceStatus == atnotconfstate ||
-                attendee.attendanceStatus == null,
-          ),
-          _buildStatusButton(
-            attendee,
-            atdeclstate,
-            Icons.cancel,
-            Colors.red,
-            attendee.attendanceStatus == atdeclstate,
-          ),
-          _buildStatusButton(
-            attendee,
-            atcallstate,
-            Icons.call_made,
-            Colors.teal,
-            attendee.attendanceStatus == atcallstate,
-          ),
-          _buildStatusButton(
-            attendee,
-            atunreachablestate,
-            Icons.cloud_off_outlined,
-            Colors.orange,
-            attendee.attendanceStatus == atunreachablestate,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Build status button
-  Widget _buildStatusButton(
-    Attendee attendee,
-    String status,
-    IconData icon,
-    Color color,
-    bool isActive,
-  ) {
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          _updateAttendanceStatus(attendee, status);
-        },
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: psm * 0.375),
-          margin: EdgeInsets.symmetric(horizontal: 2),
-          decoration: BoxDecoration(
-            color: isActive ? color : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: isActive ? color : color.withValues(alpha: 0.3),
-              width: isActive ? 1.5 : 1,
-            ),
-          ),
-          child: Icon(
-            icon,
-            size: 16,
-            color: isActive ? Colors.white : color.withValues(alpha: 0.7),
           ),
         ),
       ),

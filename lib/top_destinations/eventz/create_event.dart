@@ -8,6 +8,7 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/urls.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:haflaway/models/checkpoint.dart';
@@ -33,6 +34,7 @@ class CreateEvent extends StatefulWidget {
 class _CreateEventState extends State<CreateEvent> {
   XFile? picha;
   EventPlan? plan;
+  String? eventPlanId;
   DateTime? evstdt;
   DateTime? evenddt;
   String phnnumber = '';
@@ -76,6 +78,7 @@ class _CreateEventState extends State<CreateEvent> {
     evstdt = DateTime.parse(
       event.startDate ?? DateTime.now().toIso8601String(),
     );
+    eventPlanId = event.eventPlanId;
     stdtcont.text = dformtr.format(evstdt!);
     evenddt = DateTime.parse(event.endDate ?? DateTime.now().toIso8601String());
     enddtcont.text = dformtr.format(evenddt!);
@@ -124,7 +127,7 @@ class _CreateEventState extends State<CreateEvent> {
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
                             const Text(
-                              'Add thumbnail',
+                              'Ongeza Kijipicha',
                               style: TextStyle(
                                 fontSize: fsm,
                                 fontWeight: FontWeight.bold,
@@ -193,7 +196,7 @@ class _CreateEventState extends State<CreateEvent> {
                             ),
                             const SizedBox(height: spaceTiles),
                             const Text(
-                              'Add event title',
+                              'Jina la Shughuli',
                               style: TextStyle(
                                 fontSize: fsm,
                                 fontWeight: FontWeight.bold,
@@ -251,25 +254,54 @@ class _CreateEventState extends State<CreateEvent> {
                               ),
                             ),
                             const SizedBox(height: spaceTiles),
-                            buildField(
-                              isReadOnly: true,
-                              showCursor: false,
-                              cont: fEventBillCon,
-                              lbl: epbilolan,
-                              isTapped: () async {
-                                plan = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const BillScreen(),
-                                  ),
-                                );
-                                if (plan != null) {
-                                  setState(() {
-                                    fEventBillCon.text = plan!.name;
-                                  });
-                                }
+                            DropdownMenu(
+                              initialSelection: eventPlanId,
+                              width: double.maxFinite,
+
+                              inputDecorationTheme: InputDecorationTheme(
+                                filled: true,
+                                enabledBorder: inputBorder,
+                                border: inputBorder,
+                                focusedBorder: inputBorder,
+                                disabledBorder: inputBorder,
+                                fillColor: lqassgradBaseColor,
+                              ),
+                              onSelected: (value) {
+                                safeState(() {
+                                  eventPlanId = value ?? "";
+                                });
                               },
+                              dropdownMenuEntries: List.generate(
+                                eventPlans.length,
+                                (idx) {
+                                  EventPlan evPln = eventPlans[idx];
+                                  return DropdownMenuEntry(
+                                    leadingIcon: Icon(Clarity.crown_line),
+                                    value: evPln.id,
+                                    label: "${evPln.name}",
+                                  );
+                                },
+                              ),
                             ),
+                            // buildField(
+                            //   isReadOnly: true,
+                            //   showCursor: false,
+                            //   cont: fEventBillCon,
+                            //   lbl: epbilolan,
+                            //   isTapped: () async {
+                            //     plan = await Navigator.push(
+                            //       context,
+                            //       MaterialPageRoute(
+                            //         builder: (context) => const BillScreen(),
+                            //       ),
+                            //     );
+                            //     if (plan != null) {
+                            //       setState(() {
+                            //         fEventBillCon.text = plan!.name;
+                            //       });
+                            //     }
+                            //   },
+                            // ),
                             const SizedBox(height: spaceTiles),
                             const Text(
                               'Phone number',
@@ -333,66 +365,6 @@ class _CreateEventState extends State<CreateEvent> {
                                 }
                               },
                             ),
-                            // ListTile(
-                            //   contentPadding: const EdgeInsets.only(left: 0, right: 0),
-                            //   title: const Text(
-                            //     'Add days of event',
-                            //     style: TextStyle(
-                            //       fontSize: fsm,
-                            //       fontWeight: FontWeight.bold,
-                            //     ),
-                            //   ),
-                            //   trailing: IconButton(
-                            //     onPressed: () async {
-                            //       EventCalendar? evd = await dtPicky(context: context);
-                            //       if (evd != null) {
-                            //         setState(() {
-                            //           eventDays.add(evd);
-                            //         });
-                            //       }
-                            //     },
-                            //     icon: const Icon(Clarity.plus_circle_line),
-                            //   ),
-                            // ),
-                            // if (eventDays.isNotEmpty)
-                            //   Column(
-                            //     children: List.generate(eventDays.length, (idx) {
-                            //       var edt = dformtr.format(eventDays[idx].eventDate);
-                            //       var est = tformtr.format(eventDays[idx].startTime);
-                            //       var eet = tformtr.format(eventDays[idx].endTime);
-                            //       return Container(
-                            //         padding: EdgeInsets.only(left: psm, right: psm),
-                            //         decoration: BoxDecoration(
-                            //           gradient: secscagrad,
-                            //           border: Border.all(
-                            //             color: lqassbdrColor,
-                            //             width: bdrWidthGen,
-                            //           ),
-                            //           borderRadius: BorderRadius.circular(bsm),
-                            //         ),
-                            //         child: ListTile(
-                            //           title: Text(edt),
-                            //           contentPadding: EdgeInsets.zero,
-                            //           tileColor: lqassgradBaseColor,
-                            //           shape: RoundedRectangleBorder(
-                            //             side: BorderSide(color: lqassgradBaseColor),
-                            //             borderRadius: BorderRadiusGeometry.circular(
-                            //               bmd,
-                            //             ),
-                            //           ),
-                            //           subtitle: Text("$est - $eet"),
-                            //           trailing: IconButton(
-                            //             onPressed: () {
-                            //               setState(() {
-                            //                 eventDays.removeAt(idx);
-                            //               });
-                            //             },
-                            //             icon: const Icon(Icons.close),
-                            //           ),
-                            //         ),
-                            //       );
-                            //     }),
-                            //   ),
                           ]),
                         ),
                       ),
@@ -597,7 +569,7 @@ class _CreateEventState extends State<CreateEvent> {
           createdAt: eventt == null ? DateTime.now() : null,
           updatedAt: DateTime.now(),
           description: fEventDescCon.text.trim(),
-          eventPlanId: plan?.id ?? null,
+          eventPlanId: eventPlanId ?? null,
           eventThumbnail: dwnURL,
           // calendar: eventDays,
           location: fEventLocationCon.text.trim(),
