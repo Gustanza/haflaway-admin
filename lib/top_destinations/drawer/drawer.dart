@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/top_destinations/app_users/app_users.dart';
 import 'package:haflaway/top_destinations/settings/account.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
@@ -43,21 +42,21 @@ Widget drawer({context}) {
               trailing: Icon(Icons.arrow_forward_ios, size: icnsm),
             ),
             Divider(thickness: 0.1, height: 0),
-            ListTile(
-              title: Text("Users Management"),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return AppUsersScreen();
-                    },
-                  ),
-                );
-              },
-              trailing: Icon(Icons.arrow_forward_ios, size: icnsm),
-            ),
-            Divider(thickness: 0.1, height: 0),
+            // ListTile(
+            //   title: Text("Users Management"),
+            //   onTap: () {
+            //     Navigator.of(context).pop();
+            //     Navigator.of(context).push(
+            //       MaterialPageRoute(
+            //         builder: (context) {
+            //           return AppUsersScreen();
+            //         },
+            //       ),
+            //     );
+            //   },
+            //   trailing: Icon(Icons.arrow_forward_ios, size: icnsm),
+            // ),
+            // Divider(thickness: 0.1, height: 0),
           ],
         ),
       ),
