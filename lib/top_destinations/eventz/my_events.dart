@@ -65,6 +65,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
           await firestore
               .collection(ecol)
               .orderBy('startDate', descending: true)
+              .where("adminsIds", arrayContains: uid)
               .limit(pageSize)
               .get();
       lastEvent = res.docs.last;
@@ -89,6 +90,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
           await firestore
               .collection(ecol)
               .orderBy('startDate', descending: true)
+              .where("adminsIds", arrayContains: uid)
               .startAfterDocument(lastEvent!)
               .limit(pageSize)
               .get();
