@@ -65,7 +65,6 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
           await firestore
               .collection(ecol)
               .orderBy('startDate', descending: true)
-              .where("adminsIds", arrayContains: uid)
               .limit(pageSize)
               .get();
       lastEvent = res.docs.last;
@@ -90,7 +89,6 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
           await firestore
               .collection(ecol)
               .orderBy('startDate', descending: true)
-              .where("adminsIds", arrayContains: uid)
               .startAfterDocument(lastEvent!)
               .limit(pageSize)
               .get();
@@ -154,14 +152,15 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
             const SizedBox(width: spaceTiles),
             appBarActionButton(
               icon: Icons.add,
-              onTap: () {
-                Navigator.of(context).push(
+              onTap: () async {
+                await Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) {
                       return CreateEvent();
                     },
                   ),
                 );
+                loadEvents();
               },
             ),
           ],

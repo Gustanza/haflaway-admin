@@ -12,6 +12,8 @@ import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
+import 'package:haflaway/top_destinations/event_dash/cards/cards.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalwids.dart';
@@ -41,6 +43,8 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   int contsCount = 0;
   int adminsCount = 0;
   int scannersCount = 0;
+  int cardTempsNo = 0;
+  int evMsgTmpCount = 0;
   GlobalKey<FormState> key = GlobalKey<FormState>();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
@@ -64,9 +68,24 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
           .collection(ecol)
           .doc(widget.eventO.id)
           .collection(atcol);
-      var result = await Future.wait([eventRef.get(), attsRef.get()]);
+      CollectionReference<Map<String, dynamic>> cardsRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id)
+          .collection(cardcol);
+      CollectionReference<Map<String, dynamic>> msgsRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id)
+          .collection(evMsgTmpCol);
+      var result = await Future.wait([
+        eventRef.get(),
+        attsRef.get(),
+        cardsRef.count().get(),
+        msgsRef.count().get(),
+      ]);
       var eventSnapshot = result[0] as DocumentSnapshot<Map<String, dynamic>>;
       var attsSnapshot = result[1] as QuerySnapshot<Map<String, dynamic>>;
+      var crdsSnapshot = result[2] as AggregateQuerySnapshot;
+      var msgsSnapshot = result[3] as AggregateQuerySnapshot;
       invsCount =
           attsSnapshot.docs.where((t) {
             Attendee attendee = Attendee.fromMap(t.id, t.data());
@@ -80,6 +99,8 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
           }).length;
 
       event = Event.fromMap(eventSnapshot.id, eventSnapshot.data()!);
+      cardTempsNo = crdsSnapshot.count ?? 0;
+      evMsgTmpCount = msgsSnapshot.count ?? 0;
       adminsCount = event?.adminsIds?.length ?? 0;
       scannersCount = event?.usersIds?.length ?? 0;
       safeState(() {
@@ -248,28 +269,6 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
             buildGlassCard(
               child: Column(
                 children: [
-                  buildGlassListItem(
-                    title: "Events Toolkit",
-                    subtitle: "Manage event's notifications",
-                    icon: Clarity.notification_solid,
-                    gradient: [
-                      const Color(0xFF4CAF50),
-                      const Color(0xFF45A047),
-                    ],
-                    onTap: () async {
-                      try {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => EventTools(event: event!),
-                          ),
-                        );
-                        loadData();
-                      } catch (e) {
-                        showToast(isGood: false, msg: e.toString());
-                      }
-                    },
-                  ),
-
                   buildActionItem(
                     title: "Mialiko ya Digital",
                     children: [
@@ -313,18 +312,12 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: spaceTiles),
                   buildActionItem(
-                    title: "Contacts",
+                    title: "Michango & Bajeti",
                     children: [
                       ActionItem(
-                        figure: "0",
-                        icon: Clarity.printer_line,
-                        subtitle: "Printed Order",
-                        onPressed: () {},
-                      ),
-                      ActionItem(
                         figure: "$contsCount",
-                        icon: Clarity.users_line,
-                        subtitle: "People reached",
+                        icon: Icons.monetization_on_outlined,
+                        subtitle: "Michango",
                         onPressed: () async {
                           try {
                             await Navigator.of(context).push(
@@ -332,7 +325,7 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                                 builder:
                                     (context) => Attendees(
                                       edata: event!,
-                                      title: "Contributors",
+                                      title: "Ratibu Michango",
                                       kardType: KardType.contribution,
                                     ),
                               ),
@@ -343,29 +336,64 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                           }
                         },
                       ),
+                      ActionItem(
+                        figure: "0",
+                        icon: Icons.monetization_on,
+                        subtitle: "Bajeti",
+                        onPressed: () {},
+                      ),
                     ],
                   ),
                   const SizedBox(height: spaceTiles),
                   buildActionItem(
-                    title: "Users",
+                    title: "Dizaini Kadi & SMS",
+                    children: [
+                      ActionItem(
+                        figure: "$cardTempsNo",
+                        icon: Icons.card_giftcard,
+                        subtitle: "Temp za Kadi",
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) {
+                                return Cards(eId: widget.eventO.id ?? "");
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                      ActionItem(
+                        figure: "${evMsgTmpCount}",
+                        icon: Icons.sms,
+                        subtitle: "Temp za SMS",
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) {
+                                return InvEditor(eId: widget.eventO.id ?? "");
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: spaceTiles),
+                  buildActionItem(
+                    title: "Wasimamizi & Vendors",
                     children: [
                       ActionItem(
                         figure: "$scannersCount",
-                        icon: Clarity.qr_code_line,
-                        subtitle: "Cards Scanners",
+                        icon: Icons.card_giftcard,
+                        subtitle: "Vendors",
                         onPressed: () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => Users(eId: event?.id ?? ""),
-                            ),
-                          );
-                          loadData();
+                          showToast(isGood: true, msg: "Inakuja hivi karibuni");
                         },
                       ),
                       ActionItem(
                         figure: "$adminsCount",
                         icon: Clarity.users_line,
-                        subtitle: "Total Admins",
+                        subtitle: "Wasimamizi",
                         onPressed: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute(

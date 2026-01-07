@@ -8,7 +8,7 @@ import 'package:haflaway/models/campaign.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/sms_host.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/wsap.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/errorstrs.dart';
@@ -107,15 +107,14 @@ class _AdminCampaignsState extends State<AdminCampaigns> {
             title: "${campList[index].name}",
             subtitle: "${campList[index].createdAt}",
             icon: Clarity.chat_bubble_solid_badged,
-            onTap: () {
-              Navigator.of(context).push(
+            onTap: () async {
+              await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) {
-                    return SMSsenderHost(
+                    return InvitesIssuers(
                       event: widget.event,
                       kardType: widget.kardType,
-                      title: campList[index].name ?? "",
-                      campaignId: campList[index].id ?? "",
+                      campaignId: campList[index].id ?? "randy",
                     );
                   },
                 ),

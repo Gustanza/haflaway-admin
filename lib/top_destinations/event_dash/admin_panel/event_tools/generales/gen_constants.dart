@@ -5,11 +5,11 @@ var shannnels = {
 };
 
 var shtates = {
-  "unsent": "Hazijatumwa/unsent",
-  "sent": "Zilizotumwa",
-  "delivered": "Zilizofika",
-  "read": "Zilizosomwa",
-  "pending": "Zilizo Pending",
-  "undelivered": "Hazikupokelewa",
-  "failed": "Zilizofeli",
+  "unsent": "Hazijatumwa (Unsent)",
+  "sent": "Zilizotumwa (Sent)",
+  "delivered": "Zilizofika (Delivered)",
+  "read": "Zilizosomwa (Read)",
+  "pending": "Zilizo Pending (Pending)",
+  "undelivered": "Hazikupokelewa (Undelivered)",
+  "failed": "Zilizofeli (Failed)",
 };

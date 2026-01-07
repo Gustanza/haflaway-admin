@@ -11,6 +11,7 @@ import 'package:haflaway/components/custom_popup_btn.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/wsap.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/custom_camps/ccampsmain.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/importcontr.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/searchdel.dart';
@@ -302,8 +303,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           onTap: showQuickStats,
         ),
         PopClickers(
-          leading: Icon(Icons.send_time_extension),
-          title: Text("Tuma Mialiko"),
+          leading: Icon(Icons.mail),
+          title: Text("Tuma Kadi"),
           onTap: () async {
             await Navigator.of(context).push(
               MaterialPageRoute(
@@ -322,6 +323,24 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             _loadAttendees();
           },
         ),
+        PopClickers(
+          leading: Icon(Icons.sms),
+          title: Text("Tuma Bulk SMS"),
+          onTap: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) {
+                  return AdminCampaigns(
+                    event: widget.edata,
+                    title: "Tuma Bulk SMS",
+                    kardType: widget.kardType,
+                  );
+                },
+              ),
+            );
+            _loadAttendees();
+          },
+        ),
       ],
     );
   }
@@ -332,7 +351,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       popItems: [
         PopClickers(
           leading: Icon(Icons.group_add),
-          title: Text("Ongeza Mwalikwa"),
+          title: Text(
+            widget.kardType == KardType.invitation
+                ? "Ongeza Mwalikwa"
+                : widget.kardType == KardType.contribution
+                ? "Ongeza Mchangiaji"
+                : "",
+          ),
           onTap: () async {
             String title =
                 widget.kardType == KardType.invitation
@@ -356,13 +381,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             importFile();
           },
         ),
-        PopClickers(
-          leading: Icon(Icons.monetization_on_sharp),
-          title: Text("Pandisha Mchangiaji"),
-          onTap: () {
-            showSelectCard();
-          },
-        ),
+        if (widget.kardType == KardType.invitation)
+          PopClickers(
+            leading: Icon(Icons.monetization_on_sharp),
+            title: Text("Pandisha Mchangiaji"),
+            onTap: () {
+              showSelectCard();
+            },
+          ),
       ],
     );
   }
@@ -483,7 +509,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   if (isLoading) {
                     return const Padding(
                       padding: EdgeInsets.all(16.0),
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(child: CupertinoActivityIndicator()),
                     );
                   } else if (!hasMore && atdata.isNotEmpty) {
                     return const Padding(
