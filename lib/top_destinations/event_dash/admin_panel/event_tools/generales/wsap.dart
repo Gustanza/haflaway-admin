@@ -9,6 +9,7 @@ import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/send_previewer.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/send_search_deleg.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/crtattendees.dart';
@@ -40,107 +41,121 @@ class InvitesIssuers extends StatefulWidget {
 class _InvitesIssuersState extends State<InvitesIssuers> {
   int totalDocs = 0;
   int maxpgno = 1;
+  bool hasMore = true;
+  bool isLoading = false;
   int pageSize = atsPageSize;
   List<Attendee> selectList = [];
+  List<Attendee> attendeeList = [];
   String selStatus = shtates.keys.first;
   String selChannel = shannnels.keys.first;
+  QueryDocumentSnapshot<Map<String, dynamic>>? lastDocument;
+  ScrollController _scrollController = ScrollController();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-  int currentPage = 1;
-
-  // Cursor stack: stores the last document of each page for backward navigation
-  // Index 0 = last doc of page 1, Index 1 = last doc of page 2, etc.
-  List<DocumentSnapshot?> pageCursors = [];
-
-  // Current stream for the active page
-  Stream<QuerySnapshot>? currentStream;
-
-  // Track last document from current stream for forward navigation
-  DocumentSnapshot? currentPageLastDoc;
 
   @override
   void initState() {
     super.initState();
-    _initializeStream();
-    _loadTotalCount();
+    _loadAttendees();
+    _scrollController.addListener(_scrollListener);
   }
 
-  void _initializeStream() {
-    currentStream = _buildStreamForPage(currentPage);
+  _scrollListener() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!isLoading && hasMore) {
+        _loadMoreAttendees();
+      }
+    }
   }
 
-  void _loadTotalCount() async {
+  _loadAttendees() async {
     try {
-      var obj = firestore
-          .collection(ecol)
-          .doc(widget.event.id)
-          .collection(atcol);
-      AggregateQuerySnapshot aqs = await obj.count().get();
-      if (mounted) {
-        setState(() {
-          totalDocs = aqs.count ?? 0;
-          maxpgno = (totalDocs / pageSize).ceil();
-          if (maxpgno == 0) maxpgno = 1;
+      safeState(() {
+        hasMore = true;
+        isLoading = true;
+        selectList.clear();
+      });
+      var snapshot =
+          await firestore
+              .collection(ecol)
+              .doc(widget.event.id)
+              .collection(atcol)
+              .where(
+                "messageIndexes",
+                arrayContains:
+                    "${selChannel}_${widget.campaignId}_${selStatus}",
+              )
+              .orderBy("createdAt", descending: true)
+              .limit(pageSize)
+              .get();
+      var docs = snapshot.docs;
+      if (docs.isEmpty) {
+        return safeState(() {
+          hasMore = false;
+          isLoading = false;
+          attendeeList = [];
         });
       }
+      lastDocument = docs.last;
+      attendeeList =
+          docs.map<Attendee>((e) {
+            return Attendee.fromMap(e.id, e.data());
+          }).toList();
+      safeState(() {
+        hasMore = true;
+        isLoading = false;
+      });
     } catch (e) {
-      debugPrint("Count error: $e");
+      safeState(() {
+        hasMore = true;
+        isLoading = false;
+      });
     }
   }
 
-  Stream<QuerySnapshot> _buildStreamForPage(int page) {
-    var obj = firestore.collection(ecol).doc(widget.event.id).collection(atcol);
-    Query query;
-    query = obj.orderBy("createdAt", descending: true);
-    // For page 1, no cursor needed
-    // For page 2+, use cursor from previous page (stored at index page-2)
-    if (page > 1 && pageCursors.length >= (page - 1)) {
-      DocumentSnapshot? cursor = pageCursors[page - 2];
-      if (cursor != null) {
-        query = query.startAfterDocument(cursor);
+  _loadMoreAttendees() async {
+    try {
+      safeState(() {
+        hasMore = true;
+        isLoading = true;
+      });
+      var snapshot =
+          await firestore
+              .collection(ecol)
+              .doc(widget.event.id)
+              .collection(atcol)
+              .where(
+                "messageIndexes",
+                arrayContains:
+                    "${selChannel}_${widget.campaignId}_${selStatus}",
+              )
+              .orderBy("createdAt", descending: true)
+              .startAfterDocument(lastDocument!)
+              .limit(pageSize)
+              .get();
+      var docs = snapshot.docs;
+      if (docs.isEmpty) {
+        return safeState(() {
+          hasMore = false;
+          isLoading = false;
+        });
       }
+      lastDocument = docs.last;
+      List<Attendee> tmpList =
+          docs.map<Attendee>((e) {
+            return Attendee.fromMap(e.id, e.data());
+          }).toList();
+      attendeeList.addAll(tmpList);
+      safeState(() {
+        hasMore = true;
+        isLoading = false;
+      });
+    } catch (e) {
+      safeState(() {
+        hasMore = true;
+        isLoading = false;
+      });
     }
-
-    return query.limit(pageSize).snapshots();
-  }
-
-  void goToNextPage(QuerySnapshot currentSnapshot) {
-    if (currentSnapshot.docs.isEmpty) return;
-
-    // Store the last document of current page in cursor stack
-    DocumentSnapshot lastDoc = currentSnapshot.docs.last;
-
-    // If we're on a new page we haven't visited, add its cursor
-    if (currentPage == pageCursors.length + 1) {
-      pageCursors.add(lastDoc);
-    } else {
-      // Update existing cursor for current page
-      if (currentPage > 1) {
-        pageCursors[currentPage - 1] = lastDoc;
-      }
-    }
-
-    // Navigate to next page
-    setState(() {
-      currentPage++;
-      currentStream = _buildStreamForPage(currentPage);
-      currentPageLastDoc = null; // Reset for new page
-    });
-  }
-
-  void goToPreviousPage() {
-    if (currentPage <= 1) return;
-
-    // Remove cursors beyond current page (cleanup)
-    if (pageCursors.length >= currentPage) {
-      pageCursors = pageCursors.sublist(0, currentPage - 1);
-    }
-
-    // Navigate to previous page
-    setState(() {
-      currentPage--;
-      currentStream = _buildStreamForPage(currentPage);
-      currentPageLastDoc = null; // Reset for new page
-    });
   }
 
   pushToSend({String? prefix, bool? isWhatsApp}) async {
@@ -165,7 +180,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         actionStr1: "Rudia Kutuma",
         onTap1: () async {
           popper();
-          Navigator.of(context).push(
+          await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) {
                 return SendPreviewer(
@@ -178,6 +193,9 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               },
             ),
           );
+          selectList.clear();
+          await Future.delayed(Duration(seconds: 2));
+          _loadAttendees();
         },
         actionStr2: "Sitisha",
         onTap2: () {
@@ -185,8 +203,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         },
       );
     } else {
-      // popper();
-      Navigator.of(context).push(
+      await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) {
             return SendPreviewer(
@@ -199,6 +216,9 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           },
         ),
       );
+      selectList.clear();
+      await Future.delayed(Duration(seconds: 2));
+      _loadAttendees();
     }
   }
 
@@ -207,297 +227,239 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     return Scaffold(
       backgroundColor: scaback,
       // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: StreamBuilder<QuerySnapshot>(
-        stream: currentStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-            return Container(
-              // color: Colors.red,
-              margin: const EdgeInsets.only(bottom: psm * 4.25),
-              padding: EdgeInsets.symmetric(horizontal: psm),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                // mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  FloatingActionButton(
-                    mini: true,
-                    heroTag: "mini",
-                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-                      side: BorderSide(
-                        color: lqassbdrColor,
-                        width: bdrWidthGen,
-                      ),
-                    ),
-                    foregroundColor: Colors.white,
-                    child: Padding(
-                      padding: const EdgeInsets.all(psm * 0.5),
-                      child: Brand(Brands.wechat),
-                    ),
-                    onPressed: () async {
-                      pushToSend(isWhatsApp: false, prefix: "sms");
-                    },
-                  ),
-                  // const SizedBox(width: spaceTiles * 0.5),
-                  FloatingActionButton(
-                    heroTag: "major",
-                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-                      side: BorderSide(
-                        color: lqassbdrColor,
-                        width: bdrWidthGen,
-                      ),
-                    ),
-                    foregroundColor: Colors.white,
-                    child: Brand(Brands.whatsapp),
-                    onPressed: () async {
-                      pushToSend(isWhatsApp: true, prefix: "whatsapp");
-                    },
-                  ),
-                ],
+      floatingActionButton: Container(
+        // color: Colors.red,
+        margin: const EdgeInsets.only(bottom: psm),
+        padding: EdgeInsets.symmetric(horizontal: psm),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          // mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            FloatingActionButton(
+              mini: true,
+              heroTag: "mini",
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+                side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
               ),
-            );
-          }
-          return SizedBox.shrink();
-        },
+              foregroundColor: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(psm * 0.5),
+                child: Brand(Brands.wechat),
+              ),
+              onPressed: () async {
+                pushToSend(isWhatsApp: false, prefix: "sms");
+              },
+            ),
+            // const SizedBox(width: spaceTiles * 0.5),
+            FloatingActionButton(
+              heroTag: "major",
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+                side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+              ),
+              foregroundColor: Colors.white,
+              child: Brand(Brands.whatsapp),
+              onPressed: () async {
+                pushToSend(isWhatsApp: true, prefix: "whatsapp");
+              },
+            ),
+          ],
+        ),
       ),
       appBar: appBar(
-        title: "Ratibu Mialiko",
+        title:
+            selectList.isEmpty
+                ? "Ratibu Mialiko"
+                : "Chaguzi: ${selectList.length}",
         leading: buildActionButton(
-          icon: Icons.arrow_back,
+          icon: selectList.isEmpty ? Icons.arrow_back : Icons.close,
           onTap: () {
-            popper();
+            if (selectList.isEmpty) {
+              popper();
+            } else {
+              safeState(() {
+                selectList.clear();
+              });
+            }
           },
         ),
         actions: Row(
           children: [
-            IconButton(
-              onPressed: () {
-                showSearch(
-                  context: context,
-                  delegate: SendSearchDelegate(
-                    event: widget.event,
-                    kardType: widget.kardType,
-                    campaignId: widget.campaignId,
-                  ),
-                );
-              },
-              icon: Icon(Icons.search),
-            ),
+            if (selectList.isEmpty)
+              IconButton(
+                onPressed: () {
+                  _loadAttendees();
+                  showToast(isGood: true, msg: "Inahuisha Data");
+                },
+                icon: Icon(Icons.refresh),
+              ),
+            if (selectList.isEmpty)
+              IconButton(
+                onPressed: () {
+                  showSearch(
+                    context: context,
+                    delegate: SendSearchDelegate(
+                      event: widget.event,
+                      kardType: widget.kardType,
+                      campaignId: widget.campaignId,
+                    ),
+                  );
+                },
+                icon: Icon(Icons.search),
+              ),
+            if (selectList.isNotEmpty)
+              TextButton(
+                onPressed: () {
+                  if (selectList.length < attendeeList.length) {
+                    selectList = List.from(attendeeList);
+                  } else {
+                    selectList = [];
+                  }
+                  safeState(() {});
+                },
+                child: Text(
+                  selectList.length < attendeeList.length
+                      ? "Chagua Zote"
+                      : "Ondoa Zote",
+                ),
+              ),
           ],
         ),
       ),
       body: Ccafold(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(spaceTiles),
-              child: Row(
-                children: [
-                  buildDropDwn(shannnels, (value) {
-                    safeState(() {
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await _loadAttendees();
+          },
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: spaceTiles,
+                  right: spaceTiles,
+                  top: spaceTiles,
+                ),
+                child: Row(
+                  children: [
+                    buildDropDwn(shannnels, (value) {
                       safeState(() {
                         selChannel = value;
+                        _loadAttendees();
                       });
-                    });
-                  }),
-                  const SizedBox(width: spaceTiles),
-                  buildDropDwn(shtates, (value) {
-                    safeState(() {
+                    }),
+                    const SizedBox(width: spaceTiles),
+                    buildDropDwn(shtates, (value) {
                       selStatus = value;
-                    });
-                  }),
-                ],
-              ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: spaceTiles),
-              child: StreamBuilder<QuerySnapshot>(
-                stream: currentStream,
-                builder: (context, snapshot) {
-                  int totalCount =
-                      snapshot.hasData ? snapshot.data!.docs.length : 0;
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      "Chaguzi: ${selectList.length} kati ya $totalCount",
-                    ),
-                    trailing: StreamBuilder<QuerySnapshot>(
-                      stream: currentStream,
-                      builder: (context, snapshot) {
-                        int totalCount =
-                            snapshot.hasData ? snapshot.data!.docs.length : 0;
-                        return TextButton(
-                          onPressed: () {
-                            if (selectList.length != totalCount) {
-                              // Select all from current page
-                              List<Attendee> currentPageAttendees =
-                                  snapshot.hasData
-                                      ? snapshot.data!.docs.map<Attendee>((
-                                        doc,
-                                      ) {
-                                        return Attendee.fromMap(
-                                          doc.id,
-                                          doc.data() as Map<String, dynamic>,
-                                        );
-                                      }).toList()
-                                      : [];
-                              selectList = currentPageAttendees;
-                            } else {
-                              selectList = [];
-                            }
-                            safeState(() {});
-                          },
-                          child: Text(
-                            selectList.length != totalCount
-                                ? "Chagua Yote"
-                                : "Ondoa Yote",
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(spaceTiles),
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: currentStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return buildLoader();
-                    }
-
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Text(
-                          "Error: ${snapshot.error}",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      );
-                    }
-
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return BuildNoDt(
-                        string: "Hakuna Data",
-                        isRefreshed: () async {},
-                      );
-                    }
-
-                    // Store last document for forward navigation
-                    QuerySnapshot querySnapshot = snapshot.data!;
-                    if (querySnapshot.docs.isNotEmpty) {
-                      currentPageLastDoc = querySnapshot.docs.last;
-                    }
-
-                    // Convert to Attendee list
-                    List<Attendee> attendeesList =
-                        querySnapshot.docs
-                            .where((t) {
-                              Attendee attendee = Attendee.fromMap(
-                                t.id,
-                                t.data() as Map<String, dynamic>,
-                              );
-
-                              if (selStatus == "unsent") {
-                                var dhakey =
-                                    "${selChannel}_${widget.campaignId}";
-                                return attendee.messageIndexes?.every((indx) {
-                                      return !indx.startsWith(dhakey);
-                                    }) ??
-                                    false;
-                              }
-                              var thkey =
-                                  "${selChannel}_${widget.campaignId}_${selStatus}";
-                              return attendee.messageIndexes?.contains(thkey) ??
-                                  false;
-                            })
-                            .map<Attendee>((doc) {
-                              return Attendee.fromMap(
-                                doc.id,
-                                doc.data() as Map<String, dynamic>,
-                              );
-                            })
-                            .toList();
-
-                    return buildMialiko(attendeesList: attendeesList);
-                  },
+                      _loadAttendees();
+                    }),
+                  ],
                 ),
               ),
-            ),
-            // Pagination Controls
-            StreamBuilder<QuerySnapshot>(
-              stream: currentStream,
-              builder: (context, snapshot) {
-                if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                  return buildPaginationControls(snapshot.data!);
-                }
-                return SizedBox.shrink();
-              },
-            ),
-          ],
+              if (attendeeList.isEmpty && isLoading)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(spaceTiles),
+                    child: buildLoader(),
+                  ),
+                ),
+              if (attendeeList.isEmpty && !isLoading)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(spaceTiles),
+                    child: buildEmptyState(),
+                  ),
+                ),
+              if (attendeeList.isNotEmpty)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(spaceTiles),
+                    child: buildMialiko(attendeesList: attendeeList),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   buildMialiko({required List<Attendee> attendeesList}) {
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        ...List.generate(attendeesList.length, (indx) {
-          Attendee attendee = attendeesList[indx];
-          var hasKey = selectList.any((test) {
-            return test.id == attendee.id;
-          });
-          return buildAttendeeCard(
-            hasKey: hasKey,
-            attendee: attendee,
-            kardType: widget.kardType,
-            eventId: widget.event.id ?? "_",
-            campaignId: widget.campaignId,
-            onEdit: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return CreateAttendees(
-                      event: widget.event,
-                      kardType: widget.kardType,
-                      attendee: attendee,
-                    );
-                  },
+    return ListView.builder(
+      itemCount: attendeesList.length + 1,
+      controller: _scrollController,
+      itemBuilder: (context, indx) {
+        if (indx == attendeesList.length) {
+          if (isLoading) {
+            return const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(child: CupertinoActivityIndicator()),
+            );
+          } else if (!hasMore && attendeesList.isNotEmpty) {
+            return const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(
+                child: Text(
+                  "Hakuna Data",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
-              );
-            },
-            onSelected: () {
-              if (hasKey) {
-                var tmp =
-                    selectList.where((selItem) {
-                      return selItem.id != attendee.id;
-                    }).toList();
-                selectList = tmp;
-              } else {
-                selectList.add(attendee);
-              }
-              safeState(() {});
-            },
-            onStatusChange: (status) {
-              int index = attendeesList.indexWhere(
-                (element) => element.id == attendee.id,
-              );
-              if (index != -1) {
-                attendeesList[index].attendanceStatus = status;
-              }
-              safeState(() {});
-            },
-          );
-        }),
-      ],
+              ),
+            );
+          } else {
+            return const SizedBox(height: 20);
+          }
+        }
+        Attendee attendee = attendeesList[indx];
+        var hasKey = selectList.any((test) {
+          return test.id == attendee.id;
+        });
+        return buildAttendeeCard(
+          hasKey: hasKey,
+          attendee: attendee,
+          kardType: widget.kardType,
+          eventId: widget.event.id ?? "_",
+          campaignId: widget.campaignId,
+          onEdit: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) {
+                  return CreateAttendees(
+                    event: widget.event,
+                    kardType: widget.kardType,
+                    attendee: attendee,
+                  );
+                },
+              ),
+            );
+          },
+          onSelected: () {
+            if (hasKey) {
+              var tmp =
+                  selectList.where((selItem) {
+                    return selItem.id != attendee.id;
+                  }).toList();
+              selectList = tmp;
+            } else {
+              selectList.add(attendee);
+            }
+            safeState(() {});
+          },
+          onStatusChange: (status) {
+            int index = attendeesList.indexWhere(
+              (element) => element.id == attendee.id,
+            );
+            if (index != -1) {
+              attendeesList[index].attendanceStatus = status;
+            }
+            safeState(() {});
+          },
+        );
+      },
     );
   }
 
@@ -591,143 +553,5 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
 
   popper() {
     Navigator.of(context).pop();
-  }
-
-  Widget buildPaginationControls(QuerySnapshot snapshot) {
-    bool hasMore = snapshot.docs.length == pageSize;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: psm, vertical: psm * 0.75),
-      decoration: BoxDecoration(
-        gradient: lqassgrad,
-        // borderRadius: BorderRadius.circular(bsm),
-        border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Previous Button
-          GestureDetector(
-            onTap: currentPage > 1 ? () => goToPreviousPage() : null,
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                gradient:
-                    currentPage > 1
-                        ? primaryGrad
-                        : LinearGradient(
-                          colors: [
-                            Colors.grey.withOpacity(0.3),
-                            Colors.grey.withOpacity(0.2),
-                          ],
-                        ),
-                borderRadius: BorderRadius.circular(bsm),
-                border: Border.all(
-                  color:
-                      currentPage > 1
-                          ? lqassbdrColor
-                          : Colors.grey.withOpacity(0.3),
-                  width: bdrWidthGen,
-                ),
-              ),
-              child: Icon(
-                Icons.chevron_left_rounded,
-                color:
-                    currentPage > 1
-                        ? primaryWhite
-                        : Colors.grey.withOpacity(0.5),
-                size: 28,
-              ),
-            ),
-          ),
-          SizedBox(width: psm * 1.5),
-          // Page Display
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: psm * 1.5,
-              vertical: psm * 0.75,
-            ),
-            decoration: BoxDecoration(
-              gradient: secscagrad,
-              borderRadius: BorderRadius.circular(bsm),
-              border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: psm * 0.75),
-                  decoration: BoxDecoration(
-                    gradient: primaryGrad,
-                    borderRadius: BorderRadius.circular(bxsm),
-                  ),
-                  child: Text(
-                    "$currentPage",
-                    style: TextStyle(
-                      fontSize: fsm + 2,
-                      color: primaryWhite,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Text(
-                  " of ",
-                  style: TextStyle(
-                    fontSize: fsm + 1,
-                    color: mWhite,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: psm * 0.75),
-                  decoration: BoxDecoration(
-                    gradient: primaryGrad,
-                    borderRadius: BorderRadius.circular(bxsm),
-                  ),
-                  child: Text(
-                    "${maxpgno}",
-                    style: TextStyle(
-                      fontSize: fsm + 2,
-                      color: primaryWhite,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: psm * 1.5),
-          // Next Button
-          GestureDetector(
-            onTap: hasMore ? () => goToNextPage(snapshot) : null,
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                gradient:
-                    hasMore
-                        ? primaryGrad
-                        : LinearGradient(
-                          colors: [
-                            Colors.grey.withOpacity(0.3),
-                            Colors.grey.withOpacity(0.2),
-                          ],
-                        ),
-                borderRadius: BorderRadius.circular(bsm),
-                border: Border.all(
-                  color: hasMore ? lqassbdrColor : Colors.grey.withOpacity(0.3),
-                  width: bdrWidthGen,
-                ),
-              ),
-              child: Icon(
-                Icons.chevron_right_rounded,
-                color: hasMore ? primaryWhite : Colors.grey.withOpacity(0.5),
-                size: 28,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

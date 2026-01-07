@@ -152,14 +152,15 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
             const SizedBox(width: spaceTiles),
             appBarActionButton(
               icon: Icons.add,
-              onTap: () {
-                Navigator.of(context).push(
+              onTap: () async {
+                await Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) {
                       return CreateEvent();
                     },
                   ),
                 );
+                loadEvents();
               },
             ),
           ],

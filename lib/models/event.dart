@@ -1,5 +1,6 @@
 String ecol = 'events';
 String etcol = 'Tickets';
+String evMsgTmpCol = "messageTemplates";
 String eMsgTmpCol = 'messageTemplates';
 String etypeEDef = 'Choose Category';
 
