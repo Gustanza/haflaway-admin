@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/components/Ccafold.dart';
 import 'package:haflaway/components/appbar.dart';
@@ -14,6 +15,7 @@ import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
+import 'package:in_app_update/in_app_update.dart';
 
 class HaflaWayHome extends StatefulWidget {
   const HaflaWayHome({super.key});
@@ -35,6 +37,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
   @override
   void initState() {
     super.initState();
+    if (!kDebugMode) checkForUpdate();
     scrollController.addListener(_scrollListener);
     loadEvents();
   }
@@ -223,5 +226,20 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
         ),
       ),
     );
+  }
+
+  Future<void> checkForUpdate() async {
+    InAppUpdate.checkForUpdate()
+        .then((info) {
+          if (info.updateAvailability == UpdateAvailability.updateAvailable) {
+            InAppUpdate.performImmediateUpdate().catchError((e) {
+              showToast(isGood: false, msg: "${e}");
+              return AppUpdateResult.inAppUpdateFailed;
+            });
+          }
+        })
+        .catchError((e) {
+          showToast(isGood: false, msg: "${e}");
+        });
   }
 }
