@@ -180,7 +180,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         actionStr1: "Rudia Kutuma",
         onTap1: () async {
           popper();
-          await Navigator.of(context).push(
+          bool? didDispatch = await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) {
                 return SendPreviewer(
@@ -193,9 +193,10 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               },
             ),
           );
-          selectList.clear();
-          await Future.delayed(Duration(seconds: 2));
-          _loadAttendees();
+          // debugPrint("Abjectory: $didDispatch");
+          if (didDispatch ?? false) {
+            stallAndRefresh();
+          }
         },
         actionStr2: "Sitisha",
         onTap2: () {
@@ -203,7 +204,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         },
       );
     } else {
-      await Navigator.of(context).push(
+      bool? didDispatch = await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) {
             return SendPreviewer(
@@ -216,10 +217,24 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           },
         ),
       );
-      selectList.clear();
-      await Future.delayed(Duration(seconds: 2));
-      _loadAttendees();
+      // debugPrint("Abjectory: $didDispatch");
+      if (didDispatch ?? false) {
+        stallAndRefresh();
+      }
     }
+  }
+
+  stallAndRefresh() async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Center(child: CupertinoActivityIndicator());
+      },
+    );
+    selectList.clear();
+    await Future.delayed(Duration(seconds: 5));
+    _loadAttendees();
+    popper();
   }
 
   @override

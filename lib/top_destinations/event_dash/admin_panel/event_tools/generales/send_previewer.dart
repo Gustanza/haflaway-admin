@@ -435,9 +435,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                   ),
                 ),
               ),
-
               const SizedBox(height: psm),
-
               Text(
                 "Thibitisha Kitendo",
                 textAlign: TextAlign.center,
@@ -446,9 +444,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: psm * 0.5),
-
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: psm),
                 child: Text(
@@ -457,9 +453,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                   style: TextStyle(fontSize: fsm, color: Colors.grey[600]),
                 ),
               ),
-
               const SizedBox(height: psm * 1.5),
-
               lqAssButton(
                 label: "Tuma Sasa",
                 onPressed: () async {
@@ -506,16 +500,15 @@ class SendPreviewerState extends State<SendPreviewer> {
                     popper();
                     showNotifier(msg: "${res['message']}");
                   } catch (e) {
+                    messagesSent = false;
                     popper();
                     popper();
-                    showNotifier(msg: "Failed due to: $e");
+                    showNotifier(msg: "Imefeli kwa sababu: $e");
                   }
                   client.close();
                 },
               ),
-
               const SizedBox(height: spaceTiles),
-
               lqAssButton(
                 label: "Sitisha",
                 onPressed: () {
