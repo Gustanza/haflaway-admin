@@ -22,6 +22,7 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/gen
 import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:icons_plus/icons_plus.dart';
+import 'dart:async';
 
 class InvitesIssuers extends StatefulWidget {
   final Event event;
@@ -228,7 +229,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     showDialog(
       context: context,
       builder: (context) {
-        return Center(child: CupertinoActivityIndicator());
+        return Center(child: RefreshCountdownDialog());
       },
     );
     selectList.clear();
@@ -570,5 +571,151 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
 
   popper() {
     Navigator.of(context).pop();
+  }
+}
+
+class RefreshCountdownDialog extends StatefulWidget {
+  const RefreshCountdownDialog({Key? key}) : super(key: key);
+
+  @override
+  State<RefreshCountdownDialog> createState() => _RefreshCountdownDialogState();
+}
+
+class _RefreshCountdownDialogState extends State<RefreshCountdownDialog>
+    with SingleTickerProviderStateMixin {
+  int countdown = 5;
+  Timer? _timer;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Pulse animation for the activity indicator
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    // Start countdown
+    _startCountdown();
+  }
+
+  void _startCountdown() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (countdown > 0) {
+        setState(() {
+          countdown--;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 40),
+        padding: EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: CupertinoColors.systemBackground.resolveFrom(context),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 40,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Animated activity indicator with countdown
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                // Outer ring with pulse effect
+                ScaleTransition(
+                  scale: _pulseAnimation,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: CupertinoColors.systemBlue.withOpacity(0.1),
+                    ),
+                  ),
+                ),
+                // Activity indicator
+                SizedBox(
+                  width: 80,
+                  height: 80,
+                  child: CupertinoActivityIndicator(
+                    radius: 20,
+                    color: CupertinoColors.systemBlue,
+                  ),
+                ),
+                // Countdown number
+                AnimatedSwitcher(
+                  duration: Duration(milliseconds: 300),
+                  transitionBuilder: (child, animation) {
+                    return ScaleTransition(
+                      scale: animation,
+                      child: FadeTransition(opacity: animation, child: child),
+                    );
+                  },
+                  child: Text(
+                    '$countdown',
+                    key: ValueKey<int>(countdown),
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.systemBlue,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 24),
+            // Refreshing text
+            Text(
+              'Refreshing',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: CupertinoColors.label.resolveFrom(context),
+                letterSpacing: -0.4,
+              ),
+            ),
+            SizedBox(height: 6),
+            // Subtitle
+            Text(
+              'Please wait a moment',
+              style: TextStyle(
+                fontSize: 13,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                letterSpacing: -0.1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
