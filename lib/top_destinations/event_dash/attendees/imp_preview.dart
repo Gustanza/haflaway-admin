@@ -113,9 +113,9 @@ class _ImpPreviewState extends State<ImpPreview> {
           checkinStatus: [],
           createdAt: DateTime.now(),
           email: '',
-          fullName: "${namecell?.value}",
           phone: phoneItself,
           messages: {},
+          fullName: "${namecell?.value}".toUpperCase(),
         );
         attendees.add(attendee);
       }

@@ -235,37 +235,39 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           mainAxisSize: MainAxisSize.min,
           // mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            FloatingActionButton(
-              mini: true,
-              heroTag: "mini",
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-                side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+            if (selChannel == shannnels.keys.last)
+              FloatingActionButton(
+                // mini: true,
+                heroTag: "mini",
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+                  side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+                ),
+                foregroundColor: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(psm * 0.5),
+                  child: Brand(Brands.messages),
+                ),
+                onPressed: () async {
+                  pushToSend(isWhatsApp: false, prefix: "sms");
+                },
               ),
-              foregroundColor: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(psm * 0.5),
-                child: Brand(Brands.wechat),
-              ),
-              onPressed: () async {
-                pushToSend(isWhatsApp: false, prefix: "sms");
-              },
-            ),
             // const SizedBox(width: spaceTiles * 0.5),
-            FloatingActionButton(
-              heroTag: "major",
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-                side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+            if (selChannel == shannnels.keys.first)
+              FloatingActionButton(
+                heroTag: "major",
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+                  side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+                ),
+                foregroundColor: Colors.white,
+                child: Brand(Brands.whatsapp),
+                onPressed: () async {
+                  pushToSend(isWhatsApp: true, prefix: "whatsapp");
+                },
               ),
-              foregroundColor: Colors.white,
-              child: Brand(Brands.whatsapp),
-              onPressed: () async {
-                pushToSend(isWhatsApp: true, prefix: "whatsapp");
-              },
-            ),
           ],
         ),
       ),

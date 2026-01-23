@@ -1,7 +1,7 @@
 var shannnels = {
   // "all": "Channel Zote",
-  "sms": "Channel ya SMS",
   "whatsapp": "Channel ya WhatsApp",
+  "sms": "Channel ya SMS",
 };
 
 var shtates = {

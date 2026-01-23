@@ -42,14 +42,16 @@ class Attendee {
   String? attendanceStatus;
   String phone;
   Map messages;
+  double? pledgedAmount;
+  double? remainingAmount;
   String idComment;
   List? messageIndexes;
   Attendee({
     this.id,
     required this.cards,
     // required this.cardId,
-    // required this.cardName,
-    // required this.cardUrl,
+    this.remainingAmount,
+    this.pledgedAmount,
     required this.checkinStatus,
     required this.createdAt,
     required this.email,
@@ -65,14 +67,16 @@ class Attendee {
     if (id != null) "id": id,
     "cards": cards,
     "phone": phone,
-    "checkinStatus": checkinStatus,
-    "createdAt": createdAt.toIso8601String(),
     "email": email,
     "fullName": fullName,
     "messages": messages,
     "idComment": idComment,
     "messageIndexes": messageIndexes,
     "attendanceStatus": attendanceStatus,
+    "checkinStatus": checkinStatus,
+    "createdAt": createdAt.toIso8601String(),
+    if (remainingAmount != null) "remainingAmount": remainingAmount,
+    if (pledgedAmount != null) "pledgedAmount": pledgedAmount,
   };
 
   factory Attendee.fromMap(String id, Map<String, dynamic> map) {
@@ -98,8 +102,16 @@ class Attendee {
       fullName: map['fullName'] ?? "",
       phone: map['phone'] ?? "",
       messages: map['messages'] ?? {},
-      idComment: map['idComment'] ?? "No Comment",
       messageIndexes: mIndexes,
+      pledgedAmount:
+          map['pledgedAmount'] != null
+              ? (map['pledgedAmount'] as num).toDouble()
+              : 0.00,
+      remainingAmount:
+          map['remainingAmount'] != null
+              ? (map['remainingAmount'] as num).toDouble()
+              : 0.00,
+      idComment: map['idComment'] ?? "No Comment",
       attendanceStatus: map['attendanceStatus'] ?? "Not Confirmed",
     );
   }
