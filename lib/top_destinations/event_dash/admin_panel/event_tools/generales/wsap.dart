@@ -22,7 +22,7 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/gen
 import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:icons_plus/icons_plus.dart';
-import 'dart:async';
+import 'dart:ui';
 
 class InvitesIssuers extends StatefulWidget {
   final Event event;
@@ -226,16 +226,30 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   }
 
   stallAndRefresh() async {
-    showDialog(
+    // Clear selections immediately
+    selectList.clear();
+    safeState(() {});
+
+    // Show the beautiful loading dialog
+    if (!mounted) return;
+
+    await showDialog(
       context: context,
-      builder: (context) {
-        return Center(child: RefreshCountdownDialog());
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.7),
+      builder: (dialogContext) {
+        return _RefreshLoadingDialog(
+          onRefreshComplete: () async {
+            // Actually load the refreshed data (already waited 10 seconds)
+            await _loadAttendees();
+            // Close dialog after completion
+            if (mounted && Navigator.of(dialogContext).canPop()) {
+              Navigator.of(dialogContext).pop();
+            }
+          },
+        );
       },
     );
-    selectList.clear();
-    await Future.delayed(Duration(seconds: 5));
-    _loadAttendees();
-    popper();
   }
 
   @override
@@ -574,146 +588,259 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   }
 }
 
-class RefreshCountdownDialog extends StatefulWidget {
-  const RefreshCountdownDialog({Key? key}) : super(key: key);
+// Beautiful animated refresh loading dialog
+class _RefreshLoadingDialog extends StatefulWidget {
+  final Future<void> Function() onRefreshComplete;
+
+  const _RefreshLoadingDialog({required this.onRefreshComplete});
 
   @override
-  State<RefreshCountdownDialog> createState() => _RefreshCountdownDialogState();
+  State<_RefreshLoadingDialog> createState() => _RefreshLoadingDialogState();
 }
 
-class _RefreshCountdownDialogState extends State<RefreshCountdownDialog>
-    with SingleTickerProviderStateMixin {
-  int countdown = 5;
-  Timer? _timer;
+class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
+    with TickerProviderStateMixin {
   late AnimationController _pulseController;
+  late AnimationController _rotateController;
+  late AnimationController _progressController;
+  late AnimationController _scaleController;
   late Animation<double> _pulseAnimation;
+  late Animation<double> _rotateAnimation;
+  late Animation<double> _progressAnimation;
+  late Animation<double> _scaleAnimation;
+
+  bool _isComplete = false;
+  int _countdown = 10;
 
   @override
   void initState() {
     super.initState();
 
-    // Pulse animation for the activity indicator
+    // Pulse animation for the icon
     _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: Duration(milliseconds: 1200),
       vsync: this,
     )..repeat(reverse: true);
 
-    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+    // Rotation animation
+    _rotateController = AnimationController(
+      duration: Duration(milliseconds: 2000),
+      vsync: this,
+    )..repeat();
+
+    // Progress animation
+    _progressController = AnimationController(
+      duration: Duration(seconds: 10),
+      vsync: this,
+    );
+
+    // Scale animation for success
+    _scaleController = AnimationController(
+      duration: Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.15).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Start countdown
-    _startCountdown();
+    _rotateAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _rotateController, curve: Curves.linear));
+
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    );
+
+    // Start the refresh process
+    _startRefresh();
   }
 
-  void _startCountdown() {
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      if (countdown > 0) {
+  void _startRefresh() async {
+    // Start progress animation
+    _progressController.forward();
+
+    // Countdown
+    for (int i = 10; i > 0; i--) {
+      await Future.delayed(Duration(seconds: 1));
+      if (mounted) {
         setState(() {
-          countdown--;
+          _countdown = i - 1;
         });
-      } else {
-        timer.cancel();
       }
-    });
+    }
+
+    // Complete the refresh
+    if (mounted) {
+      setState(() {
+        _isComplete = true;
+      });
+
+      // Animate success
+      _scaleController.forward();
+
+      // Wait a moment to show success
+      await Future.delayed(Duration(milliseconds: 800));
+
+      // Call the refresh completion callback
+      await widget.onRefreshComplete();
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _pulseController.dispose();
+    _rotateController.dispose();
+    _progressController.dispose();
+    _scaleController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 40),
-        padding: EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          color: CupertinoColors.systemBackground.resolveFrom(context),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 40,
-              offset: Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Animated activity indicator with countdown
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                // Outer ring with pulse effect
-                ScaleTransition(
-                  scale: _pulseAnimation,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: CupertinoColors.systemBlue.withOpacity(0.1),
+    return Dialog(
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: glassDialog(
+        child: Container(
+          padding: EdgeInsets.all(psm * 2),
+          decoration: BoxDecoration(
+            gradient: secscagrad,
+            borderRadius: BorderRadius.circular(bmd),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Animated Icon Container
+              AnimatedBuilder(
+                animation: Listenable.merge([
+                  _pulseAnimation,
+                  _rotateAnimation,
+                  _scaleAnimation,
+                ]),
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale:
+                        _isComplete
+                            ? _scaleAnimation.value
+                            : _pulseAnimation.value,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient:
+                            _isComplete
+                                ? LinearGradient(
+                                  colors: [
+                                    Colors.green.withOpacity(0.3),
+                                    Colors.greenAccent.withOpacity(0.2),
+                                  ],
+                                )
+                                : primaryGrad,
+                        border: Border.all(color: lqassbdrColor, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_isComplete ? Colors.green : primaryColor)
+                                .withOpacity(0.3),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child:
+                            _isComplete
+                                ? Icon(
+                                  Icons.check_circle_rounded,
+                                  color: Colors.greenAccent,
+                                  size: 50,
+                                )
+                                : Transform.rotate(
+                                  angle: _rotateAnimation.value * 2 * 3.14159,
+                                  child: Icon(
+                                    Icons.refresh_rounded,
+                                    color: primaryWhite,
+                                    size: 45,
+                                  ),
+                                ),
+                      ),
                     ),
+                  );
+                },
+              ),
+
+              SizedBox(height: psm * 2),
+
+              // Title
+              Text(
+                _isComplete ? "Data Imefreshwa!" : "Inahifadhi Data...",
+                style: TextStyle(
+                  fontSize: fsm + 4,
+                  fontWeight: FontWeight.bold,
+                  color: primaryWhite,
+                  letterSpacing: 0.5,
+                ),
+              ),
+
+              SizedBox(height: psm),
+
+              // Progress Bar
+              if (!_isComplete) ...[
+                Container(
+                  width: 200,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(3),
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                  child: AnimatedBuilder(
+                    animation: _progressAnimation,
+                    builder: (context, child) {
+                      return Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          width: 200 * _progressAnimation.value,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(3),
+                            gradient: primaryGrad,
+                            boxShadow: [
+                              BoxShadow(
+                                color: primaryColor.withOpacity(0.5),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
-                // Activity indicator
-                SizedBox(
-                  width: 80,
-                  height: 80,
-                  child: CupertinoActivityIndicator(
-                    radius: 20,
-                    color: CupertinoColors.systemBlue,
+                SizedBox(height: psm * 0.5),
+                Text(
+                  "Subiri sekunde $_countdown...",
+                  style: TextStyle(
+                    fontSize: fsm - 1,
+                    color: mWhite,
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
-                // Countdown number
-                AnimatedSwitcher(
-                  duration: Duration(milliseconds: 300),
-                  transitionBuilder: (child, animation) {
-                    return ScaleTransition(
-                      scale: animation,
-                      child: FadeTransition(opacity: animation, child: child),
-                    );
-                  },
-                  child: Text(
-                    '$countdown',
-                    key: ValueKey<int>(countdown),
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w600,
-                      color: CupertinoColors.systemBlue,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
+              ] else ...[
+                Text(
+                  "Data mpya imepakuliwa kwa ufanisi",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: fsm, color: mWhite),
                 ),
               ],
-            ),
-            SizedBox(height: 24),
-            // Refreshing text
-            Text(
-              'Refreshing',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: CupertinoColors.label.resolveFrom(context),
-                letterSpacing: -0.4,
-              ),
-            ),
-            SizedBox(height: 6),
-            // Subtitle
-            Text(
-              'Please wait a moment',
-              style: TextStyle(
-                fontSize: 13,
-                color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                letterSpacing: -0.1,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

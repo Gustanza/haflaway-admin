@@ -82,6 +82,7 @@ class Event {
   String? supportPhone;
   String? startDate;
   String? endDate;
+  String? language;
   List<EventCalendar>? calendar;
 
   Event({
@@ -103,6 +104,7 @@ class Event {
     this.usepng = true,
     this.startDate,
     this.endDate,
+    this.language,
     this.calendar = const [],
   });
 
@@ -125,6 +127,7 @@ class Event {
     if (supportPhone != null) 'supportPhone': supportPhone,
     if (startDate != null) 'startDate': startDate,
     if (endDate != null) 'endDate': endDate,
+    if (language != null) "language": language,
     if (calendar != null)
       'calendar':
           calendar?.map((e) {
@@ -150,6 +153,7 @@ class Event {
       eventThumbnail: map['eventThumbnail'] ?? '',
       location: map['location'] ?? '',
       usepng: map['usepng'] ?? true,
+      language: map['language'] ?? 'sw',
       startDate: map['startDate'] ?? DateTime(1990).toIso8601String(),
       endDate: map['endDate'] ?? DateTime(1991).toIso8601String(),
       calendar:

@@ -13,6 +13,7 @@ import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/settings/event_settings.dart';
 import 'package:haflaway/top_destinations/event_dash/cards/cards.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/dimensions.dart';
@@ -131,14 +132,22 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
         actions: Row(
           children: [
             buildActionButton(
-              icon: Icons.share,
+              icon: Icons.settings,
               onTap: () async {
-                String link =
-                    "https://haflaway.com/#/cards/${widget.eventO.id}";
-                String message = "Kadi za ${widget.eventO.title}";
-                SharePlus.instance.share(
-                  ShareParams(text: link, title: message),
+                // String link =
+                //     "https://haflaway.com/#/cards/${widget.eventO.id}";
+                // String message = "Kadi za ${widget.eventO.title}";
+                // SharePlus.instance.share(
+                //   ShareParams(text: link, title: message),
+                // );
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return EventSettings(event: event);
+                    },
+                  ),
                 );
+                loadData();
               },
             ),
             const SizedBox(width: spaceTiles),
