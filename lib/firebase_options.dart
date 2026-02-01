@@ -48,7 +48,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDTvs-Cp294hfsk6B4vL_EVfQ-kZgbryyA',
-    appId: '1:556877909874:android:8703f54dcc256ad673d7eb',
+    appId: '1:556877909874:android:0b7efe0eeea88f5073d7eb',
     messagingSenderId: '556877909874',
     projectId: 'haflaway-f14aa',
     storageBucket: 'haflaway-f14aa.firebasestorage.app',

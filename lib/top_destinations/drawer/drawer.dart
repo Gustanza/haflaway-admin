@@ -43,21 +43,21 @@ Widget drawer({context}) {
               trailing: Icon(Icons.arrow_forward_ios, size: icnsm),
             ),
             Divider(thickness: 0.1, height: 0),
-            ListTile(
-              title: Text("Users Management"),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return AppUsersScreen();
-                    },
-                  ),
-                );
-              },
-              trailing: Icon(Icons.arrow_forward_ios, size: icnsm),
-            ),
-            Divider(thickness: 0.1, height: 0),
+            // ListTile(
+            //   title: Text("Users Management"),
+            //   onTap: () {
+            //     Navigator.of(context).pop();
+            //     Navigator.of(context).push(
+            //       MaterialPageRoute(
+            //         builder: (context) {
+            //           return AppUsersScreen();
+            //         },
+            //       ),
+            //     );
+            //   },
+            //   trailing: Icon(Icons.arrow_forward_ios, size: icnsm),
+            // ),
+            // Divider(thickness: 0.1, height: 0),
           ],
         ),
       ),
