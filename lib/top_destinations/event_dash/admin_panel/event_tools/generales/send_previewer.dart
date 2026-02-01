@@ -51,85 +51,95 @@ class SendPreviewerState extends State<SendPreviewer> {
             ? firestore
                 .collection("messageTemplates")
                 .where('category', isEqualTo: "matrimony-contributions")
+                .where("language", isEqualTo: widget.event.language)
                 .get()
             : widget.campaignId == invCampId
             ? firestore
                 .collection("messageTemplates")
                 .where('category', isEqualTo: "whatsapp-wedding-invitations")
+                .where("language", isEqualTo: widget.event.language)
                 .get()
             : firestore
                 .collection("messageTemplates")
                 .where('category', isEqualTo: "whatsapp-wedding-save-the-date")
+                .where("language", isEqualTo: widget.event.language)
                 .get();
 
-    return Scaffold(
-      appBar: appBar(
-        title: "Kamilisha kutuma",
-        leading: buildActionButton(
-          icon: Icons.arrow_back,
-          onTap: () {
-            popper();
-          },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleExit();
+      },
+      child: Scaffold(
+        appBar: appBar(
+          title: "Kamilisha kutuma",
+          leading: buildActionButton(
+            icon: Icons.arrow_back,
+            onTap: () {
+              _handleExit();
+            },
+          ),
         ),
-      ),
-      backgroundColor: scaback,
-      body: Container(
-        width: double.maxFinite,
-        height: double.maxFinite,
-        decoration: BoxDecoration(gradient: scagrad),
-        child: Column(
-          children: [
-            // Modern Header Section
-            _buildHeaderSection(),
-            // Templates List
-            Expanded(
-              child: FutureBuilder(
-                future:
-                    widget.isWhatsApp
-                        ? path
-                        : firestore
-                            .collection('events')
-                            .doc(widget.event.id)
-                            .collection("messageTemplates")
-                            .get(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    var dt = (snapshot.data as dynamic).docs;
-                    if (dt != null && dt.isNotEmpty) {
-                      List<WsapTemplate> wtemps =
-                          dt
-                              .where((tdt) {
-                                WsapTemplate wsapTemplate =
-                                    WsapTemplate.fromMap(
-                                      id: tdt.id,
-                                      map: tdt.data(),
-                                    );
-                                return wsapTemplate.usepng;
-                              })
-                              .map<WsapTemplate>((tdt) {
-                                return WsapTemplate.fromMap(
-                                  id: tdt.id,
-                                  map: tdt.data(),
-                                );
-                              })
-                              .toList();
-                      return buildTemplates(wtemps);
-                    } else {
-                      return BuildNoDt(string: "no data");
+        backgroundColor: scaback,
+        body: Container(
+          width: double.maxFinite,
+          height: double.maxFinite,
+          decoration: BoxDecoration(gradient: scagrad),
+          child: Column(
+            children: [
+              // Modern Header Section
+              _buildHeaderSection(),
+              // Templates List
+              Expanded(
+                child: FutureBuilder(
+                  future:
+                      widget.isWhatsApp
+                          ? path
+                          : firestore
+                              .collection('events')
+                              .doc(widget.event.id)
+                              .collection("messageTemplates")
+                              .get(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      var dt = (snapshot.data as dynamic).docs;
+                      if (dt != null && dt.isNotEmpty) {
+                        List<WsapTemplate> wtemps =
+                            dt
+                                .where((tdt) {
+                                  WsapTemplate wsapTemplate =
+                                      WsapTemplate.fromMap(
+                                        id: tdt.id,
+                                        map: tdt.data(),
+                                      );
+                                  return wsapTemplate.usepng;
+                                })
+                                .map<WsapTemplate>((tdt) {
+                                  return WsapTemplate.fromMap(
+                                    id: tdt.id,
+                                    map: tdt.data(),
+                                  );
+                                })
+                                .toList();
+                        return buildTemplates(wtemps);
+                      } else {
+                        return BuildNoDt(string: "no data");
+                      }
                     }
-                  }
-                  if (snapshot.hasError) {
-                    return buildErr();
-                  } else {
-                    return Center(child: CircularProgressIndicator());
-                  }
-                },
+                    if (snapshot.hasError) {
+                      return buildErr();
+                    } else {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                  },
+                ),
               ),
-            ),
 
-            // Floating Action Button Area
-            if (groupValue != null) _buildFloatingConfirmButton(),
-          ],
+              // Floating Action Button Area
+              if (groupValue != null) _buildFloatingConfirmButton(),
+            ],
+          ),
         ),
       ),
     );
@@ -435,9 +445,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                   ),
                 ),
               ),
-
               const SizedBox(height: psm),
-
               Text(
                 "Thibitisha Kitendo",
                 textAlign: TextAlign.center,
@@ -446,9 +454,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: psm * 0.5),
-
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: psm),
                 child: Text(
@@ -457,9 +463,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                   style: TextStyle(fontSize: fsm, color: Colors.grey[600]),
                 ),
               ),
-
               const SizedBox(height: psm * 1.5),
-
               lqAssButton(
                 label: "Tuma Sasa",
                 onPressed: () async {
@@ -502,24 +506,23 @@ class SendPreviewerState extends State<SendPreviewer> {
                     }
                     var res = jsonDecode(response.body);
                     messagesSent = true;
-                    popper();
-                    popper();
+                    _handleExit();
+                    _handleExit();
                     showNotifier(msg: "${res['message']}");
                   } catch (e) {
-                    popper();
-                    popper();
-                    showNotifier(msg: "Failed due to: $e");
+                    messagesSent = false;
+                    _handleExit();
+                    _handleExit();
+                    showNotifier(msg: "Imefeli kwa sababu: $e");
                   }
                   client.close();
                 },
               ),
-
               const SizedBox(height: spaceTiles),
-
               lqAssButton(
                 label: "Sitisha",
                 onPressed: () {
-                  popper();
+                  _handleExit();
                 },
               ),
 
@@ -571,7 +574,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                 lqAssButton(
                   label: "Funga",
                   onPressed: () {
-                    popper();
+                    _handleExit();
                   },
                 ),
                 const SizedBox(height: psm * 0.5),
@@ -583,7 +586,7 @@ class SendPreviewerState extends State<SendPreviewer> {
     );
   }
 
-  popper() {
+  _handleExit() {
     Navigator.of(context).pop(messagesSent);
   }
 }

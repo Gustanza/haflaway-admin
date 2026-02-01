@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
+import 'package:haflaway/top_destinations/event_dash/michango/michango_editor.dart';
 import 'package:haflaway/utils/attstates.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/constants.dart';
@@ -248,13 +249,73 @@ Widget buildAttendeeCard({
                 ),
                 SizedBox(height: psm * 0.5),
                 // Attendance controls - compact
-                _buildAttendanceControls(attendee, eventId, onStatusChange),
+                if (kardType == KardType.invitation)
+                  _buildAttendanceControls(attendee, eventId, onStatusChange),
+                if (kardType == KardType.contribution)
+                  buildMichangoDisplay(
+                    context,
+                    attendee,
+                    eventId,
+                    onStatusChange,
+                  ),
               ],
             ),
           ),
         ),
       );
     },
+  );
+}
+
+Widget buildMichangoDisplay(context, attendee, eventId, onStatusChange) {
+  return Container(
+    width: double.maxFinite,
+    padding: EdgeInsets.all(spaceTiles),
+    decoration: BoxDecoration(
+      border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+      borderRadius: BorderRadius.circular(bsm),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Ahadi: Tsh 100,000",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            Text(
+              "Mchango: Tsh 100,000",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        TextButton.icon(
+          icon: Icon(Icons.edit),
+          label: Text("Hariri"),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) {
+                  return MichangoEditor(
+                    attendee: attendee,
+                    eventId: eventId,
+                    onStatusChange: onStatusChange,
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    ),
   );
 }
 

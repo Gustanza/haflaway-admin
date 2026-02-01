@@ -22,6 +22,7 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/gen
 import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:icons_plus/icons_plus.dart';
+import 'dart:ui';
 
 class InvitesIssuers extends StatefulWidget {
   final Event event;
@@ -180,7 +181,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         actionStr1: "Rudia Kutuma",
         onTap1: () async {
           popper();
-          await Navigator.of(context).push(
+          bool? didDispatch = await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) {
                 return SendPreviewer(
@@ -193,9 +194,10 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               },
             ),
           );
-          selectList.clear();
-          await Future.delayed(Duration(seconds: 2));
-          _loadAttendees();
+          // debugPrint("Abjectory: $didDispatch");
+          if (didDispatch ?? false) {
+            stallAndRefresh();
+          }
         },
         actionStr2: "Sitisha",
         onTap2: () {
@@ -203,7 +205,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         },
       );
     } else {
-      await Navigator.of(context).push(
+      bool? didDispatch = await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) {
             return SendPreviewer(
@@ -216,10 +218,38 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           },
         ),
       );
-      selectList.clear();
-      await Future.delayed(Duration(seconds: 2));
-      _loadAttendees();
+      // debugPrint("Abjectory: $didDispatch");
+      if (didDispatch ?? false) {
+        stallAndRefresh();
+      }
     }
+  }
+
+  stallAndRefresh() async {
+    // Clear selections immediately
+    selectList.clear();
+    safeState(() {});
+
+    // Show the beautiful loading dialog
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.7),
+      builder: (dialogContext) {
+        return _RefreshLoadingDialog(
+          onRefreshComplete: () async {
+            // Actually load the refreshed data (already waited 10 seconds)
+            await _loadAttendees();
+            // Close dialog after completion
+            if (mounted && Navigator.of(dialogContext).canPop()) {
+              Navigator.of(dialogContext).pop();
+            }
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -235,37 +265,39 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           mainAxisSize: MainAxisSize.min,
           // mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            FloatingActionButton(
-              mini: true,
-              heroTag: "mini",
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-                side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+            if (selChannel == shannnels.keys.last)
+              FloatingActionButton(
+                // mini: true,
+                heroTag: "mini",
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+                  side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+                ),
+                foregroundColor: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(psm * 0.5),
+                  child: Brand(Brands.messages),
+                ),
+                onPressed: () async {
+                  pushToSend(isWhatsApp: false, prefix: "sms");
+                },
               ),
-              foregroundColor: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(psm * 0.5),
-                child: Brand(Brands.wechat),
-              ),
-              onPressed: () async {
-                pushToSend(isWhatsApp: false, prefix: "sms");
-              },
-            ),
             // const SizedBox(width: spaceTiles * 0.5),
-            FloatingActionButton(
-              heroTag: "major",
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-                side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+            if (selChannel == shannnels.keys.first)
+              FloatingActionButton(
+                heroTag: "major",
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadiusGeometry.circular(bmd * 10),
+                  side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+                ),
+                foregroundColor: Colors.white,
+                child: Brand(Brands.whatsapp),
+                onPressed: () async {
+                  pushToSend(isWhatsApp: true, prefix: "whatsapp");
+                },
               ),
-              foregroundColor: Colors.white,
-              child: Brand(Brands.whatsapp),
-              onPressed: () async {
-                pushToSend(isWhatsApp: true, prefix: "whatsapp");
-              },
-            ),
           ],
         ),
       ),
@@ -553,5 +585,264 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
 
   popper() {
     Navigator.of(context).pop();
+  }
+}
+
+// Beautiful animated refresh loading dialog
+class _RefreshLoadingDialog extends StatefulWidget {
+  final Future<void> Function() onRefreshComplete;
+
+  const _RefreshLoadingDialog({required this.onRefreshComplete});
+
+  @override
+  State<_RefreshLoadingDialog> createState() => _RefreshLoadingDialogState();
+}
+
+class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
+    with TickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late AnimationController _rotateController;
+  late AnimationController _progressController;
+  late AnimationController _scaleController;
+  late Animation<double> _pulseAnimation;
+  late Animation<double> _rotateAnimation;
+  late Animation<double> _progressAnimation;
+  late Animation<double> _scaleAnimation;
+
+  bool _isComplete = false;
+  int _countdown = 10;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Pulse animation for the icon
+    _pulseController = AnimationController(
+      duration: Duration(milliseconds: 1200),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    // Rotation animation
+    _rotateController = AnimationController(
+      duration: Duration(milliseconds: 2000),
+      vsync: this,
+    )..repeat();
+
+    // Progress animation
+    _progressController = AnimationController(
+      duration: Duration(seconds: 10),
+      vsync: this,
+    );
+
+    // Scale animation for success
+    _scaleController = AnimationController(
+      duration: Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.15).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _rotateAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _rotateController, curve: Curves.linear));
+
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    );
+
+    // Start the refresh process
+    _startRefresh();
+  }
+
+  void _startRefresh() async {
+    // Start progress animation
+    _progressController.forward();
+
+    // Countdown
+    for (int i = 10; i > 0; i--) {
+      await Future.delayed(Duration(seconds: 1));
+      if (mounted) {
+        setState(() {
+          _countdown = i - 1;
+        });
+      }
+    }
+
+    // Complete the refresh
+    if (mounted) {
+      setState(() {
+        _isComplete = true;
+      });
+
+      // Animate success
+      _scaleController.forward();
+
+      // Wait a moment to show success
+      await Future.delayed(Duration(milliseconds: 800));
+
+      // Call the refresh completion callback
+      await widget.onRefreshComplete();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _rotateController.dispose();
+    _progressController.dispose();
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: glassDialog(
+        child: Container(
+          padding: EdgeInsets.all(psm * 2),
+          decoration: BoxDecoration(
+            gradient: secscagrad,
+            borderRadius: BorderRadius.circular(bmd),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Animated Icon Container
+              AnimatedBuilder(
+                animation: Listenable.merge([
+                  _pulseAnimation,
+                  _rotateAnimation,
+                  _scaleAnimation,
+                ]),
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale:
+                        _isComplete
+                            ? _scaleAnimation.value
+                            : _pulseAnimation.value,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient:
+                            _isComplete
+                                ? LinearGradient(
+                                  colors: [
+                                    Colors.green.withOpacity(0.3),
+                                    Colors.greenAccent.withOpacity(0.2),
+                                  ],
+                                )
+                                : primaryGrad,
+                        border: Border.all(color: lqassbdrColor, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_isComplete ? Colors.green : primaryColor)
+                                .withOpacity(0.3),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child:
+                            _isComplete
+                                ? Icon(
+                                  Icons.check_circle_rounded,
+                                  color: Colors.greenAccent,
+                                  size: 50,
+                                )
+                                : Transform.rotate(
+                                  angle: _rotateAnimation.value * 2 * 3.14159,
+                                  child: Icon(
+                                    Icons.refresh_rounded,
+                                    color: primaryWhite,
+                                    size: 45,
+                                  ),
+                                ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              SizedBox(height: psm * 2),
+
+              // Title
+              Text(
+                _isComplete ? "Data Imefreshwa!" : "Inahifadhi Data...",
+                style: TextStyle(
+                  fontSize: fsm + 4,
+                  fontWeight: FontWeight.bold,
+                  color: primaryWhite,
+                  letterSpacing: 0.5,
+                ),
+              ),
+
+              SizedBox(height: psm),
+
+              // Progress Bar
+              if (!_isComplete) ...[
+                Container(
+                  width: 200,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(3),
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                  child: AnimatedBuilder(
+                    animation: _progressAnimation,
+                    builder: (context, child) {
+                      return Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          width: 200 * _progressAnimation.value,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(3),
+                            gradient: primaryGrad,
+                            boxShadow: [
+                              BoxShadow(
+                                color: primaryColor.withOpacity(0.5),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(height: psm * 0.5),
+                Text(
+                  "Subiri sekunde $_countdown...",
+                  style: TextStyle(
+                    fontSize: fsm - 1,
+                    color: mWhite,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  "Data mpya imepakuliwa kwa ufanisi",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: fsm, color: mWhite),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

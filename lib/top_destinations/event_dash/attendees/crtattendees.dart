@@ -223,14 +223,14 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         dataCleaner(passcode: atId);
         Attendee atdt = Attendee(
           id: atId,
+          cards: {},
           email: '',
           messages: {},
           checkinStatus: chk,
           createdAt: DateTime.now(),
-          fullName: ncont.text.trim(),
           attendanceStatus: atnotconfstate,
           phone: phnnumber.replaceAll('+', ''),
-          cards: {},
+          fullName: ncont.text.trim().toUpperCase(),
         );
         var payload = {
           "eventId": widget.event.id,
