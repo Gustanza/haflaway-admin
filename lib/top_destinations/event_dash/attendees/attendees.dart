@@ -65,12 +65,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   // Attendance status filters
   String _attendanceFilter = "All";
   final List<String> _filters = atStatesList;
-
   // Pagination variables
-  final int pageSize = 20;
-  DocumentSnapshot? lastDocument;
+  int pageSize = atsPageSize;
   bool isLoading = false;
   bool hasMore = true;
+  DocumentSnapshot? lastDocument;
   ScrollController scrollController = ScrollController();
 
   @override
@@ -105,7 +104,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     setState(() {
       isLoading = true;
     });
-
+    pageSize = atList.isEmpty ? atsPageSize : atList.length;
     try {
       Query<Map<String, dynamic>> query = nQwrBuilder();
       var snapshot = await query.get();
@@ -244,7 +243,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     setState(() {
       isLoading = true;
     });
-
+    pageSize = atsPageSize;
     try {
       Query<Map<String, dynamic>> query = mQwrBuilder();
 
@@ -571,6 +570,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     safeState(() {});
                   },
                   onStatusChange: (status) {
+                    if (widget.kardType == KardType.contribution)
+                      return _loadAttendees();
                     int index = atdata.indexWhere(
                       (element) => element.id == attendee.id,
                     );

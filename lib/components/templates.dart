@@ -137,7 +137,7 @@ showCommentDialog({context, eventId, atId, label}) {
               const SizedBox(height: psm * 1.5),
               SizedBox(
                 width: double.maxFinite,
-                child: buildGlassButton(
+                child: buildBGlassButton(
                   text: "Save Comment",
                   icon: Icons.save,
                   onPressed: () {
@@ -560,7 +560,7 @@ Widget buildGlassEmptyState() {
           ),
 
           const SizedBox(height: 32),
-          buildGlassButton(
+          buildBGlassButton(
             text: "Create First Checkpoint",
             icon: Icons.add_circle_outline,
             onPressed: null, // showCrtChkpn,
@@ -596,7 +596,7 @@ Widget buildGlassErrorView() {
             ),
           ),
           const SizedBox(height: 24),
-          buildGlassButton(
+          buildBGlassButton(
             text: "Try Again",
             icon: Icons.refresh,
             onPressed: () {},
@@ -607,7 +607,7 @@ Widget buildGlassErrorView() {
   );
 }
 
-Widget buildGlassButton({
+Widget buildBGlassButton({
   required String text,
   required IconData icon,
   required VoidCallback? onPressed,

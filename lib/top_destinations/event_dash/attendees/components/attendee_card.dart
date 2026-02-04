@@ -282,14 +282,14 @@ Widget buildMichangoDisplay(context, attendee, eventId, onStatusChange) {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Ahadi: Tsh 100,000",
+              "Ahadi: Tsh ${attendee.pledgedAmount}",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontStyle: FontStyle.italic,
               ),
             ),
             Text(
-              "Mchango: Tsh 100,000",
+              "Mchango: Tsh ${attendee.paidAmount}",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontStyle: FontStyle.italic,
@@ -299,19 +299,16 @@ Widget buildMichangoDisplay(context, attendee, eventId, onStatusChange) {
         ),
         TextButton.icon(
           icon: Icon(Icons.edit),
-          label: Text("Hariri"),
-          onPressed: () {
-            Navigator.of(context).push(
+          label: Text("Edit"),
+          onPressed: () async {
+            await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) {
-                  return MichangoEditor(
-                    attendee: attendee,
-                    eventId: eventId,
-                    onStatusChange: onStatusChange,
-                  );
+                  return MichangoEditor(attendee: attendee, eventId: eventId);
                 },
               ),
             );
+            onStatusChange("str");
           },
         ),
       ],
