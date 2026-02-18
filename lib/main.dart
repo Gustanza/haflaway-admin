@@ -4,7 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
-import 'package:flutter_phoenix/flutter_phoenix.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart'; 
 import 'package:go_router/go_router.dart';
 import 'package:haflaway/firebase_options.dart';
 import 'package:haflaway/models/card.dart';
