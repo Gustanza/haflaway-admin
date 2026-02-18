@@ -3,14 +3,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:haflaway/components/Ccafold.dart';
-import 'package:haflaway/components/appbar.dart';
-import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/settings/event_settings.dart';
@@ -24,8 +20,8 @@ import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/attendees.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/eventTools.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:intl/intl.dart';
 
 class AdminPanel extends StatefulWidget {
   final Event eventO;
@@ -117,309 +113,679 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: scaback,
-      appBar: appBar(
-        title: "Kituo cha Udhibiti",
-        leading: appBarActionButton(
-          icon: Icons.arrow_back,
-          onTap: () {
-            Navigator.of(context).pop();
-          },
-        ),
-        actions: Row(
-          children: [
-            buildActionButton(
-              icon: Icons.settings,
-              onTap: () async {
-                // String link =
-                //     "https://haflaway.com/#/cards/${widget.eventO.id}";
-                // String message = "Kadi za ${widget.eventO.title}";
-                // SharePlus.instance.share(
-                //   ShareParams(text: link, title: message),
-                // );
-                await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return EventSettings(event: event);
-                    },
-                  ),
-                );
-                loadData();
-              },
+  // ── Helpers ──────────────────────────────────────────────
+
+  String _formattedDate() {
+    try {
+      if (event?.startDate != null) {
+        final dt = DateTime.parse(event!.startDate!);
+        return DateFormat('EEE, MMM d · h:mm a').format(dt);
+      }
+    } catch (_) {}
+    return "";
+  }
+
+  // ── Floating glass icon button (back / settings / edit) ─
+  Widget _floatingButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.35),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.15),
+                width: 0.5,
+              ),
             ),
-            const SizedBox(width: spaceTiles),
-            buildActionButton(
-              icon: Icons.edit_document,
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return CreateEvent(event: event);
-                    },
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Single action row (iOS-settings style) ──────────────
+  Widget _buildActionRow({
+    required IconData icon,
+    required List<Color> iconGradient,
+    required String title,
+    required String count,
+    required VoidCallback onTap,
+    bool isLast = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        color: Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        child: Row(
+          children: [
+            // Icon pill
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: iconGradient,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 16),
+            // Title
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ),
+            // Count badge
+            if (count.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  count,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
-                );
-                loadData();
-              },
+                ),
+              ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.white.withOpacity(0.3),
+              size: 22,
             ),
           ],
         ),
       ),
-      body: Ccafold(
-        child:
-            !hasError && isLoading
-                ? buildLoader()
-                : !hasError && !isLoading
-                ? CustomScrollView(
-                  slivers: [
-                    SliverToBoxAdapter(child: SizedBox(height: spaceTiles)),
-                    _buildEventImageCard(),
-                    _buildAdminToolsSection(),
-                    const SliverPadding(padding: EdgeInsets.only(bottom: psm)),
-                  ],
-                )
-                : buildErrorView(),
-      ),
     );
   }
 
-  // Mirror-like event image card
-  SliverToBoxAdapter _buildEventImageCard() {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(psm, 0, psm, spaceTiles + 1.2),
-        child: Container(
-          height: 250,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.white.withOpacity(0.5)),
-            borderRadius: BorderRadius.circular(p20),
-            boxShadow: [
-              BoxShadow(color: Colors.white),
-              // BoxShadow(color: Colors.white.withOpacity(0.5)),
-            ],
+  // ── Section card (frosted glass container) ──────────────
+  Widget _buildSectionCard({
+    required String title,
+    required List<Widget> rows,
+  }) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 16 * (1 - value)),
+            child: child,
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(p20),
-            child: Stack(
-              children: [
-                // Background image
-                CachedNetworkImage(
-                  imageUrl: event?.eventThumbnail ?? "",
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                  filterQuality: FilterQuality.high,
-                  placeholder:
-                      (context, url) => Shimmer.fromColors(
-                        baseColor: primaryColor,
-                        highlightColor: primaryColor.withValues(alpha: 0.85),
-                        child: Container(color: primaryColor),
-                      ),
-                  errorWidget:
-                      (context, url, error) => const Icon(Clarity.error_line),
-                ),
-
-                // Gradient overlay
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: const [0.0, 0.6, 1.0],
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.3),
-                        Colors.black.withOpacity(0.8),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Title text at the bottom
-                Positioned(
-                  bottom: 20,
-                  left: 20,
-                  right: 20,
-                  child: Text(
-                    event?.title ?? "",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(0, 1),
-                          blurRadius: 3,
-                          color: primaryColor,
-                        ),
-                      ],
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 10),
+            child: Text(
+              title.toUpperCase(),
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.45),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
             ),
           ),
-        ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.07),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.1),
+                    width: 0.5,
+                  ),
+                ),
+                child: Column(
+                  children: List.generate(rows.length * 2 - 1, (i) {
+                    if (i.isOdd) {
+                      // Divider
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 74),
+                        child: Container(
+                          height: 0.5,
+                          color: Colors.white.withOpacity(0.08),
+                        ),
+                      );
+                    }
+                    return rows[i ~/ 2];
+                  }),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildAdminToolsSection() {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: psm),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            buildGlassCard(
-              child: Column(
-                children: [
-                  buildActionItem(
-                    title: "Mialiko ya Digital",
-                    children: [
-                      ActionItem(
-                        figure: "$invsCount",
-                        icon: Clarity.email_line,
-                        subtitle: "Kadi Zote",
-                        onPressed: () async {
-                          try {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return Attendees(
-                                    edata: event!,
-                                    kardType: KardType.invitation,
-                                  );
-                                },
-                              ),
-                            );
-                            loadData();
-                          } catch (e) {
-                            showToast(isGood: false, msg: e.toString());
-                          }
-                        },
-                      ),
-                      ActionItem(
-                        figure: "$invsCount",
-                        icon: Clarity.qr_code_line,
-                        subtitle: "Skani Kadi",
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder:
-                                  (context) =>
-                                      CheckPoints(edata: widget.eventO),
-                            ),
-                          );
-                        },
-                      ),
+  // ── Error view ──────────────────────────────────────────
+  Widget _buildErrorView() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.wifi_off_rounded,
+              size: 48,
+              color: Colors.redAccent,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            "Imeshindikana kupakia",
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Angalia mtandao wako na ujaribu tena",
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.4),
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 32),
+          GestureDetector(
+            onTap: loadData,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withOpacity(0.15)),
+              ),
+              child: const Text(
+                "Jaribu Tena",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ── BUILD ─────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final heroHeight = screenHeight * 0.48;
+
+    return Scaffold(
+      backgroundColor: scaback,
+      extendBodyBehindAppBar: true,
+      body:
+          !hasError && isLoading
+              ? Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFF1a1a2e),
+                      Color(0xFF16213e),
+                      Color(0xFF0f3460),
                     ],
                   ),
-                  const SizedBox(height: spaceTiles),
-                  buildActionItem(
-                    title: "Michango & Bajeti",
-                    children: [
-                      ActionItem(
-                        figure: "$contsCount",
-                        icon: Icons.monetization_on_outlined,
-                        subtitle: "Michango",
-                        onPressed: () async {
-                          try {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => Attendees(
-                                      edata: event!,
-                                      title: "Ratibu Michango",
-                                      kardType: KardType.contribution,
-                                    ),
-                              ),
-                            );
-                            loadData();
-                          } catch (e) {
-                            showToast(isGood: false, msg: e.toString());
-                          }
-                        },
-                      ),
-                      ActionItem(
-                        figure: "0",
-                        icon: Icons.monetization_on,
-                        subtitle: "Bajeti",
-                        onPressed: () {},
-                      ),
+                ),
+                child: buildLoader(),
+              )
+              : hasError
+              ? Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFF1a1a2e),
+                      Color(0xFF16213e),
+                      Color(0xFF0f3460),
                     ],
                   ),
-                  const SizedBox(height: spaceTiles),
-                  buildActionItem(
-                    title: "Dizaini Kadi & SMS",
-                    children: [
-                      ActionItem(
-                        figure: "$cardTempsNo",
-                        icon: Icons.card_giftcard,
-                        subtitle: "Temp za Kadi",
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return Cards(eId: widget.eventO.id ?? "");
-                              },
-                            ),
-                          );
-                        },
+                ),
+                child: SafeArea(child: _buildErrorView()),
+              )
+              : CustomScrollView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                slivers: [
+                  // ── Hero SliverAppBar ───────────────────
+                  SliverAppBar(
+                    expandedHeight: heroHeight,
+                    pinned: true,
+                    stretch: true,
+                    backgroundColor: scaback,
+                    elevation: 0,
+                    automaticallyImplyLeading: false,
+                    // Floating buttons
+                    leading: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Center(
+                        child: _floatingButton(
+                          icon: Icons.arrow_back_rounded,
+                          onTap: () => Navigator.of(context).pop(),
+                        ),
                       ),
-                      ActionItem(
-                        figure: "${evMsgTmpCount}",
-                        icon: Icons.sms,
-                        subtitle: "Temp za SMS",
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return InvEditor(eId: widget.eventO.id ?? "");
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: spaceTiles),
-                  buildActionItem(
-                    title: "Wasimamizi & Vendors",
-                    children: [
-                      ActionItem(
-                        figure: "$scannersCount",
-                        icon: Icons.card_giftcard,
-                        subtitle: "Vendors",
-                        onPressed: () async {
-                          showToast(isGood: true, msg: "Inakuja hivi karibuni");
-                        },
-                      ),
-                      ActionItem(
-                        figure: "$adminsCount",
-                        icon: Clarity.users_line,
-                        subtitle: "Wasimamizi",
-                        onPressed: () async {
+                    ),
+                    actions: [
+                      _floatingButton(
+                        icon: Icons.settings_rounded,
+                        onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (context) => Users(eId: event?.id ?? ""),
+                              builder: (context) {
+                                return EventSettings(event: event);
+                              },
                             ),
                           );
                           loadData();
                         },
                       ),
+                      const SizedBox(width: 10),
+                      _floatingButton(
+                        icon: Icons.edit_rounded,
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) {
+                                return CreateEvent(event: event);
+                              },
+                            ),
+                          );
+                          loadData();
+                        },
+                      ),
+                      const SizedBox(width: 14),
                     ],
+                    flexibleSpace: FlexibleSpaceBar(
+                      stretchModes: const [
+                        StretchMode.zoomBackground,
+                        StretchMode.blurBackground,
+                      ],
+                      background: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // Event thumbnail
+                          CachedNetworkImage(
+                            imageUrl: event?.eventThumbnail ?? "",
+                            fit: BoxFit.cover,
+                            filterQuality: FilterQuality.high,
+                            placeholder:
+                                (context, url) => Shimmer.fromColors(
+                                  baseColor: scaback,
+                                  highlightColor: const Color(0xFF16213e),
+                                  child: Container(color: scaback),
+                                ),
+                            errorWidget:
+                                (context, url, error) => Container(
+                                  color: scaback,
+                                  child: Icon(
+                                    Clarity.image_line,
+                                    color: Colors.white.withOpacity(0.2),
+                                    size: 64,
+                                  ),
+                                ),
+                          ),
+
+                          // Multi-stop gradient fade
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                stops: const [0.0, 0.35, 0.6, 0.8, 1.0],
+                                colors: [
+                                  Colors.black.withOpacity(0.25),
+                                  Colors.transparent,
+                                  Colors.transparent,
+                                  scaback.withOpacity(0.75),
+                                  scaback,
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // Event title + details overlay
+                          Positioned(
+                            left: 24,
+                            right: 24,
+                            bottom: 0,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  event?.title ?? "",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.8,
+                                    height: 1.15,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (_formattedDate().isNotEmpty ||
+                                    (event?.location ?? "").isNotEmpty) ...[
+                                  const SizedBox(height: 10),
+                                  if (_formattedDate().isNotEmpty)
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.calendar_today_rounded,
+                                          color: Colors.white.withOpacity(0.6),
+                                          size: 14,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          _formattedDate(),
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(
+                                              0.6,
+                                            ),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  if ((event?.location ?? "").isNotEmpty) ...[
+                                    const SizedBox(height: 5),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.location_on_outlined,
+                                          color: Colors.white.withOpacity(0.6),
+                                          size: 14,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            event!.location!,
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(
+                                                0.6,
+                                              ),
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                                const SizedBox(height: 4),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // ── Admin tool sections ────────────────
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 28, 18, 40),
+                      child: Column(
+                        children: [
+                          // ─ Invitations & Scanning ──────
+                          _buildSectionCard(
+                            title: "Mialiko ya Digital",
+                            rows: [
+                              _buildActionRow(
+                                icon: Clarity.email_line,
+                                iconGradient: const [
+                                  Color(0xFF6366F1),
+                                  Color(0xFF818CF8),
+                                ],
+                                title: "Kadi Zote",
+                                count: "$invsCount",
+                                onTap: () async {
+                                  try {
+                                    await Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) {
+                                          return Attendees(
+                                            edata: event!,
+                                            kardType: KardType.invitation,
+                                          );
+                                        },
+                                      ),
+                                    );
+                                    loadData();
+                                  } catch (e) {
+                                    showToast(isGood: false, msg: e.toString());
+                                  }
+                                },
+                              ),
+                              _buildActionRow(
+                                icon: Clarity.qr_code_line,
+                                iconGradient: const [
+                                  Color(0xFF8B5CF6),
+                                  Color(0xFFA78BFA),
+                                ],
+                                title: "Skani Kadi",
+                                count: "$invsCount",
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) =>
+                                              CheckPoints(edata: widget.eventO),
+                                    ),
+                                  );
+                                },
+                                isLast: true,
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // ─ Contributions & Budget ──────
+                          _buildSectionCard(
+                            title: "Michango & Bajeti",
+                            rows: [
+                              _buildActionRow(
+                                icon: Icons.monetization_on_outlined,
+                                iconGradient: const [
+                                  Color(0xFF10B981),
+                                  Color(0xFF34D399),
+                                ],
+                                title: "Michango",
+                                count: "$contsCount",
+                                onTap: () async {
+                                  try {
+                                    await Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => Attendees(
+                                              edata: event!,
+                                              title: "Ratibu Michango",
+                                              kardType: KardType.contribution,
+                                            ),
+                                      ),
+                                    );
+                                    loadData();
+                                  } catch (e) {
+                                    showToast(isGood: false, msg: e.toString());
+                                  }
+                                },
+                              ),
+                              _buildActionRow(
+                                icon: Icons.account_balance_wallet_outlined,
+                                iconGradient: const [
+                                  Color(0xFF059669),
+                                  Color(0xFF10B981),
+                                ],
+                                title: "Bajeti",
+                                count: "",
+                                onTap: () {},
+                                isLast: true,
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // ─ Card & SMS Design ───────────
+                          _buildSectionCard(
+                            title: "Dizaini Kadi & SMS",
+                            rows: [
+                              _buildActionRow(
+                                icon: Icons.style_outlined,
+                                iconGradient: const [
+                                  Color(0xFFF59E0B),
+                                  Color(0xFFFBBF24),
+                                ],
+                                title: "Temp za Kadi",
+                                count: "$cardTempsNo",
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) {
+                                        return Cards(
+                                          eId: widget.eventO.id ?? "",
+                                        );
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildActionRow(
+                                icon: Icons.sms_outlined,
+                                iconGradient: const [
+                                  Color(0xFFEF4444),
+                                  Color(0xFFF87171),
+                                ],
+                                title: "Temp za SMS",
+                                count: "$evMsgTmpCount",
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) {
+                                        return InvEditor(
+                                          eId: widget.eventO.id ?? "",
+                                        );
+                                      },
+                                    ),
+                                  );
+                                },
+                                isLast: true,
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // ─ Admins & Vendors ────────────
+                          _buildSectionCard(
+                            title: "Wasimamizi & Vendors",
+                            rows: [
+                              _buildActionRow(
+                                icon: Icons.storefront_outlined,
+                                iconGradient: const [
+                                  Color(0xFFEC4899),
+                                  Color(0xFFF472B6),
+                                ],
+                                title: "Vendors",
+                                count: "$scannersCount",
+                                onTap: () async {
+                                  showToast(
+                                    isGood: true,
+                                    msg: "Inakuja hivi karibuni",
+                                  );
+                                },
+                              ),
+                              _buildActionRow(
+                                icon: Clarity.users_line,
+                                iconGradient: const [
+                                  Color(0xFF3B82F6),
+                                  Color(0xFF60A5FA),
+                                ],
+                                title: "Wasimamizi",
+                                count: "$adminsCount",
+                                onTap: () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) =>
+                                              Users(eId: event?.id ?? ""),
+                                    ),
+                                  );
+                                  loadData();
+                                },
+                                isLast: true,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
