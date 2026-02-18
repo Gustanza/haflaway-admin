@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/models/attendee.dart';
@@ -5,16 +6,19 @@ import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/event_dash/michango/michango_editor.dart';
 import 'package:haflaway/utils/attstates.dart';
-import 'package:haflaway/utils/colors.dart';
-import 'package:haflaway/utils/constants.dart';
-import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/helpers.dart';
-import 'package:haflaway/utils/styles.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+// ── Warm palette ────────────────────────────────────────────
+const _warmBg = Color(0xFF3A2D20);
+
+// ═══════════════════════════════════════════════════════════
+//  Simplified Apple-style attendee tile
+// ═══════════════════════════════════════════════════════════
 
 Widget buildAttendeeCard({
   required Attendee attendee,
@@ -27,239 +31,144 @@ Widget buildAttendeeCard({
   required Function(String) onStatusChange,
 }) {
   var fullname = attendee.fullName;
-  var attrCrdMap = attendee.cards[kardType.name];
-  AttributeCard? attributeCard;
-  attributeCard =
-      attrCrdMap != null ? AttributeCard.fromMap(map: attrCrdMap) : null;
-  String crdnm =
-      attributeCard != null ? attributeCard.name ?? "Not Set" : "Not Set";
 
-  // Calculate message count if messages property exists
-  int messageCount = 0;
-  messageCount = (attendee.messageIndexes)?.length ?? 0;
+  // Derive initials for avatar
+  final initials =
+      fullname
+          .split(' ')
+          .where((w) => w.isNotEmpty)
+          .take(2)
+          .map((w) => w[0].toUpperCase())
+          .join();
 
-  // stful builder
+  // Warm avatar colors based on name hash
+  final hue = (fullname.hashCode % 360).abs().toDouble();
+  final avatarColor = HSLColor.fromAHSL(1, hue, 0.45, 0.55).toColor();
+
+  int messageCount = (attendee.messageIndexes)?.length ?? 0;
+
   return StatefulBuilder(
     builder: (context, setState) {
       return GestureDetector(
         onLongPress: onSelected,
-        child: Container(
-          margin: EdgeInsets.only(bottom: psm * 0.5),
+        onTap:
+            () => _showDetailPopup(
+              context: context,
+              attendee: attendee,
+              kardType: kardType,
+              campaignId: campaignId,
+              eventId: eventId,
+              onEdit: onEdit,
+              onStatusChange: onStatusChange,
+            ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            gradient: lqassgrad,
+            color:
+                hasKey
+                    ? Colors.redAccent.withValues(alpha: 0.18)
+                    : _warmBg.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(28),
             border:
-                !hasKey
-                    ? lqassbdr
-                    : Border.all(color: Colors.redAccent, width: bdrWidthGen),
-            borderRadius: BorderRadius.circular(12),
+                hasKey
+                    ? Border.all(
+                      color: Colors.redAccent.withValues(alpha: 0.5),
+                      width: 1.2,
+                    )
+                    : null,
           ),
-          child: Padding(
-            padding: EdgeInsets.all(psm * 0.625),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top row: Avatar, Name, Actions
-                Row(
-                  children: [
-                    // Avatar with message badge
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Hero(
-                          tag: "avatar-${attendee.id}",
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.25),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.account_circle,
-                              size: 24,
-                              color: Colors.white.withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ),
-                        if (messageCount > 0)
-                          Positioned(
-                            top: -2,
-                            right: -2,
-                            child: Container(
-                              padding: EdgeInsets.all(messageCount > 9 ? 3 : 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 1.5,
-                                ),
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 14,
-                                minHeight: 14,
-                              ),
-                              child: Text(
-                                messageCount > 99 ? "99+" : "$messageCount",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
+          child: Row(
+            children: [
+              // ── Avatar ──
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: avatarColor.withValues(alpha: 0.3),
+                      shape: BoxShape.circle,
                     ),
-                    SizedBox(width: psm * 0.5),
-                    // Name and info
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            fullname,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: fsm + 1,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: psm * 0.25),
-                          // Card name and phone in compact row
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.event,
-                                size: 12,
-                                color: Colors.white.withValues(alpha: 0.7),
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                crdnm,
-                                style: TextStyle(
-                                  fontSize: fsm - 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                ),
-                                maxLines: 1,
-                              ),
-                              SizedBox(width: psm),
-                              Icon(
-                                Clarity.mobile_phone_line,
-                                size: 12,
-                                color: Colors.white.withValues(alpha: 0.7),
-                              ),
-                              SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  attendee.phone,
-                                  style: TextStyle(
-                                    fontSize: fsm - 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    color: Colors.white.withValues(alpha: 0.85),
-                                  ),
-                                  maxLines: 1,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: psm * 0.375),
-                          // Delivery status indicators - SMS & WhatsApp
-                          _buildDeliveryStatusIndicators(
-                            attendee,
-                            kardType,
-                            campaignId,
-                          ),
-                        ],
+                    child: Center(
+                      child: Text(
+                        initials,
+                        style: TextStyle(
+                          color: avatarColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
-                    // Action buttons - compact
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // View card button
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              var vcrd = attendee.cards[kardType.name];
-                              if (vcrd != null) {
-                                AttributeCard attrCrd = AttributeCard.fromMap(
-                                  map: vcrd,
-                                );
-                                try {
-                                  launchUrl(Uri.parse(attrCrd.url ?? ""));
-                                } catch (e) {
-                                  showToast(isGood: false, msg: "$e");
-                                }
-                              } else {
-                                showToast(isGood: false, msg: "Unable to View");
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(6),
-                            child: Padding(
-                              padding: EdgeInsets.all(6),
-                              child: Icon(
-                                Clarity.eye_show_line,
-                                size: icnsm + 2,
-                                color: Colors.white.withValues(alpha: 0.8),
-                              ),
-                            ),
+                  ),
+                  if (messageCount > 0)
+                    Positioned(
+                      top: -3,
+                      right: -3,
+                      child: Container(
+                        padding: EdgeInsets.all(messageCount > 9 ? 3 : 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: _warmBg, width: 2),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          messageCount > 99 ? "99+" : "$messageCount",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                            height: 1,
                           ),
                         ),
-                        // Call button
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () => callNumber(attendee.phone),
-                            borderRadius: BorderRadius.circular(6),
-                            child: Padding(
-                              padding: EdgeInsets.all(6),
-                              child: Icon(
-                                Icons.call,
-                                size: icnsm + 2,
-                                color: Colors.white.withValues(alpha: 0.8),
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Edit button
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: onEdit,
-                            borderRadius: BorderRadius.circular(6),
-                            child: Padding(
-                              padding: EdgeInsets.all(6),
-                              child: Icon(
-                                Icons.edit,
-                                size: icnsm + 2,
-                                color: Colors.white.withValues(alpha: 0.8),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 14),
+              // ── Name + Phone ──
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      fullname,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.white,
+                        letterSpacing: 0.1,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      attendee.phone,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontStyle: FontStyle.italic,
+                        letterSpacing: 0.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-                SizedBox(height: psm * 0.5),
-                // Attendance controls - compact
-                if (kardType == KardType.invitation)
-                  _buildAttendanceControls(attendee, eventId, onStatusChange),
-                if (kardType == KardType.contribution)
-                  buildMichangoDisplay(
-                    context,
-                    attendee,
-                    eventId,
-                    onStatusChange,
-                  ),
-              ],
-            ),
+              ),
+              // ── Attendance dot indicator ──
+              if (kardType == KardType.invitation)
+                _buildStatusDot(attendee.attendanceStatus),
+            ],
           ),
         ),
       );
@@ -267,13 +176,364 @@ Widget buildAttendeeCard({
   );
 }
 
+// ── Tiny colored dot showing attendance status ──
+Widget _buildStatusDot(String? status) {
+  Color dotColor;
+  switch (status) {
+    case atconfstate:
+      dotColor = Colors.green;
+      break;
+    case atdeclstate:
+      dotColor = Colors.red;
+      break;
+    case atcallstate:
+      dotColor = Colors.teal;
+      break;
+    case atunreachablestate:
+      dotColor = Colors.orange;
+      break;
+    default:
+      dotColor = Colors.grey;
+  }
+  return Container(
+    width: 10,
+    height: 10,
+    margin: const EdgeInsets.only(left: 8),
+    decoration: BoxDecoration(
+      color: dotColor,
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(
+          color: dotColor.withValues(alpha: 0.5),
+          blurRadius: 6,
+          spreadRadius: 1,
+        ),
+      ],
+    ),
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Detail popup — shows everything on tap
+// ═══════════════════════════════════════════════════════════
+
+void _showDetailPopup({
+  required BuildContext context,
+  required Attendee attendee,
+  required KardType kardType,
+  required String campaignId,
+  required String eventId,
+  required Function() onEdit,
+  required Function(String) onStatusChange,
+}) {
+  var attrCrdMap = attendee.cards[kardType.name];
+  AttributeCard? attributeCard;
+  attributeCard =
+      attrCrdMap != null ? AttributeCard.fromMap(map: attrCrdMap) : null;
+  String crdnm =
+      attributeCard != null ? attributeCard.name ?? "Not Set" : "Not Set";
+
+  final fullname = attendee.fullName;
+  final hue = (fullname.hashCode % 360).abs().toDouble();
+  final avatarColor = HSLColor.fromAHSL(1, hue, 0.45, 0.55).toColor();
+  final initials =
+      fullname
+          .split(' ')
+          .where((w) => w.isNotEmpty)
+          .take(2)
+          .map((w) => w[0].toUpperCase())
+          .join();
+
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (ctx, popupSetState) {
+          return Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.72,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1810),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).padding.bottom + 20,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // ── Handle bar ──
+                      Container(
+                        margin: const EdgeInsets.only(top: 12, bottom: 20),
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+
+                      // ── Avatar + Name header ──
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: avatarColor.withValues(alpha: 0.25),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: avatarColor.withValues(alpha: 0.4),
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            initials,
+                            style: TextStyle(
+                              color: avatarColor,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 26,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        fullname,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        attendee.phone,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      // ── Card type badge ──
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _warmBg.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          crdnm,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // ── Quick action buttons ──
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildPopupAction(
+                              icon: Icons.call,
+                              label: "Piga",
+                              color: Colors.green,
+                              onTap: () => callNumber(attendee.phone),
+                            ),
+                            _buildPopupAction(
+                              icon: Clarity.eye_show_line,
+                              label: "Kadi",
+                              color: Colors.blueAccent,
+                              onTap: () {
+                                var vcrd = attendee.cards[kardType.name];
+                                if (vcrd != null) {
+                                  AttributeCard attrCrd = AttributeCard.fromMap(
+                                    map: vcrd,
+                                  );
+                                  try {
+                                    launchUrl(Uri.parse(attrCrd.url ?? ""));
+                                  } catch (e) {
+                                    showToast(isGood: false, msg: "$e");
+                                  }
+                                } else {
+                                  showToast(
+                                    isGood: false,
+                                    msg: "Unable to View",
+                                  );
+                                }
+                              },
+                            ),
+                            _buildPopupAction(
+                              icon: Icons.edit,
+                              label: "Hariri",
+                              color: Colors.orangeAccent,
+                              onTap: () {
+                                Navigator.of(ctx).pop();
+                                onEdit();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // ── Delivery status section ──
+                      _buildPopupSection(
+                        title: "Hali ya Ujumbe",
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: _buildDeliveryStatusIndicators(
+                            attendee,
+                            kardType,
+                            campaignId,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // ── Attendance controls — for invitations ──
+                      if (kardType == KardType.invitation)
+                        _buildPopupSection(
+                          title: "Hali ya Mahudhurio",
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: _buildAttendanceControls(attendee, eventId, (
+                              status,
+                            ) {
+                              onStatusChange(status);
+                              popupSetState(() {});
+                            }),
+                          ),
+                        ),
+
+                      // ── Michango display — for contributions ──
+                      if (kardType == KardType.contribution)
+                        _buildPopupSection(
+                          title: "Taarifa za Mchango",
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: buildMichangoDisplay(
+                              context,
+                              attendee,
+                              eventId,
+                              onStatusChange,
+                            ),
+                          ),
+                        ),
+
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+// ── Popup circular action button ──
+Widget _buildPopupAction({
+  required IconData icon,
+  required String label,
+  required Color color,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+          ),
+          child: Icon(icon, color: color, size: 22),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.6),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// ── Section header inside popup ──
+Widget _buildPopupSection({required String title, required Widget child}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(left: 28, bottom: 10),
+        child: Text(
+          title.toUpperCase(),
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.35),
+            letterSpacing: 1.2,
+          ),
+        ),
+      ),
+      child,
+    ],
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Existing logic widgets (unchanged functionality)
+// ═══════════════════════════════════════════════════════════
+
 Widget buildMichangoDisplay(context, attendee, eventId, onStatusChange) {
   return Container(
     width: double.maxFinite,
-    padding: EdgeInsets.all(spaceTiles),
+    padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
-      borderRadius: BorderRadius.circular(bsm),
+      color: _warmBg.withValues(alpha: 0.5),
+      borderRadius: BorderRadius.circular(16),
     ),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -283,14 +543,14 @@ Widget buildMichangoDisplay(context, attendee, eventId, onStatusChange) {
           children: [
             Text(
               "Ahadi: Tsh ${attendee.pledgedAmount}",
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontStyle: FontStyle.italic,
               ),
             ),
             Text(
               "Mchango: Tsh ${attendee.paidAmount}",
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontStyle: FontStyle.italic,
               ),
@@ -298,8 +558,8 @@ Widget buildMichangoDisplay(context, attendee, eventId, onStatusChange) {
           ],
         ),
         TextButton.icon(
-          icon: Icon(Icons.edit),
-          label: Text("Edit"),
+          icon: const Icon(Icons.edit),
+          label: const Text("Edit"),
           onPressed: () async {
             await Navigator.of(context).push(
               MaterialPageRoute(
@@ -337,14 +597,12 @@ Widget _buildDeliveryStatusIndicators(
   } catch (e) {}
   return Row(
     children: [
-      // SMS Status Indicator
       _buildStatusChip(
         label: "SMS",
         status: smsStatus,
         brandData: Brands.wechat,
       ),
-      SizedBox(width: psm * 0.5),
-      // WhatsApp Status Indicator
+      const SizedBox(width: 10),
       _buildStatusChip(
         label: "WhatsApp",
         status: whatsappStatus,
@@ -354,13 +612,11 @@ Widget _buildDeliveryStatusIndicators(
   );
 }
 
-// Build individual status chip
 Widget _buildStatusChip({
   required String label,
   required String status,
   required String brandData,
 }) {
-  // Determine status color and styling based on status text
   Color statusColor;
   Color backgroundColor;
 
@@ -369,7 +625,6 @@ Widget _buildStatusChip({
     case "read":
       statusColor = Colors.greenAccent;
       backgroundColor = Colors.green.withValues(alpha: 0.2);
-
       break;
     case "sent":
       statusColor = Colors.lightBlueAccent;
@@ -391,7 +646,7 @@ Widget _buildStatusChip({
   }
   return Expanded(
     child: Container(
-      padding: EdgeInsets.symmetric(horizontal: 0, vertical: psm * 0.1),
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(60),
@@ -402,7 +657,7 @@ Widget _buildStatusChip({
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Brand(brandData, size: 14),
-          SizedBox(width: 5),
+          const SizedBox(width: 5),
           Text(
             status.toUpperCase(),
             style: TextStyle(
@@ -420,21 +675,16 @@ Widget _buildStatusChip({
   );
 }
 
-// Build attendance controls
 Widget _buildAttendanceControls(
   Attendee attendee,
   String eventId,
   Function(String) onStatusChange,
 ) {
   return Container(
-    padding: EdgeInsets.symmetric(
-      horizontal: spaceTiles,
-      vertical: psm * 0.375,
-    ),
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+      color: _warmBg.withValues(alpha: 0.5),
+      borderRadius: BorderRadius.circular(16),
     ),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -490,7 +740,6 @@ Widget _buildAttendanceControls(
   );
 }
 
-// Build status button
 Widget _buildStatusButton(
   String eventId,
   Attendee attendee,
@@ -505,13 +754,13 @@ Widget _buildStatusButton(
       onTap: () {
         _updateAttendanceStatus(attendee, status, eventId, onStatusChange);
       },
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: psm * 0.375),
-        margin: EdgeInsets.symmetric(horizontal: 2),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        margin: const EdgeInsets.symmetric(horizontal: 3),
         decoration: BoxDecoration(
           color: isActive ? color : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isActive ? color : color.withValues(alpha: 0.3),
             width: isActive ? 1.5 : 1,
@@ -519,7 +768,7 @@ Widget _buildStatusButton(
         ),
         child: Icon(
           icon,
-          size: 16,
+          size: 18,
           color: isActive ? Colors.white : color.withValues(alpha: 0.7),
         ),
       ),
@@ -534,14 +783,12 @@ Future<void> _updateAttendanceStatus(
   Function(String) onStatusChange,
 ) async {
   try {
-    // Perform the update
     await firestore
         .collection(ecol)
         .doc(eventId)
         .collection(atcol)
         .doc(attendee.id)
         .update({"attendanceStatus": status});
-    // Show success message
     showToast(isGood: true, msg: "Attendance status updated to $status");
     onStatusChange(status);
   } catch (e) {
