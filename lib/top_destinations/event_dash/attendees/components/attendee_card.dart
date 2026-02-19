@@ -61,114 +61,135 @@ Widget buildAttendeeCard({
               onEdit: onEdit,
               onStatusChange: onStatusChange,
             ),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color:
-                hasKey
-                    ? Colors.redAccent.withValues(alpha: 0.18)
-                    : _warmBg.withValues(alpha: 0.55),
-            borderRadius: BorderRadius.circular(28),
-            border:
-                hasKey
-                    ? Border.all(
-                      color: Colors.redAccent.withValues(alpha: 0.5),
-                      width: 1.2,
-                    )
-                    : null,
-          ),
-          child: Row(
-            children: [
-              // ── Avatar ──
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: avatarColor.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        initials,
-                        style: TextStyle(
-                          color: avatarColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors:
+                        hasKey
+                            ? [
+                              Colors.redAccent.withValues(alpha: 0.25),
+                              Colors.redAccent.withValues(alpha: 0.15),
+                            ]
+                            : [
+                              Colors.white.withValues(alpha: 0.08),
+                              Colors.white.withValues(alpha: 0.03),
+                            ],
                   ),
-                  if (messageCount > 0)
-                    Positioned(
-                      top: -3,
-                      right: -3,
-                      child: Container(
-                        padding: EdgeInsets.all(messageCount > 9 ? 3 : 4),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: _warmBg, width: 2),
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          messageCount > 99 ? "99+" : "$messageCount",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                            height: 1,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color:
+                        hasKey
+                            ? Colors.redAccent.withValues(alpha: 0.5)
+                            : Colors.white.withValues(alpha: 0.15),
+                    width: 1.2,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    // ── Avatar ──
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: avatarColor.withValues(alpha: 0.3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              initials,
+                              style: TextStyle(
+                                color: avatarColor,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                           ),
                         ),
+                        if (messageCount > 0)
+                          Positioned(
+                            top: -3,
+                            right: -3,
+                            child: Container(
+                              padding: EdgeInsets.all(messageCount > 9 ? 3 : 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: _warmBg, width: 2),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                messageCount > 99 ? "99+" : "$messageCount",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 14),
+                    // ── Name + Phone ──
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            fullname,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              color: Colors.white,
+                              letterSpacing: 0.1,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            attendee.phone,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withValues(alpha: 0.5),
+                              fontStyle: FontStyle.italic,
+                              letterSpacing: 0.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(width: 14),
-              // ── Name + Phone ──
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      fullname,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Colors.white,
-                        letterSpacing: 0.1,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      attendee.phone,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontStyle: FontStyle.italic,
-                        letterSpacing: 0.2,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    // ── Attendance dot indicator ──
+                    if (kardType == KardType.invitation)
+                      _buildStatusDot(attendee.attendanceStatus),
                   ],
                 ),
               ),
-              // ── Attendance dot indicator ──
-              if (kardType == KardType.invitation)
-                _buildStatusDot(attendee.attendanceStatus),
-            ],
+            ),
           ),
         ),
       );
@@ -256,13 +277,13 @@ void _showDetailPopup({
               maxHeight: MediaQuery.of(context).size.height * 0.72,
             ),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1810),
+              color: const Color(0xFF1E1810).withValues(alpha: 0.6),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(28),
               ),
               border: Border(
                 top: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: Colors.white.withValues(alpha: 0.1),
                   width: 1,
                 ),
               ),
@@ -532,8 +553,9 @@ Widget buildMichangoDisplay(context, attendee, eventId, onStatusChange) {
     width: double.maxFinite,
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: _warmBg.withValues(alpha: 0.5),
+      color: Colors.white.withValues(alpha: 0.05),
       borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1),
     ),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -683,8 +705,9 @@ Widget _buildAttendanceControls(
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
     decoration: BoxDecoration(
-      color: _warmBg.withValues(alpha: 0.5),
+      color: Colors.white.withValues(alpha: 0.05),
       borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1),
     ),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
