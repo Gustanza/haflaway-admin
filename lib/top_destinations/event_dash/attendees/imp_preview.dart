@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/hfhttp/clientelle.dart';
+import 'package:haflaway/models/mchango.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -58,7 +59,7 @@ class _ImpPreviewState extends State<ImpPreview> {
   void initState() {
     super.initState();
     if (widget.xcelFile != null) {
-      prcsXcel();
+      manouverExcel();
     } else {
       setAtList();
     }
@@ -80,7 +81,7 @@ class _ImpPreviewState extends State<ImpPreview> {
     }
   }
 
-  prcsXcel() async {
+  manouverExcel() async {
     try {
       if (mounted) {
         setState(() {
@@ -91,6 +92,8 @@ class _ImpPreviewState extends State<ImpPreview> {
       //
       int atnidx = widget.mapp!['fullName']!;
       int atphnidx = widget.mapp!['phone']!;
+      int? atahadiidx = widget.mapp!['ahadi'];
+      int? atmchangoidx = widget.mapp!['mchango'];
       //
       File? file = widget.xcelFile;
       var bytes = file?.readAsBytesSync();
@@ -107,6 +110,8 @@ class _ImpPreviewState extends State<ImpPreview> {
         }
         var namecell = rows[i][atnidx];
         var phonecell = rows[i][atphnidx];
+        var ahadicell = rows[i][atahadiidx ?? 0];
+        var mchangocell = rows[i][atmchangoidx ?? 0];
         var phoneItself = transformNumber("${phonecell?.value}");
         Attendee attendee = Attendee(
           cards: {},
@@ -115,6 +120,14 @@ class _ImpPreviewState extends State<ImpPreview> {
           email: '',
           phone: phoneItself,
           messages: {},
+          pledgedAmount:
+              widget.kardType == KardType.contribution
+                  ? double.tryParse("${ahadicell?.value}") ?? 0.0
+                  : null,
+          paidAmount:
+              widget.kardType == KardType.contribution
+                  ? double.tryParse("${mchangocell?.value}") ?? 0.0
+                  : null,
           fullName: "${namecell?.value}".toUpperCase(),
         );
         attendees.add(attendee);
@@ -183,15 +196,15 @@ class _ImpPreviewState extends State<ImpPreview> {
     );
   }
 
-  bady() {
+  Widget bady() {
     if (isLoading) {
       return buildLoader();
     }
     if (hasError) {
-      return buildErr()();
+      return buildErr();
     }
     if (attendees.isEmpty) {
-      BuildNoDt(string: "no data");
+      return BuildNoDt(string: "no data");
     }
     return buildAtList(atList: attendees);
   }
@@ -238,9 +251,25 @@ class _ImpPreviewState extends State<ImpPreview> {
                     ),
                   ),
                   title: Text(fullname),
-                  subtitle: Text(
-                    atList[index].phone,
-                    style: const TextStyle(fontSize: fsm - 2),
+                  subtitle: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        atList[index].phone,
+                        style: const TextStyle(fontSize: fsm - 2),
+                      ),
+                      if (widget.kardType == KardType.contribution)
+                        Text(
+                          "Ahadi: ${atList[index].pledgedAmount}",
+                          style: const TextStyle(fontSize: fsm - 2),
+                        ),
+                      if (widget.kardType == KardType.contribution)
+                        Text(
+                          "Mchango: ${atList[index].paidAmount}",
+                          style: const TextStyle(fontSize: fsm - 2),
+                        ),
+                    ],
                   ),
                   trailing: IconButton(
                     onPressed: () {
@@ -298,6 +327,7 @@ class _ImpPreviewState extends State<ImpPreview> {
           showToast(isGood: false, msg: "$message");
         } else {
           message = body['message'] ?? "Success";
+          setMchango(amount: attendee.paidAmount, atId: atRef.id);
           showToast(isGood: true, msg: "$message");
           safeState(() {
             try {
@@ -318,6 +348,28 @@ class _ImpPreviewState extends State<ImpPreview> {
     safeState(() {
       isWritting = false;
     });
+  }
+
+  setMchango({amount, atId}) {
+    Mchango mchango = Mchango(
+      amount: amount ?? 0,
+      createdAt: DateTime.now().toIso8601String(),
+    );
+    CollectionReference<Map<String, dynamic>> mchColRef = firestore
+        .collection(ecol)
+        .doc(widget.event.id)
+        .collection(atcol)
+        .doc(atId)
+        .collection(atPaySub);
+
+    var mchId = mchColRef.doc().id;
+
+    mchColRef
+        .doc(mchId)
+        .set(mchango.toMap(), SetOptions(merge: true))
+        .catchError((onError) {
+          showToast(isGood: false, msg: "${onError}");
+        });
   }
 
   safeState(runnable) {

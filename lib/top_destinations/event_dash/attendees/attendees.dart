@@ -4,7 +4,6 @@ import 'package:excel/excel.dart' as exl;
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-
 import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/custom_popup_btn.dart';
 import 'package:haflaway/components/sheets.dart';
@@ -57,6 +56,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   TextEditingController impname = TextEditingController();
   TextEditingController impphone = TextEditingController();
   TextEditingController impcard = TextEditingController();
+  TextEditingController impahadi = TextEditingController();
+  TextEditingController impmchango = TextEditingController();
   FirebaseStorage storage = FirebaseStorage.instance;
   TextEditingController scont = TextEditingController();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -1447,6 +1448,41 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
+                // Ahadi & Michango Stuff
+                if (widget.kardType == KardType.contribution)
+                  Padding(
+                    padding: const EdgeInsets.all(psm),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Ahadi",
+                          style: TextStyle(
+                            fontSize: fsm + 2,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        buildDrop(sels, impahadi),
+                      ],
+                    ),
+                  ),
+                if (widget.kardType == KardType.contribution)
+                  Padding(
+                    padding: const EdgeInsets.all(psm),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Mchango",
+                          style: TextStyle(
+                            fontSize: fsm + 2,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        buildDrop(sels, impmchango),
+                      ],
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(psm),
                   child: Row(
@@ -1472,6 +1508,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       Map<String, dynamic> mapp = {
                         'fullName': int.parse(impname.text),
                         'phone': int.parse(impphone.text),
+                        if (widget.kardType == KardType.contribution)
+                          'ahadi': int.parse(impahadi.text),
+                        if (widget.kardType == KardType.contribution)
+                          'mchango': int.parse(impmchango.text),
                       };
                       var carddata = lcrds.firstWhere((lcrd) {
                         return lcrd.id == impcard.text;
