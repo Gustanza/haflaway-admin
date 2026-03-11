@@ -152,27 +152,24 @@ class _ImpPreviewState extends State<ImpPreview> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: scaback,
-      appBar: appBar(
-        title: 'Import Previewer',
-        leading: appBarActionButton(
-          icon: Icons.arrow_back,
-          onTap: () {
-            Navigator.of(context).pop();
-          },
-        ),
-        actions:
-            !isWritting
-                ? appBarActionButton(
-                  icon: Clarity.import_solid,
-                  onTap: () {
-                    if (attendees.isNotEmpty) {
-                      crtEm();
-                    } else {
-                      showToast(isGood: false, msg: "Nothing to import");
-                    }
-                  },
-                )
-                : CupertinoActivityIndicator(),
+      appBar: uppBar(
+        title: "Kihakiki cha Kupakia Data",
+        leading: gsUppBack(context: context),
+        actions: <Widget>[
+          !isWritting
+              ? gsFloatingButton(
+                icon: Clarity.import_solid,
+                onTap: () {
+                  if (attendees.isNotEmpty) {
+                    crtEm();
+                  } else {
+                    showToast(isGood: false, msg: "Nothing to import");
+                  }
+                },
+              )
+              : Text("Inapakia..."),
+          SizedBox(width: psm),
+        ],
       ),
 
       body: FutureBuilder(
@@ -230,7 +227,9 @@ class _ImpPreviewState extends State<ImpPreview> {
               ),
             ),
             ...List.generate(atList.length, (index) {
-              var fullname = atList[index].fullName;
+              var attendee = atList[index];
+              var fullname = attendee.fullName;
+              // nicer card-like row with aligned columns
               return Container(
                 margin: EdgeInsets.only(bottom: psm * 0.5),
                 decoration: BoxDecoration(
@@ -238,48 +237,217 @@ class _ImpPreviewState extends State<ImpPreview> {
                   borderRadius: BorderRadius.circular(bsm),
                   border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: psm * 0.7,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: psm * 0.8,
+                    vertical: psm * 0.6,
                   ),
-
-                  leading: CircleAvatar(
-                    backgroundColor: lqassgradBaseColor,
-                    child: Text(
-                      "${index + 1}",
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  title: Text(fullname),
-                  subtitle: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Stack(
                     children: [
-                      Text(
-                        atList[index].phone,
-                        style: const TextStyle(fontSize: fsm - 2),
+                      // main horizontal content
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // compact index pill with subtle shadow
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: lqassgradBaseColor,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                "${index + 1}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: psm * 0.6),
+                          // main details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // name (single line)
+                                Text(
+                                  fullname,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: fsm + 0.6,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(height: psm * 0.25),
+                                // phone (own line, muted)
+                                Text(
+                                  attendee.phone,
+                                  style: TextStyle(
+                                    fontSize: fsm - 2,
+                                    color: Colors.white.withOpacity(0.85),
+                                  ),
+                                ),
+                                SizedBox(height: psm * 0.5),
+                                // amounts: separate lines with subtle label + value layout
+                                if (widget.kardType == KardType.contribution)
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          // small label box
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: psm * 0.45,
+                                              vertical: psm * 0.18,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(
+                                                0.04,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(bsm),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.favorite,
+                                                  size: 12,
+                                                  color: Colors.white70,
+                                                ),
+                                                SizedBox(width: psm * 0.35),
+                                                Text(
+                                                  'Ahadi',
+                                                  style: TextStyle(
+                                                    fontSize: fsm - 4,
+                                                    color: Colors.white70,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          SizedBox(width: psm * 0.5),
+                                          // value
+                                          Expanded(
+                                            child: Text(
+                                              (attendee.pledgedAmount ?? 0) == 0
+                                                  ? '-'
+                                                  : formatMoney(
+                                                    currency: "TZS",
+                                                    attendee.pledgedAmount,
+                                                    decimals: 0,
+                                                  ),
+                                              textAlign: TextAlign.right,
+                                              style: TextStyle(
+                                                fontSize: fsm - 3,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: psm * 0.35),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: psm * 0.45,
+                                              vertical: psm * 0.18,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(
+                                                0.02,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(bsm),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.payments,
+                                                  size: 12,
+                                                  color: Colors.white70,
+                                                ),
+                                                SizedBox(width: psm * 0.35),
+                                                Text(
+                                                  'Mchango',
+                                                  style: TextStyle(
+                                                    fontSize: fsm - 4,
+                                                    color: Colors.white70,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          SizedBox(width: psm * 0.5),
+                                          Expanded(
+                                            child: Text(
+                                              (attendee.paidAmount ?? 0) == 0
+                                                  ? '-'
+                                                  : formatMoney(
+                                                    currency: "TZS",
+                                                    attendee.paidAmount,
+                                                    decimals: 0,
+                                                  ),
+                                              textAlign: TextAlign.right,
+                                              style: TextStyle(
+                                                fontSize: fsm - 3,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      if (widget.kardType == KardType.contribution)
-                        Text(
-                          "Ahadi: ${atList[index].pledgedAmount}",
-                          style: const TextStyle(fontSize: fsm - 2),
+                      // delete button overlayed top-right so it doesn't consume layout width
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                          iconSize: 18,
+                          onPressed: () {
+                            if (mounted) {
+                              setState(() {
+                                attendees.removeAt(index);
+                              });
+                            }
+                          },
+                          icon: const Icon(Clarity.close_line),
+                          color: Colors.white,
                         ),
-                      if (widget.kardType == KardType.contribution)
-                        Text(
-                          "Mchango: ${atList[index].paidAmount}",
-                          style: const TextStyle(fontSize: fsm - 2),
-                        ),
+                      ),
                     ],
-                  ),
-                  trailing: IconButton(
-                    onPressed: () {
-                      if (mounted) {
-                        setState(() {
-                          attendees.removeAt(index);
-                        });
-                      }
-                    },
-                    icon: const Icon(Clarity.close_line),
                   ),
                 ),
               );

@@ -20,7 +20,7 @@ void main(List<String> args) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('sw', null);
 
-  // if (kDebugMode)   {
+  // if (kDebugMode) {
   //   try {
   //     // FirebaseStorage storage = FirebaseStorage.instance;
   //     FirebaseFirestore firestore = FirebaseFirestore.instance;

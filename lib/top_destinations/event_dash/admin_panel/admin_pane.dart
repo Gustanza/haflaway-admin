@@ -11,6 +11,7 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/inde
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/settings/event_settings.dart';
 import 'package:haflaway/top_destinations/event_dash/cards/cards.dart';
+import 'package:haflaway/top_destinations/event_dash/michango/michango_dash.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalwids.dart';
@@ -657,13 +658,21 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                                 count: "$contsCount",
                                 onTap: () async {
                                   try {
+                                    // await Navigator.of(context).push(
+                                    //   MaterialPageRoute(
+                                    //     builder:
+                                    //         (context) => Attendees(
+                                    //           edata: event!,
+                                    //           title: "Ratibu Michango",
+                                    //           kardType: KardType.contribution,
+                                    //         ),
+                                    //   ),
+                                    // );
                                     await Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder:
-                                            (context) => Attendees(
-                                              edata: event!,
-                                              title: "Ratibu Michango",
-                                              kardType: KardType.contribution,
+                                            (context) => MichangoDashboard(
+                                              eventId: event?.id ?? "",
                                             ),
                                       ),
                                     );
