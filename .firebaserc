@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "haflaway-f14aa"
-  }
+  },
+  "targets": {
+    "haflaway-f14aa": {
+      "hosting": {
+        "haflaway-admin": [
+          "haflaway-admin"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
