@@ -658,24 +658,24 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                                 count: "$contsCount",
                                 onTap: () async {
                                   try {
-                                    // await Navigator.of(context).push(
-                                    //   MaterialPageRoute(
-                                    //     builder:
-                                    //         (context) => Attendees(
-                                    //           edata: event!,
-                                    //           title: "Ratibu Michango",
-                                    //           kardType: KardType.contribution,
-                                    //         ),
-                                    //   ),
-                                    // );
                                     await Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder:
-                                            (context) => MichangoDashboard(
-                                              eventId: event?.id ?? "",
+                                            (context) => Attendees(
+                                              edata: event!,
+                                              title: "Ratibu Michango",
+                                              kardType: KardType.contribution,
                                             ),
                                       ),
                                     );
+                                    // await Navigator.of(context).push(
+                                    //   MaterialPageRoute(
+                                    //     builder:
+                                    //         (context) => MichangoDashboard(
+                                    //           eventId: event?.id ?? "",
+                                    //         ),
+                                    //   ),
+                                    // );
                                     loadData();
                                   } catch (e) {
                                     showToast(isGood: false, msg: e.toString());
