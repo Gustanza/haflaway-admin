@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/hfhttp/clientelle.dart';
+import 'package:haflaway/models/mchango.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -58,7 +59,7 @@ class _ImpPreviewState extends State<ImpPreview> {
   void initState() {
     super.initState();
     if (widget.xcelFile != null) {
-      prcsXcel();
+      manouverExcel();
     } else {
       setAtList();
     }
@@ -80,7 +81,7 @@ class _ImpPreviewState extends State<ImpPreview> {
     }
   }
 
-  prcsXcel() async {
+  manouverExcel() async {
     try {
       if (mounted) {
         setState(() {
@@ -91,6 +92,8 @@ class _ImpPreviewState extends State<ImpPreview> {
       //
       int atnidx = widget.mapp!['fullName']!;
       int atphnidx = widget.mapp!['phone']!;
+      int? atahadiidx = widget.mapp!['ahadi'];
+      int? atmchangoidx = widget.mapp!['mchango'];
       //
       File? file = widget.xcelFile;
       var bytes = file?.readAsBytesSync();
@@ -107,6 +110,8 @@ class _ImpPreviewState extends State<ImpPreview> {
         }
         var namecell = rows[i][atnidx];
         var phonecell = rows[i][atphnidx];
+        var ahadicell = rows[i][atahadiidx ?? 0];
+        var mchangocell = rows[i][atmchangoidx ?? 0];
         var phoneItself = transformNumber("${phonecell?.value}");
         Attendee attendee = Attendee(
           cards: {},
@@ -115,6 +120,14 @@ class _ImpPreviewState extends State<ImpPreview> {
           email: '',
           phone: phoneItself,
           messages: {},
+          pledgedAmount:
+              widget.kardType == KardType.contribution
+                  ? double.tryParse("${ahadicell?.value}") ?? 0.0
+                  : null,
+          paidAmount:
+              widget.kardType == KardType.contribution
+                  ? double.tryParse("${mchangocell?.value}") ?? 0.0
+                  : null,
           fullName: "${namecell?.value}".toUpperCase(),
         );
         attendees.add(attendee);
@@ -139,27 +152,24 @@ class _ImpPreviewState extends State<ImpPreview> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: scaback,
-      appBar: appBar(
-        title: 'Import Previewer',
-        leading: appBarActionButton(
-          icon: Icons.arrow_back,
-          onTap: () {
-            Navigator.of(context).pop();
-          },
-        ),
-        actions:
-            !isWritting
-                ? appBarActionButton(
-                  icon: Clarity.import_solid,
-                  onTap: () {
-                    if (attendees.isNotEmpty) {
-                      crtEm();
-                    } else {
-                      showToast(isGood: false, msg: "Nothing to import");
-                    }
-                  },
-                )
-                : CupertinoActivityIndicator(),
+      appBar: uppBar(
+        title: "Kihakiki cha Kupakia Data",
+        leading: gsUppBack(context: context),
+        actions: <Widget>[
+          !isWritting
+              ? gsFloatingButton(
+                icon: Clarity.import_solid,
+                onTap: () {
+                  if (attendees.isNotEmpty) {
+                    crtEm();
+                  } else {
+                    showToast(isGood: false, msg: "Nothing to import");
+                  }
+                },
+              )
+              : Text("Inapakia..."),
+          SizedBox(width: psm),
+        ],
       ),
 
       body: FutureBuilder(
@@ -183,15 +193,15 @@ class _ImpPreviewState extends State<ImpPreview> {
     );
   }
 
-  bady() {
+  Widget bady() {
     if (isLoading) {
       return buildLoader();
     }
     if (hasError) {
-      return buildErr()();
+      return buildErr();
     }
     if (attendees.isEmpty) {
-      BuildNoDt(string: "no data");
+      return BuildNoDt(string: "no data");
     }
     return buildAtList(atList: attendees);
   }
@@ -217,7 +227,9 @@ class _ImpPreviewState extends State<ImpPreview> {
               ),
             ),
             ...List.generate(atList.length, (index) {
-              var fullname = atList[index].fullName;
+              var attendee = atList[index];
+              var fullname = attendee.fullName;
+              // nicer card-like row with aligned columns
               return Container(
                 margin: EdgeInsets.only(bottom: psm * 0.5),
                 decoration: BoxDecoration(
@@ -225,32 +237,217 @@ class _ImpPreviewState extends State<ImpPreview> {
                   borderRadius: BorderRadius.circular(bsm),
                   border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: psm * 0.7,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: psm * 0.8,
+                    vertical: psm * 0.6,
                   ),
-
-                  leading: CircleAvatar(
-                    backgroundColor: lqassgradBaseColor,
-                    child: Text(
-                      "${index + 1}",
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  title: Text(fullname),
-                  subtitle: Text(
-                    atList[index].phone,
-                    style: const TextStyle(fontSize: fsm - 2),
-                  ),
-                  trailing: IconButton(
-                    onPressed: () {
-                      if (mounted) {
-                        setState(() {
-                          attendees.removeAt(index);
-                        });
-                      }
-                    },
-                    icon: const Icon(Clarity.close_line),
+                  child: Stack(
+                    children: [
+                      // main horizontal content
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // compact index pill with subtle shadow
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: lqassgradBaseColor,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                "${index + 1}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: psm * 0.6),
+                          // main details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // name (single line)
+                                Text(
+                                  fullname,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: fsm + 0.6,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(height: psm * 0.25),
+                                // phone (own line, muted)
+                                Text(
+                                  attendee.phone,
+                                  style: TextStyle(
+                                    fontSize: fsm - 2,
+                                    color: Colors.white.withOpacity(0.85),
+                                  ),
+                                ),
+                                SizedBox(height: psm * 0.5),
+                                // amounts: separate lines with subtle label + value layout
+                                if (widget.kardType == KardType.contribution)
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          // small label box
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: psm * 0.45,
+                                              vertical: psm * 0.18,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(
+                                                0.04,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(bsm),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.favorite,
+                                                  size: 12,
+                                                  color: Colors.white70,
+                                                ),
+                                                SizedBox(width: psm * 0.35),
+                                                Text(
+                                                  'Ahadi',
+                                                  style: TextStyle(
+                                                    fontSize: fsm - 4,
+                                                    color: Colors.white70,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          SizedBox(width: psm * 0.5),
+                                          // value
+                                          Expanded(
+                                            child: Text(
+                                              (attendee.pledgedAmount ?? 0) == 0
+                                                  ? '-'
+                                                  : formatMoney(
+                                                    currency: "TZS",
+                                                    attendee.pledgedAmount,
+                                                    decimals: 0,
+                                                  ),
+                                              textAlign: TextAlign.right,
+                                              style: TextStyle(
+                                                fontSize: fsm - 3,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: psm * 0.35),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: psm * 0.45,
+                                              vertical: psm * 0.18,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(
+                                                0.02,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(bsm),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.payments,
+                                                  size: 12,
+                                                  color: Colors.white70,
+                                                ),
+                                                SizedBox(width: psm * 0.35),
+                                                Text(
+                                                  'Mchango',
+                                                  style: TextStyle(
+                                                    fontSize: fsm - 4,
+                                                    color: Colors.white70,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          SizedBox(width: psm * 0.5),
+                                          Expanded(
+                                            child: Text(
+                                              (attendee.paidAmount ?? 0) == 0
+                                                  ? '-'
+                                                  : formatMoney(
+                                                    currency: "TZS",
+                                                    attendee.paidAmount,
+                                                    decimals: 0,
+                                                  ),
+                                              textAlign: TextAlign.right,
+                                              style: TextStyle(
+                                                fontSize: fsm - 3,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      // delete button overlayed top-right so it doesn't consume layout width
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                          iconSize: 18,
+                          onPressed: () {
+                            if (mounted) {
+                              setState(() {
+                                attendees.removeAt(index);
+                              });
+                            }
+                          },
+                          icon: const Icon(Clarity.close_line),
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -298,6 +495,7 @@ class _ImpPreviewState extends State<ImpPreview> {
           showToast(isGood: false, msg: "$message");
         } else {
           message = body['message'] ?? "Success";
+          setMchango(amount: attendee.paidAmount, atId: atRef.id);
           showToast(isGood: true, msg: "$message");
           safeState(() {
             try {
@@ -318,6 +516,28 @@ class _ImpPreviewState extends State<ImpPreview> {
     safeState(() {
       isWritting = false;
     });
+  }
+
+  setMchango({amount, atId}) {
+    Mchango mchango = Mchango(
+      amount: amount ?? 0,
+      createdAt: DateTime.now().toIso8601String(),
+    );
+    CollectionReference<Map<String, dynamic>> mchColRef = firestore
+        .collection(ecol)
+        .doc(widget.event.id)
+        .collection(atcol)
+        .doc(atId)
+        .collection(atPaySub);
+
+    var mchId = mchColRef.doc().id;
+
+    mchColRef
+        .doc(mchId)
+        .set(mchango.toMap(), SetOptions(merge: true))
+        .catchError((onError) {
+          showToast(isGood: false, msg: "${onError}");
+        });
   }
 
   safeState(runnable) {

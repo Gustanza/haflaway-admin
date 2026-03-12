@@ -4,8 +4,6 @@ import 'package:excel/excel.dart' as exl;
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:haflaway/components/Ccafold.dart';
-import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/custom_popup_btn.dart';
 import 'package:haflaway/components/sheets.dart';
@@ -58,6 +56,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   TextEditingController impname = TextEditingController();
   TextEditingController impphone = TextEditingController();
   TextEditingController impcard = TextEditingController();
+  TextEditingController impahadi = TextEditingController();
+  TextEditingController impmchango = TextEditingController();
   FirebaseStorage storage = FirebaseStorage.instance;
   TextEditingController scont = TextEditingController();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -65,12 +65,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   // Attendance status filters
   String _attendanceFilter = "All";
   final List<String> _filters = atStatesList;
-
   // Pagination variables
-  final int pageSize = 20;
-  DocumentSnapshot? lastDocument;
+  int pageSize = atsPageSize;
   bool isLoading = false;
   bool hasMore = true;
+  DocumentSnapshot? lastDocument;
   ScrollController scrollController = ScrollController();
 
   @override
@@ -105,7 +104,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     setState(() {
       isLoading = true;
     });
-
+    pageSize = atList.isEmpty ? atsPageSize : atList.length;
     try {
       Query<Map<String, dynamic>> query = nQwrBuilder();
       var snapshot = await query.get();
@@ -244,7 +243,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     setState(() {
       isLoading = true;
     });
-
+    pageSize = atsPageSize;
     try {
       Query<Map<String, dynamic>> query = mQwrBuilder();
 
@@ -395,195 +394,230 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final bool inSelectMode = selectList.isNotEmpty;
+
     return Scaffold(
       backgroundColor: scaback,
-      appBar: appBar(
-        title:
-            selectList.isEmpty
-                ? "${widget.title}"
-                : "Chaguzi: ${selectList.length}",
-        leading: appBarActionButton(
-          icon: selectList.isEmpty ? Icons.arrow_back : Icons.close,
-          onTap: () {
-            if (selectList.isEmpty) {
-              Navigator.of(context).pop();
-            } else {
-              safeState(() {
-                selectList = [];
-              });
-            }
-          },
-        ),
-        actions: Row(
-          children: [
-            if (selectList.isEmpty) _buildFilterButton(),
-            if (selectList.isEmpty)
-              IconButton(
-                icon: Icon(Icons.search),
-                onPressed: () {
-                  showSearch(
-                    context: context,
-                    delegate: DhaSearchDelegate(
-                      edata: widget.edata,
-                      kardType: widget.kardType,
-                    ),
-                  );
-                },
-              ),
-            if (selectList.isNotEmpty)
-              FilledButton.icon(
-                style: ButtonStyle(
-                  foregroundColor: WidgetStatePropertyAll(Colors.white),
-                  backgroundColor: WidgetStatePropertyAll(lqassgradBaseColor),
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: AppBar(
+              backgroundColor: Colors.black.withValues(alpha: 0.2),
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              centerTitle: true,
+              leadingWidth: 56,
+              leading: Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Center(
+                  child: _floatingButton(
+                    icon: inSelectMode ? Icons.close : Icons.arrow_back_ios_new,
+                    onTap: () {
+                      if (inSelectMode) {
+                        safeState(() {
+                          selectList = [];
+                        });
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
                 ),
-                onPressed: () {
-                  delSelect();
-                },
-                label: Text("Delete"),
-                icon: Icon(Clarity.trash_solid),
               ),
-          ],
+              title: Text(
+                inSelectMode ? "Chaguzi: ${selectList.length}" : widget.title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              actions: [
+                if (!inSelectMode) ...[
+                  _buildFilterButton(),
+                  const SizedBox(width: 4),
+                  _floatingButton(
+                    icon: Icons.search,
+                    onTap: () {
+                      showSearch(
+                        context: context,
+                        delegate: DhaSearchDelegate(
+                          edata: widget.edata,
+                          kardType: widget.kardType,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                if (inSelectMode) ...[
+                  _glassActionChip(
+                    icon: Clarity.trash_solid,
+                    label: "Futa",
+                    color: Colors.redAccent,
+                    onTap: () => delSelect(),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            mini: true,
-            heroTag: "mini",
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-              side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
-            ),
-            foregroundColor: Colors.white,
-            child: getMiniBuild(),
-            onPressed: null,
+      floatingActionButton: _buildFloatingActions(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f3460)],
           ),
-          const SizedBox(height: spaceTiles),
-          FloatingActionButton(
-            heroTag: "major",
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-              side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
-            ),
-            foregroundColor: Colors.white,
-            child: getMainBuild(),
-            onPressed: null,
-          ),
-        ],
-      ),
-      body: Ccafold(
+        ),
         child:
             atList.isEmpty && isLoading
-                ? buildLoader()
+                ? SafeArea(child: buildLoader())
                 : atList.isEmpty && !isLoading
-                ? BuildNoDt(
-                  string: "No Attendees Found",
-                  isRefreshed: () async {
-                    await _loadAttendees();
-                  },
-                )
+                ? SafeArea(child: _buildEmptyState())
                 : buildAtList(atList),
       ),
     );
   }
 
   buildAtList(List<Attendee> atdata) {
+    final topPad = MediaQuery.of(context).padding.top + kToolbarHeight;
     return RefreshIndicator(
       onRefresh: () async {
         await _loadAttendees();
       },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.all(spaceTiles),
-              controller: scrollController,
-              itemCount: atdata.length + 1, // +1 for the loading indicator
-              itemBuilder: (context, index) {
-                // Show loading indicator at the end
-                if (index == atdata.length) {
-                  if (isLoading) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Center(child: CupertinoActivityIndicator()),
-                    );
-                  } else if (!hasMore && atdata.isNotEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Center(
-                        child: Text(
-                          "No more attendees to load",
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
-                    );
-                  } else {
-                    return const SizedBox(height: 20);
-                  }
-                }
+      color: Colors.white,
+      backgroundColor: Colors.black.withValues(alpha: 0.3),
+      child: ListView.builder(
+        padding: EdgeInsets.only(
+          top: topPad + 12,
+          left: 16,
+          right: 16,
+          bottom: 120,
+        ),
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        controller: scrollController,
+        itemCount: atdata.length + 2, // +1 header, +1 footer
+        itemBuilder: (context, index) {
+          // ── Header row ──
+          if (index == 0) return _buildListHeader(atdata.length);
 
-                // Show attendee item
-                Attendee attendee = atdata[index];
-                var hasKey = selectList.any((test) {
-                  return test.id == attendee.id;
-                });
-                var campaignId =
-                    widget.kardType == KardType.invitation
-                        ? invCampId
-                        : contrCampId;
-                return buildAttendeeCard(
-                  hasKey: hasKey,
-                  attendee: attendee,
-                  kardType: widget.kardType,
-                  eventId: widget.edata.id ?? "_",
-                  campaignId: campaignId,
-                  onEdit: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return CreateAttendees(
-                            event: widget.edata,
-                            kardType: widget.kardType,
-                            attendee: attendee,
-                          );
-                        },
+          final dataIndex = index - 1;
+
+          // ── Footer (loading / end) ──
+          if (dataIndex == atdata.length) {
+            if (isLoading) {
+              return const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: CupertinoActivityIndicator()),
+              );
+            } else if (!hasMore && atdata.isNotEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      "Umefika mwisho",
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.35),
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
                       ),
-                    );
-                    _loadAttendees();
-                  },
-                  onSelected: () {
-                    if (hasKey) {
-                      var tmp =
-                          selectList.where((test) {
-                            return test.id != attendee.id;
-                          }).toList();
-                      selectList = tmp;
-                    } else {
-                      selectList.add(attendee);
-                    }
-                    safeState(() {});
-                  },
-                  onStatusChange: (status) {
-                    int index = atdata.indexWhere(
-                      (element) => element.id == attendee.id,
-                    );
-                    if (index != -1) {
-                      atdata[index].attendanceStatus = status;
-                    }
-                    safeState(() {});
-                  },
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              return const SizedBox(height: 20);
+            }
+          }
+
+          // ── Attendee card with staggered animation ──
+          Attendee attendee = atdata[dataIndex];
+          var hasKey = selectList.any((test) {
+            return test.id == attendee.id;
+          });
+          var campaignId =
+              widget.kardType == KardType.invitation ? invCampId : contrCampId;
+
+          return TweenAnimationBuilder<double>(
+            key: ValueKey('anim_${attendee.id}'),
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(
+              milliseconds: 350 + (dataIndex.clamp(0, 10) * 50),
+            ),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              return Opacity(
+                opacity: value,
+                child: Transform.translate(
+                  offset: Offset(0, 18 * (1 - value)),
+                  child: child,
+                ),
+              );
+            },
+            child: buildAttendeeCard(
+              hasKey: hasKey,
+              attendee: attendee,
+              kardType: widget.kardType,
+              eventId: widget.edata.id ?? "_",
+              campaignId: campaignId,
+              onEdit: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return CreateAttendees(
+                        event: widget.edata,
+                        kardType: widget.kardType,
+                        attendee: attendee,
+                      );
+                    },
+                  ),
                 );
+                _loadAttendees();
+              },
+              onSelected: () {
+                if (hasKey) {
+                  var tmp =
+                      selectList.where((test) {
+                        return test.id != attendee.id;
+                      }).toList();
+                  selectList = tmp;
+                } else {
+                  selectList.add(attendee);
+                }
+                safeState(() {});
+              },
+              onStatusChange: (status) {
+                if (widget.kardType == KardType.contribution)
+                  return _loadAttendees();
+                int idx = atdata.indexWhere(
+                  (element) => element.id == attendee.id,
+                );
+                if (idx != -1) {
+                  atdata[idx].attendanceStatus = status;
+                }
+                safeState(() {});
               },
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -889,6 +923,270 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     );
   }
 
+  // ── New UI helper methods ──────────────────────────────────
+
+  Widget _floatingButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.15),
+                width: 0.5,
+              ),
+            ),
+            child: Icon(icon, color: Colors.white, size: 18),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _glassActionChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: color.withValues(alpha: 0.5),
+                width: 0.8,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, child) {
+          return Opacity(
+            opacity: value,
+            child: Transform.translate(
+              offset: Offset(0, 30 * (1 - value)),
+              child: child,
+            ),
+          );
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                Icons.people_outline_rounded,
+                size: 36,
+                color: Colors.white.withValues(alpha: 0.35),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              "Hakuna Walikwa",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.7),
+                letterSpacing: 0.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Bonyeza + kuongeza walikwa wapya",
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
+            ),
+            const SizedBox(height: 24),
+            GestureDetector(
+              onTap: () async {
+                await _loadAttendees();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    width: 0.5,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.refresh,
+                      color: Colors.white.withValues(alpha: 0.6),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Jaribu tena",
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFloatingActions() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildFrostedFAB(child: getMiniBuild(), isMini: true),
+        const SizedBox(height: 12),
+        _buildFrostedFAB(child: getMainBuild(), isMini: false),
+      ],
+    );
+  }
+
+  Widget _buildFrostedFAB({required Widget child, bool isMini = false}) {
+    final double size = isMini ? 48.0 : 56.0;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size / 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size / 2),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(size / 2),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.15),
+                width: 0.5,
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListHeader(int count) {
+    bool hasActiveFilters =
+        _selectedKardFilter != null || _attendanceFilter != "All";
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Text(
+            "$count Walikwa",
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.5),
+              letterSpacing: 0.3,
+            ),
+          ),
+          if (hasActiveFilters) ...[
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              width: 4,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                "Filtered",
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white.withValues(alpha: 0.45),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   selectAll() {
     if (atList.isNotEmpty) {
       if (selectList.length != atList.length) {
@@ -1150,6 +1448,41 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
+                // Ahadi & Michango Stuff
+                if (widget.kardType == KardType.contribution)
+                  Padding(
+                    padding: const EdgeInsets.all(psm),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Ahadi",
+                          style: TextStyle(
+                            fontSize: fsm + 2,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        buildDrop(sels, impahadi),
+                      ],
+                    ),
+                  ),
+                if (widget.kardType == KardType.contribution)
+                  Padding(
+                    padding: const EdgeInsets.all(psm),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Mchango",
+                          style: TextStyle(
+                            fontSize: fsm + 2,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        buildDrop(sels, impmchango),
+                      ],
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(psm),
                   child: Row(
@@ -1175,6 +1508,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       Map<String, dynamic> mapp = {
                         'fullName': int.parse(impname.text),
                         'phone': int.parse(impphone.text),
+                        if (widget.kardType == KardType.contribution)
+                          'ahadi': int.parse(impahadi.text),
+                        if (widget.kardType == KardType.contribution)
+                          'mchango': int.parse(impmchango.text),
                       };
                       var carddata = lcrds.firstWhere((lcrd) {
                         return lcrd.id == impcard.text;

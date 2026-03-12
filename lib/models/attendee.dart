@@ -7,6 +7,7 @@ const gtimeframe = 'event_timeframe';
 const glocation = 'event_location';
 /* fbase */
 const atcol = "attendees";
+const atPaySub = 'payments';
 /* labels */
 const atlblname = "Name of Attendee";
 const atlblphone = "Phone Number of Attendee";
@@ -43,14 +44,14 @@ class Attendee {
   String phone;
   Map messages;
   double? pledgedAmount;
-  double? remainingAmount;
+  double? paidAmount;
   String idComment;
   List? messageIndexes;
   Attendee({
     this.id,
     required this.cards,
     // required this.cardId,
-    this.remainingAmount,
+    this.paidAmount,
     this.pledgedAmount,
     required this.checkinStatus,
     required this.createdAt,
@@ -75,7 +76,7 @@ class Attendee {
     "attendanceStatus": attendanceStatus,
     "checkinStatus": checkinStatus,
     "createdAt": createdAt.toIso8601String(),
-    if (remainingAmount != null) "remainingAmount": remainingAmount,
+    if (paidAmount != null) "paidAmount": paidAmount,
     if (pledgedAmount != null) "pledgedAmount": pledgedAmount,
   };
 
@@ -107,9 +108,9 @@ class Attendee {
           map['pledgedAmount'] != null
               ? (map['pledgedAmount'] as num).toDouble()
               : 0.00,
-      remainingAmount:
-          map['remainingAmount'] != null
-              ? (map['remainingAmount'] as num).toDouble()
+      paidAmount:
+          map['paidAmount'] != null
+              ? (map['paidAmount'] as num).toDouble()
               : 0.00,
       idComment: map['idComment'] ?? "No Comment",
       attendanceStatus: map['attendanceStatus'] ?? "Not Confirmed",
