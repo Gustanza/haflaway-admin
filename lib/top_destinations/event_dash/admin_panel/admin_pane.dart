@@ -20,6 +20,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/attendees.dart';
+import 'package:haflaway/components/moving_gradient_border.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:intl/intl.dart';
 
@@ -165,65 +166,71 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   }) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            // Icon pill with gold gradient
+            // Slick Dark Glass Icon Pill
             Container(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [GusTheme.gold, GusTheme.goldLight],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                color: Colors.black.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  width: 0.5,
                 ),
-                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: GusTheme.gold.withValues(alpha: 0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              child: Icon(icon, color: Colors.black, size: 18),
+              child: Center(
+                child: ShaderMask(
+                  shaderCallback:
+                      (bounds) => const LinearGradient(
+                        colors: [GusTheme.gold, GusTheme.goldLight],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ).createShader(bounds),
+                  child: Icon(icon, color: Colors.white, size: 22),
+                ),
+              ),
             ),
             const SizedBox(width: 16),
             // Title
             Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.inter(
-                  color: GusTheme.textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: -0.2,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      color: GusTheme.textPrimary.withValues(alpha: 0.95),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  if (count.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      "$count items recorded",
+                      style: GoogleFonts.inter(
+                        color: GusTheme.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            // Count badge
-            if (count.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  count,
-                  style: GoogleFonts.inter(
-                    color: GusTheme.textMuted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            const SizedBox(width: 8),
             const Icon(
               Icons.chevron_right_rounded,
               color: GusTheme.textMuted,
@@ -255,26 +262,36 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: GusTheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: GusTheme.glassBorder, width: 1),
-          ),
+        MovingGradientBorder(
+          borderRadius: 24,
+          borderWidth: 1.0,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
-            child: Column(
-              children: List.generate(rows.length * 2 - 1, (i) {
-                if (i.isOdd) {
-                  return Divider(
-                    height: 1,
-                    thickness: 0.5,
-                    color: GusTheme.glassBorder,
-                    indent: 64,
-                  );
-                }
-                return rows[i ~/ 2];
-              }),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: GusTheme.surface.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    width: 0.5,
+                  ),
+                ),
+                child: Column(
+                  children: List.generate(rows.length * 2 - 1, (i) {
+                    if (i.isOdd) {
+                      return Divider(
+                        height: 1,
+                        thickness: 0.5,
+                        color: Colors.white.withValues(alpha: 0.08),
+                        indent: 72,
+                      );
+                    }
+                    return rows[i ~/ 2];
+                  }),
+                ),
+              ),
             ),
           ),
         ),
@@ -358,6 +375,22 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
 
     return GusScaffold(
       title: "",
+      titleWidget: MovingGradientBorder(
+        borderRadius: 8,
+        borderWidth: 1.2,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Text(
+            "Admin Panel",
+            style: GoogleFonts.cormorantGaramond(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: GusTheme.textPrimary,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+      ),
       actions: [
         _floatingButton(
           icon: Icons.settings_rounded,
@@ -399,126 +432,145 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
-                    // Premium Hero Image
-                    Container(
-                      height: 240,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(32),
-                        border: Border.all(
-                          color: GusTheme.glassBorder,
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            blurRadius: 30,
-                            offset: const Offset(0, 15),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(32),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            CachedNetworkImage(
-                              imageUrl: event?.eventThumbnail ?? "",
-                              fit: BoxFit.cover,
-                              placeholder:
-                                  (context, url) => Container(
-                                    color: GusTheme.surface,
-                                    child: const Center(
-                                      child: CupertinoActivityIndicator(
-                                        color: GusTheme.gold,
-                                      ),
-                                    ),
-                                  ),
-                              errorWidget:
-                                  (context, url, error) => Container(
-                                    color: GusTheme.surface,
-                                    child: const Icon(
-                                      Clarity.image_line,
-                                      color: GusTheme.textMuted,
-                                      size: 48,
-                                    ),
-                                  ),
-                            ),
-                            // Gradient Overlay
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withValues(alpha: 0.7),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            // Event Details Overlay
-                            Positioned(
-                              bottom: 20,
-                              left: 20,
-                              right: 20,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (_formattedDate().isNotEmpty)
-                                    Text(
-                                      _formattedDate().toUpperCase(),
-                                      style: GoogleFonts.inter(
-                                        color: GusTheme.gold,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 1.2,
-                                      ),
-                                    ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    event?.title ?? "",
-                                    style: GoogleFonts.cormorantGaramond(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w600,
-                                      height: 1.1,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if ((event?.location ?? "").isNotEmpty) ...[
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.location_on_rounded,
-                                          color: GusTheme.textMuted,
-                                          size: 14,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Expanded(
-                                          child: Text(
-                                            event!.location!,
-                                            style: GoogleFonts.inter(
-                                              color: GusTheme.textMuted,
-                                              fontSize: 12,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ],
-                              ),
+                    // Premium Hero Image with Glittering Border
+                    MovingGradientBorder(
+                      borderRadius: 32,
+                      borderWidth: 1.2,
+                      child: Container(
+                        height: 300,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(32),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              blurRadius: 40,
+                              offset: const Offset(0, 20),
                             ),
                           ],
                         ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              CachedNetworkImage(
+                                imageUrl: event?.eventThumbnail ?? "",
+                                fit: BoxFit.cover,
+                                placeholder:
+                                    (context, url) => Container(
+                                      color: GusTheme.surface,
+                                      child: const Center(
+                                        child: CupertinoActivityIndicator(
+                                          color: GusTheme.gold,
+                                        ),
+                                      ),
+                                    ),
+                                errorWidget:
+                                    (context, url, error) => Container(
+                                      color: GusTheme.surface,
+                                      child: const Icon(
+                                        Clarity.image_line,
+                                        color: GusTheme.textMuted,
+                                        size: 48,
+                                      ),
+                                    ),
+                              ),
+                              // Deeper Gradient Overlay for Vault-like feel
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withValues(alpha: 0.2),
+                                      Colors.black.withValues(alpha: 0.85),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Event Details Overlay
+                              Positioned(
+                                bottom: 24,
+                                left: 24,
+                                right: 24,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (_formattedDate().isNotEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: GusTheme.gold.withValues(
+                                            alpha: 0.15,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          _formattedDate().toUpperCase(),
+                                          style: GoogleFonts.inter(
+                                            color: GusTheme.gold,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      event?.title ?? "",
+                                      style: GoogleFonts.cormorantGaramond(
+                                        color: Colors.white,
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.w700,
+                                        height: 1.0,
+                                        letterSpacing: -0.5,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if ((event?.location ?? "").isNotEmpty) ...[
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.location_on_rounded,
+                                            color: GusTheme.gold,
+                                            size: 14,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              event!.location!,
+                                              style: GoogleFonts.inter(
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.6,
+                                                ),
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 12),
                   ],
                 ),
               ),

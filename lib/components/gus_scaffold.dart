@@ -5,41 +5,49 @@ import 'package:haflaway/utils/gus_theme.dart';
 
 class GusScaffold extends StatelessWidget {
   final String title;
+  final Widget? titleWidget;
   final String? subtitle;
   final Widget body;
   final List<Widget>? actions;
   final bool showBackButton;
   final VoidCallback? onBack;
   final Widget? floatingActionButton;
+  final Widget? drawer;
+  final GlobalKey<ScaffoldState>? scaffoldKey;
 
   const GusScaffold({
     super.key,
     required this.title,
+    this.titleWidget,
     this.subtitle,
     required this.body,
     this.actions,
     this.showBackButton = true,
     this.onBack,
     this.floatingActionButton,
+    this.drawer,
+    this.scaffoldKey,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: scaffoldKey,
       backgroundColor: GusTheme.obsidian,
       floatingActionButton: floatingActionButton,
+      drawer: drawer,
       body: Stack(
         children: [
           // ── ambient orbs ───────────────────────────────────────────────────
           Positioned(
-            top: -80,
-            right: -60,
-            child: const _GusOrb(size: 300, color: GusTheme.gold),
+            top: -150,
+            right: -100,
+            child: const _GusOrb(size: 400, color: GusTheme.gold),
           ),
           Positioned(
-            bottom: 100,
-            left: -60,
-            child: const _GusOrb(size: 200, color: Color(0xFF4A6CF7)),
+            bottom: 50,
+            left: -120,
+            child: const _GusOrb(size: 350, color: Color(0xFF4A6CF7)),
           ),
 
           // ── main content ───────────────────────────────────────────────────
@@ -49,6 +57,7 @@ class GusScaffold extends StatelessWidget {
               children: [
                 _GusTopBar(
                   title: title,
+                  titleWidget: titleWidget,
                   subtitle: subtitle,
                   actions: actions,
                   showBackButton: showBackButton,
@@ -66,6 +75,7 @@ class GusScaffold extends StatelessWidget {
 
 class _GusTopBar extends StatelessWidget {
   final String title;
+  final Widget? titleWidget;
   final String? subtitle;
   final List<Widget>? actions;
   final bool showBackButton;
@@ -73,6 +83,7 @@ class _GusTopBar extends StatelessWidget {
 
   const _GusTopBar({
     required this.title,
+    this.titleWidget,
     this.subtitle,
     this.actions,
     required this.showBackButton,
@@ -86,32 +97,33 @@ class _GusTopBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.cormorantGaramond(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w400,
-                  color: GusTheme.textPrimary,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  subtitle!.toUpperCase(),
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    letterSpacing: 1.4,
-                    color: GusTheme.textMuted,
-                    fontWeight: FontWeight.w500,
+          titleWidget ??
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.cormorantGaramond(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w400,
+                      color: GusTheme.textPrimary,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-              ],
-            ],
-          ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!.toUpperCase(),
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        letterSpacing: 1.4,
+                        color: GusTheme.textMuted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
           Row(
             children: [
               if (actions != null) ...actions!,
@@ -125,7 +137,7 @@ class _GusTopBar extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: GusTheme.glassBorder),
-                      color: Colors.white.withValues(alpha: 0.04),
+                      color: Colors.white.withOpacity(0.04),
                     ),
                     child: const Icon(
                       Icons.arrow_back_rounded,
@@ -157,7 +169,7 @@ class _GusOrb extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withValues(alpha: opacity),
+        color: color.withOpacity(opacity),
       ),
       child: ClipOval(
         child: BackdropFilter(

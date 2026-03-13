@@ -32,6 +32,7 @@ import 'package:haflaway/components/gus_scaffold.dart';
 import 'package:haflaway/utils/gus_theme.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'imp_preview.dart';
+import 'package:haflaway/components/moving_gradient_border.dart';
 
 class Attendees extends StatefulWidget {
   final Event edata;
@@ -458,20 +459,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             atdata.length + (widget.kardType == KardType.contribution ? 3 : 2),
         itemBuilder: (context, index) {
           if (widget.kardType == KardType.contribution && index == 0) {
-            final double totalPledged = atdata.fold(
-              0,
-              (s, a) => s + (a.pledgedAmount ?? 0),
-            );
-            final double totalPaid = atdata.fold(
-              0,
-              (s, a) => s + (a.paidAmount ?? 0),
-            );
             final double pct =
-                totalPledged > 0 ? totalPaid / totalPledged : 0.0;
+                widget.edata.totalPledge! > 0
+                    ? widget.edata.totalPayment! / widget.edata.totalPledge!
+                    : 0.0;
 
             return _HeroCard(
-              totalPledged: totalPledged,
-              totalPaid: totalPaid,
+              totalPledged: widget.edata.totalPledge!,
+              totalPaid: widget.edata.totalPayment!,
               pct: pct,
               progressAnim: AlwaysStoppedAnimation(pct),
             );
@@ -1562,85 +1557,147 @@ class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: GusTheme.surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: GusTheme.glassBorder, width: 0.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildStat("Pledged", "TSh ${totalPledged.toInt()}"),
-              _buildStat("Collected", "TSh ${totalPaid.toInt()}"),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Stack(
-            children: [
-              Container(
-                height: 12,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(6),
+      margin: const EdgeInsets.only(bottom: 24, top: 8),
+      child: MovingGradientBorder(
+        borderRadius: 28,
+        borderWidth: 1.2,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: GusTheme.surface.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  width: 0.5,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 25,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
               ),
-              AnimatedBuilder(
-                animation: progressAnim,
-                builder: (context, _) {
-                  return FractionallySizedBox(
-                    widthFactor: progressAnim.value.clamp(0.0, 1.0),
-                    child: Container(
-                      height: 12,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [GusTheme.gold, GusTheme.goldLight],
-                        ),
-                        borderRadius: BorderRadius.circular(6),
-                        boxShadow: [
-                          BoxShadow(
-                            color: GusTheme.gold.withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildStat(
+                        "Pledged",
+                        "TSh ${totalPledged.toInt()}",
+                        Clarity.dollar_line,
                       ),
-                    ),
-                  );
-                },
+                      _buildStat(
+                        "Collected",
+                        "TSh ${totalPaid.toInt()}",
+                        Clarity.wallet_line,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Container(
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(7),
+                              ),
+                            ),
+                            AnimatedBuilder(
+                              animation: progressAnim,
+                              builder: (context, _) {
+                                return FractionallySizedBox(
+                                  widthFactor: progressAnim.value.clamp(
+                                    0.0,
+                                    1.0,
+                                  ),
+                                  child: Container(
+                                    height: 14,
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          GusTheme.gold,
+                                          GusTheme.goldLight,
+                                        ],
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                      ),
+                                      borderRadius: BorderRadius.circular(7),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: GusTheme.gold.withValues(
+                                            alpha: 0.4,
+                                          ),
+                                          blurRadius: 12,
+                                          spreadRadius: 1,
+                                          offset: const Offset(0, 0),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Text(
+                        "${(pct * 100).toStringAsFixed(1)}%",
+                        style: GoogleFonts.inter(
+                          color: GusTheme.gold,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildStat(String label, String value) {
+  Widget _buildStat(String label, String value, IconData icon) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: GusTheme.textMuted, fontSize: 13),
+        Row(
+          children: [
+            Icon(icon, color: GusTheme.gold, size: 14),
+            const SizedBox(width: 6),
+            Text(
+              label.toUpperCase(),
+              style: GoogleFonts.inter(
+                color: GusTheme.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           value,
           style: GoogleFonts.cormorantGaramond(
             color: GusTheme.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
           ),
         ),
       ],
