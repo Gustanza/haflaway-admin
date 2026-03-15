@@ -1,22 +1,21 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/styles.dart';
 
-appBar({leading, title, actions}) {
+appBar({leading, title, titleWidget, actions}) {
   return PreferredSize(
     preferredSize: const Size.fromHeight(kToolbarHeight * 1.5),
     child: ClipRRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          decoration: BoxDecoration(gradient: lqassgrad),
+          decoration: BoxDecoration(color: Colors.white.withOpacity(0.02)),
           child: AppBar(
-            backgroundColor: Colors.white.withOpacity(0.05),
+            backgroundColor: Colors.transparent,
             elevation: 0,
             toolbarHeight: 100,
-            leading: SizedBox.shrink(),
+            leading: const SizedBox.shrink(),
             leadingWidth: 0,
             flexibleSpace: SafeArea(
               child: Padding(
@@ -25,21 +24,21 @@ appBar({leading, title, actions}) {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Row(
-                      // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         if (leading != null) leading,
                         if (leading != null) const SizedBox(width: psm),
-                        Text(
-                          title,
-                          maxLines: 1,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: fsm + 4,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        Spacer(),
+                        titleWidget ??
+                            Text(
+                              title ?? "",
+                              maxLines: 1,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: fsm + 4,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                        const Spacer(),
                         if (actions != null) actions,
                       ],
                     ),
@@ -67,7 +66,7 @@ uppBar({
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: AppBar(
-          backgroundColor: Colors.black.withValues(alpha: 0.2),
+          backgroundColor: Colors.black.withOpacity(0.2),
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           centerTitle: centerTitle,
@@ -113,10 +112,10 @@ Widget gsFloatingButton({required IconData icon, required VoidCallback onTap}) {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.35),
+            color: Colors.black.withOpacity(0.35),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: Colors.white.withOpacity(0.15),
               width: 0.5,
             ),
           ),

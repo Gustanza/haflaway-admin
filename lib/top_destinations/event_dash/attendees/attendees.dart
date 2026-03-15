@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:excel/excel.dart' as exl;
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,20 +19,20 @@ import 'package:haflaway/top_destinations/event_dash/attendees/components/stats.
 import 'package:haflaway/top_destinations/event_dash/attendees/crtattendees.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:haflaway/utils/attstates.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/card.dart';
-import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/errorstrs.dart';
 import 'package:haflaway/utils/globalfns.dart';
-import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/styles.dart';
+import 'package:haflaway/components/gus_scaffold.dart';
+import 'package:haflaway/utils/gus_theme.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'imp_preview.dart';
+import 'package:haflaway/components/moving_gradient_border.dart';
 
 class Attendees extends StatefulWidget {
   final Event edata;
@@ -396,98 +398,51 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final bool inSelectMode = selectList.isNotEmpty;
 
-    return Scaffold(
-      backgroundColor: scaback,
-      extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: AppBar(
-              backgroundColor: Colors.black.withValues(alpha: 0.2),
-              surfaceTintColor: Colors.transparent,
-              elevation: 0,
-              centerTitle: true,
-              leadingWidth: 56,
-              leading: Padding(
-                padding: const EdgeInsets.only(left: 12),
-                child: Center(
-                  child: _floatingButton(
-                    icon: inSelectMode ? Icons.close : Icons.arrow_back_ios_new,
-                    onTap: () {
-                      if (inSelectMode) {
-                        safeState(() {
-                          selectList = [];
-                        });
-                      } else {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                  ),
+    return GusScaffold(
+      title: widget.title,
+      subtitle:
+          widget.kardType == KardType.contribution
+              ? "COLLECTION"
+              : "INVITATION",
+      actions: [
+        if (!inSelectMode) ...[
+          _buildFilterButton(),
+          const SizedBox(width: 4),
+          _floatingButton(
+            icon: Icons.search,
+            onTap: () {
+              showSearch(
+                context: context,
+                delegate: DhaSearchDelegate(
+                  edata: widget.edata,
+                  kardType: widget.kardType,
                 ),
-              ),
-              title: Text(
-                inSelectMode ? "Chaguzi: ${selectList.length}" : widget.title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.3,
-                ),
-              ),
-              actions: [
-                if (!inSelectMode) ...[
-                  _buildFilterButton(),
-                  const SizedBox(width: 4),
-                  _floatingButton(
-                    icon: Icons.search,
-                    onTap: () {
-                      showSearch(
-                        context: context,
-                        delegate: DhaSearchDelegate(
-                          edata: widget.edata,
-                          kardType: widget.kardType,
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 12),
-                ],
-                if (inSelectMode) ...[
-                  _glassActionChip(
-                    icon: Clarity.trash_solid,
-                    label: "Futa",
-                    color: Colors.redAccent,
-                    onTap: () => delSelect(),
-                  ),
-                  const SizedBox(width: 12),
-                ],
-              ],
-            ),
+              );
+            },
           ),
-        ),
-      ),
+          const SizedBox(width: 12),
+        ],
+        if (inSelectMode) ...[
+          _glassActionChip(
+            icon: Clarity.trash_solid,
+            label: "Futa",
+            color: Colors.redAccent,
+            onTap: () => delSelect(),
+          ),
+          const SizedBox(width: 12),
+        ],
+      ],
       floatingActionButton: _buildFloatingActions(),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f3460)],
-          ),
-        ),
-        child:
-            atList.isEmpty && isLoading
-                ? SafeArea(child: buildLoader())
-                : atList.isEmpty && !isLoading
-                ? SafeArea(child: _buildEmptyState())
-                : buildAtList(atList),
-      ),
+      body:
+          atList.isEmpty && isLoading
+              ? Center(child: CupertinoActivityIndicator())
+              : atList.isEmpty && !isLoading
+              ? _buildEmptyState()
+              : buildAtList(atList),
     );
   }
 
   buildAtList(List<Attendee> atdata) {
-    final topPad = MediaQuery.of(context).padding.top + kToolbarHeight;
     return RefreshIndicator(
       onRefresh: () async {
         await _loadAttendees();
@@ -495,24 +450,36 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       color: Colors.white,
       backgroundColor: Colors.black.withValues(alpha: 0.3),
       child: ListView.builder(
-        padding: EdgeInsets.only(
-          top: topPad + 12,
-          left: 16,
-          right: 16,
-          bottom: 120,
-        ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),
         controller: scrollController,
-        itemCount: atdata.length + 2, // +1 header, +1 footer
+        itemCount:
+            atdata.length + (widget.kardType == KardType.contribution ? 3 : 2),
         itemBuilder: (context, index) {
-          // ── Header row ──
-          if (index == 0) return _buildListHeader(atdata.length);
+          if (widget.kardType == KardType.contribution && index == 0) {
+            final double pct =
+                widget.edata.totalPledge! > 0
+                    ? widget.edata.totalPayment! / widget.edata.totalPledge!
+                    : 0.0;
 
-          final dataIndex = index - 1;
+            return _HeroCard(
+              totalPledged: widget.edata.totalPledge!,
+              totalPaid: widget.edata.totalPayment!,
+              pct: pct,
+              progressAnim: AlwaysStoppedAnimation(pct),
+            );
+          }
 
-          // ── Footer (loading / end) ──
+          final dataIndex =
+              widget.kardType == KardType.contribution ? index - 2 : index - 1;
+
+          if ((widget.kardType == KardType.contribution && index == 1) ||
+              (widget.kardType != KardType.contribution && index == 0)) {
+            return _buildListHeader(atdata.length);
+          }
+
           if (dataIndex == atdata.length) {
             if (isLoading) {
               return const Padding(
@@ -548,11 +515,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             }
           }
 
-          // ── Attendee card with staggered animation ──
           Attendee attendee = atdata[dataIndex];
-          var hasKey = selectList.any((test) {
-            return test.id == attendee.id;
-          });
+          var hasKey = selectList.any((test) => test.id == attendee.id);
           var campaignId =
               widget.kardType == KardType.invitation ? invCampId : contrCampId;
 
@@ -581,24 +545,19 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               onEdit: () async {
                 await Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) {
-                      return CreateAttendees(
-                        event: widget.edata,
-                        kardType: widget.kardType,
-                        attendee: attendee,
-                      );
-                    },
+                    builder:
+                        (context) => CreateAttendees(
+                          event: widget.edata,
+                          kardType: widget.kardType,
+                          attendee: attendee,
+                        ),
                   ),
                 );
                 _loadAttendees();
               },
               onSelected: () {
                 if (hasKey) {
-                  var tmp =
-                      selectList.where((test) {
-                        return test.id != attendee.id;
-                      }).toList();
-                  selectList = tmp;
+                  selectList.removeWhere((test) => test.id == attendee.id);
                 } else {
                   selectList.add(attendee);
                 }
@@ -610,9 +569,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 int idx = atdata.indexWhere(
                   (element) => element.id == attendee.id,
                 );
-                if (idx != -1) {
-                  atdata[idx].attendanceStatus = status;
-                }
+                if (idx != -1) atdata[idx].attendanceStatus = status;
                 safeState(() {});
               },
             ),
@@ -1581,5 +1538,169 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
 
   poper() {
     Navigator.of(context).pop();
+  }
+}
+
+class _HeroCard extends StatelessWidget {
+  final double totalPledged;
+  final double totalPaid;
+  final double pct;
+  final Animation<double> progressAnim;
+
+  const _HeroCard({
+    required this.totalPledged,
+    required this.totalPaid,
+    required this.pct,
+    required this.progressAnim,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24, top: 8),
+      child: MovingGradientBorder(
+        borderRadius: 28,
+        borderWidth: 1.2,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: GusTheme.surface.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  width: 0.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 25,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildStat(
+                        "Pledged",
+                        "TSh ${totalPledged.toInt()}",
+                        Clarity.dollar_line,
+                      ),
+                      _buildStat(
+                        "Collected",
+                        "TSh ${totalPaid.toInt()}",
+                        Clarity.wallet_line,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Container(
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(7),
+                              ),
+                            ),
+                            AnimatedBuilder(
+                              animation: progressAnim,
+                              builder: (context, _) {
+                                return FractionallySizedBox(
+                                  widthFactor: progressAnim.value.clamp(
+                                    0.0,
+                                    1.0,
+                                  ),
+                                  child: Container(
+                                    height: 14,
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          GusTheme.gold,
+                                          GusTheme.goldLight,
+                                        ],
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                      ),
+                                      borderRadius: BorderRadius.circular(7),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: GusTheme.gold.withValues(
+                                            alpha: 0.4,
+                                          ),
+                                          blurRadius: 12,
+                                          spreadRadius: 1,
+                                          offset: const Offset(0, 0),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Text(
+                        "${(pct * 100).toStringAsFixed(1)}%",
+                        style: GoogleFonts.inter(
+                          color: GusTheme.gold,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStat(String label, String value, IconData icon) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: GusTheme.gold, size: 14),
+            const SizedBox(width: 6),
+            Text(
+              label.toUpperCase(),
+              style: GoogleFonts.inter(
+                color: GusTheme.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: GoogleFonts.cormorantGaramond(
+            color: GusTheme.textPrimary,
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
+          ),
+        ),
+      ],
+    );
   }
 }

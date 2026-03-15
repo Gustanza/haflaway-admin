@@ -83,6 +83,8 @@ class Event {
   String? startDate;
   String? endDate;
   String? language;
+  double? totalPledge;
+  double? totalPayment;
   List<EventCalendar>? calendar;
 
   Event({
@@ -105,6 +107,8 @@ class Event {
     this.startDate,
     this.endDate,
     this.language,
+    this.totalPledge,
+    this.totalPayment,
     this.calendar = const [],
   });
 
@@ -128,6 +132,8 @@ class Event {
     if (startDate != null) 'startDate': startDate,
     if (endDate != null) 'endDate': endDate,
     if (language != null) "language": language,
+    if (totalPledge != null) 'totalPledge': totalPledge,
+    if (totalPayment != null) 'totalPayment': totalPayment,
     if (calendar != null)
       'calendar':
           calendar?.map((e) {
@@ -154,6 +160,14 @@ class Event {
       location: map['location'] ?? '',
       usepng: map['usepng'] ?? true,
       language: map['language'] ?? 'sw',
+      totalPledge:
+          map['totalPledge'] != null
+              ? (map['totalPledge'] as num).toDouble()
+              : 0.0,
+      totalPayment:
+          map['totalPayment'] != null
+              ? (map['totalPayment'] as num).toDouble()
+              : 0.0,
       startDate: map['startDate'] ?? DateTime(1990).toIso8601String(),
       endDate: map['endDate'] ?? DateTime(1991).toIso8601String(),
       calendar:

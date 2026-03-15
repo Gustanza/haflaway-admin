@@ -10,18 +10,18 @@ import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/settings/event_settings.dart';
-import 'package:haflaway/top_destinations/event_dash/cards/cards.dart';
-import 'package:haflaway/top_destinations/event_dash/michango/michango_dash.dart';
-import 'package:haflaway/top_destinations/eventz/create_event.dart';
-import 'package:haflaway/utils/dimensions.dart';
-import 'package:haflaway/utils/globalwids.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
+import 'package:haflaway/top_destinations/event_dash/cards/cards.dart';
+import 'package:haflaway/top_destinations/eventz/create_event.dart';
+import 'package:haflaway/components/gus_scaffold.dart';
+import 'package:haflaway/utils/gus_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/attendees.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/eventTools.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:haflaway/components/moving_gradient_border.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'package:intl/intl.dart';
 
 class AdminPanel extends StatefulWidget {
@@ -164,65 +164,77 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     required VoidCallback onTap,
     bool isLast = false,
   }) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            // Icon pill
+            // Slick Dark Glass Icon Pill
             Container(
-              width: 38,
-              height: 38,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: iconGradient,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                color: Colors.black.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  width: 0.5,
                 ),
-                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(icon, color: Colors.white, size: 20),
+              child: Center(
+                child: ShaderMask(
+                  shaderCallback:
+                      (bounds) => const LinearGradient(
+                        colors: [GusTheme.gold, GusTheme.goldLight],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ).createShader(bounds),
+                  child: Icon(icon, color: Colors.white, size: 22),
+                ),
+              ),
             ),
             const SizedBox(width: 16),
             // Title
             Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: -0.2,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      color: GusTheme.textPrimary.withValues(alpha: 0.95),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  if (count.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      "$count items recorded",
+                      style: GoogleFonts.inter(
+                        color: GusTheme.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            // Count badge
-            if (count.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  count,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            const SizedBox(width: 8),
-            Icon(
+            const Icon(
               Icons.chevron_right_rounded,
-              color: Colors.white.withOpacity(0.3),
-              size: 22,
+              color: GusTheme.textMuted,
+              size: 20,
             ),
           ],
         ),
@@ -235,57 +247,45 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     required String title,
     required List<Widget> rows,
   }) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeOut,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 16 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 10),
-            child: Text(
-              title.toUpperCase(),
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.45),
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            title.toUpperCase(),
+            style: GoogleFonts.inter(
+              color: GusTheme.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.5,
             ),
           ),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+        ),
+        MovingGradientBorder(
+          borderRadius: 24,
+          borderWidth: 1.0,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.07),
-                  borderRadius: BorderRadius.circular(16),
+                  color: GusTheme.surface.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.08),
                     width: 0.5,
                   ),
                 ),
                 child: Column(
                   children: List.generate(rows.length * 2 - 1, (i) {
                     if (i.isOdd) {
-                      // Divider
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 74),
-                        child: Container(
-                          height: 0.5,
-                          color: Colors.white.withOpacity(0.08),
-                        ),
+                      return Divider(
+                        height: 1,
+                        thickness: 0.5,
+                        color: Colors.white.withValues(alpha: 0.08),
+                        indent: 72,
                       );
                     }
                     return rows[i ~/ 2];
@@ -294,66 +294,67 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   // ── Error view ──────────────────────────────────────────
   Widget _buildErrorView() {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.15),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.wifi_off_rounded,
-              size: 48,
-              color: Colors.redAccent,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            "Imeshindikana kupakia",
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Angalia mtandao wako na ujaribu tena",
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.4),
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 32),
-          GestureDetector(
-            onTap: loadData,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withOpacity(0.15)),
+                color: Colors.red.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
               ),
-              child: const Text(
-                "Jaribu Tena",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                color: Colors.redAccent,
+                size: 64,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              "Something went wrong",
+              style: GoogleFonts.cormorantGaramond(
+                color: GusTheme.textPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "We encountered an error while loading the event data. Please try again.",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(color: GusTheme.textMuted, fontSize: 14),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () => loadData(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GusTheme.gold,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
+              child: const Text(
+                "Retry Now",
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -364,437 +365,414 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final heroHeight = screenHeight * 0.48;
+    if (hasError) return GusScaffold(title: "", body: _buildErrorView());
+    if (isLoading && event == null) {
+      return const GusScaffold(
+        title: "",
+        body: Center(child: CupertinoActivityIndicator(color: GusTheme.gold)),
+      );
+    }
 
-    return Scaffold(
-      backgroundColor: scaback,
-      extendBodyBehindAppBar: true,
-      body:
-          !hasError && isLoading
-              ? Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF1a1a2e),
-                      Color(0xFF16213e),
-                      Color(0xFF0f3460),
-                    ],
-                  ),
-                ),
-                child: buildLoader(),
-              )
-              : hasError
-              ? Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF1a1a2e),
-                      Color(0xFF16213e),
-                      Color(0xFF0f3460),
-                    ],
-                  ),
-                ),
-                child: SafeArea(child: _buildErrorView()),
-              )
-              : CustomScrollView(
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
-                slivers: [
-                  // ── Hero SliverAppBar ───────────────────
-                  SliverAppBar(
-                    expandedHeight: heroHeight,
-                    pinned: true,
-                    stretch: true,
-                    backgroundColor: scaback,
-                    elevation: 0,
-                    automaticallyImplyLeading: false,
-                    // Floating buttons
-                    leading: Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Center(
-                        child: _floatingButton(
-                          icon: Icons.arrow_back_rounded,
-                          onTap: () => Navigator.of(context).pop(),
+    return GusScaffold(
+      title: "",
+      titleWidget: MovingGradientBorder(
+        borderRadius: 8,
+        borderWidth: 1.2,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Text(
+            "Admin Panel",
+            style: GoogleFonts.cormorantGaramond(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: GusTheme.textPrimary,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        _floatingButton(
+          icon: Icons.settings_rounded,
+          onTap: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => EventSettings(event: event),
+              ),
+            );
+            loadData();
+          },
+        ),
+        const SizedBox(width: 8),
+        _floatingButton(
+          icon: Icons.edit_rounded,
+          onTap: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => CreateEvent(event: event),
+              ),
+            );
+            loadData();
+          },
+        ),
+        const SizedBox(width: 12),
+      ],
+      body: RefreshIndicator(
+        onRefresh: () async => loadData(),
+        color: GusTheme.gold,
+        backgroundColor: GusTheme.surface,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          slivers: [
+            // ── Hero Section ───────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    // Premium Hero Image with Glittering Border
+                    MovingGradientBorder(
+                      borderRadius: 32,
+                      borderWidth: 1.2,
+                      child: Container(
+                        height: 300,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(32),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              blurRadius: 40,
+                              offset: const Offset(0, 20),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              CachedNetworkImage(
+                                imageUrl: event?.eventThumbnail ?? "",
+                                fit: BoxFit.cover,
+                                placeholder:
+                                    (context, url) => Container(
+                                      color: GusTheme.surface,
+                                      child: const Center(
+                                        child: CupertinoActivityIndicator(
+                                          color: GusTheme.gold,
+                                        ),
+                                      ),
+                                    ),
+                                errorWidget:
+                                    (context, url, error) => Container(
+                                      color: GusTheme.surface,
+                                      child: const Icon(
+                                        Clarity.image_line,
+                                        color: GusTheme.textMuted,
+                                        size: 48,
+                                      ),
+                                    ),
+                              ),
+                              // Deeper Gradient Overlay for Vault-like feel
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withValues(alpha: 0.2),
+                                      Colors.black.withValues(alpha: 0.85),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Event Details Overlay
+                              Positioned(
+                                bottom: 24,
+                                left: 24,
+                                right: 24,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (_formattedDate().isNotEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: GusTheme.gold.withValues(
+                                            alpha: 0.15,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          _formattedDate().toUpperCase(),
+                                          style: GoogleFonts.inter(
+                                            color: GusTheme.gold,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      event?.title ?? "",
+                                      style: GoogleFonts.cormorantGaramond(
+                                        color: Colors.white,
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.w700,
+                                        height: 1.0,
+                                        letterSpacing: -0.5,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if ((event?.location ?? "").isNotEmpty) ...[
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.location_on_rounded,
+                                            color: GusTheme.gold,
+                                            size: 14,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              event!.location!,
+                                              style: GoogleFonts.inter(
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.6,
+                                                ),
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                    actions: [
-                      _floatingButton(
-                        icon: Icons.settings_rounded,
-                        onTap: () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return EventSettings(event: event);
-                              },
-                            ),
-                          );
-                          loadData();
-                        },
-                      ),
-                      const SizedBox(width: 10),
-                      _floatingButton(
-                        icon: Icons.edit_rounded,
-                        onTap: () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return CreateEvent(event: event);
-                              },
-                            ),
-                          );
-                          loadData();
-                        },
-                      ),
-                      const SizedBox(width: 14),
-                    ],
-                    flexibleSpace: FlexibleSpaceBar(
-                      stretchModes: const [
-                        StretchMode.zoomBackground,
-                        StretchMode.blurBackground,
-                      ],
-                      background: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // Event thumbnail
-                          CachedNetworkImage(
-                            imageUrl: event?.eventThumbnail ?? "",
-                            fit: BoxFit.cover,
-                            filterQuality: FilterQuality.high,
-                            placeholder:
-                                (context, url) => Shimmer.fromColors(
-                                  baseColor: scaback,
-                                  highlightColor: const Color(0xFF16213e),
-                                  child: Container(color: scaback),
-                                ),
-                            errorWidget:
-                                (context, url, error) => Container(
-                                  color: scaback,
-                                  child: Icon(
-                                    Clarity.image_line,
-                                    color: Colors.white.withOpacity(0.2),
-                                    size: 64,
-                                  ),
-                                ),
-                          ),
-
-                          // Multi-stop gradient fade
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                stops: const [0.0, 0.35, 0.6, 0.8, 1.0],
-                                colors: [
-                                  Colors.black.withOpacity(0.25),
-                                  Colors.transparent,
-                                  Colors.transparent,
-                                  scaback.withOpacity(0.75),
-                                  scaback,
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          // Event title + details overlay
-                          Positioned(
-                            left: 24,
-                            right: 24,
-                            bottom: 0,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  event?.title ?? "",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.8,
-                                    height: 1.15,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (_formattedDate().isNotEmpty ||
-                                    (event?.location ?? "").isNotEmpty) ...[
-                                  const SizedBox(height: 10),
-                                  if (_formattedDate().isNotEmpty)
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.calendar_today_rounded,
-                                          color: Colors.white.withOpacity(0.6),
-                                          size: 14,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          _formattedDate(),
-                                          style: TextStyle(
-                                            color: Colors.white.withOpacity(
-                                              0.6,
-                                            ),
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  if ((event?.location ?? "").isNotEmpty) ...[
-                                    const SizedBox(height: 5),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.location_on_outlined,
-                                          color: Colors.white.withOpacity(0.6),
-                                          size: 14,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: Text(
-                                            event!.location!,
-                                            style: TextStyle(
-                                              color: Colors.white.withOpacity(
-                                                0.6,
-                                              ),
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ],
-                                const SizedBox(height: 4),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // ── Admin tool sections ────────────────
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 28, 18, 40),
-                      child: Column(
-                        children: [
-                          // ─ Invitations & Scanning ──────
-                          _buildSectionCard(
-                            title: "Mialiko ya Digital",
-                            rows: [
-                              _buildActionRow(
-                                icon: Clarity.email_line,
-                                iconGradient: const [
-                                  Color(0xFF6366F1),
-                                  Color(0xFF818CF8),
-                                ],
-                                title: "Kadi Zote",
-                                count: "$invsCount",
-                                onTap: () async {
-                                  try {
-                                    await Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) {
-                                          return Attendees(
-                                            edata: event!,
-                                            kardType: KardType.invitation,
-                                          );
-                                        },
-                                      ),
-                                    );
-                                    loadData();
-                                  } catch (e) {
-                                    showToast(isGood: false, msg: e.toString());
-                                  }
-                                },
-                              ),
-                              _buildActionRow(
-                                icon: Clarity.qr_code_line,
-                                iconGradient: const [
-                                  Color(0xFF8B5CF6),
-                                  Color(0xFFA78BFA),
-                                ],
-                                title: "Skani Kadi",
-                                count: "$invsCount",
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              CheckPoints(edata: widget.eventO),
-                                    ),
-                                  );
-                                },
-                                isLast: true,
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 28),
-
-                          // ─ Contributions & Budget ──────
-                          _buildSectionCard(
-                            title: "Michango & Bajeti",
-                            rows: [
-                              _buildActionRow(
-                                icon: Icons.monetization_on_outlined,
-                                iconGradient: const [
-                                  Color(0xFF10B981),
-                                  Color(0xFF34D399),
-                                ],
-                                title: "Michango",
-                                count: "$contsCount",
-                                onTap: () async {
-                                  try {
-                                    await Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) => Attendees(
-                                              edata: event!,
-                                              title: "Ratibu Michango",
-                                              kardType: KardType.contribution,
-                                            ),
-                                      ),
-                                    );
-                                    // await Navigator.of(context).push(
-                                    //   MaterialPageRoute(
-                                    //     builder:
-                                    //         (context) => MichangoDashboard(
-                                    //           eventId: event?.id ?? "",
-                                    //         ),
-                                    //   ),
-                                    // );
-                                    loadData();
-                                  } catch (e) {
-                                    showToast(isGood: false, msg: e.toString());
-                                  }
-                                },
-                              ),
-                              _buildActionRow(
-                                icon: Icons.account_balance_wallet_outlined,
-                                iconGradient: const [
-                                  Color(0xFF059669),
-                                  Color(0xFF10B981),
-                                ],
-                                title: "Bajeti",
-                                count: "",
-                                onTap: () {},
-                                isLast: true,
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 28),
-
-                          // ─ Card & SMS Design ───────────
-                          _buildSectionCard(
-                            title: "Dizaini Kadi & SMS",
-                            rows: [
-                              _buildActionRow(
-                                icon: Icons.style_outlined,
-                                iconGradient: const [
-                                  Color(0xFFF59E0B),
-                                  Color(0xFFFBBF24),
-                                ],
-                                title: "Temp za Kadi",
-                                count: "$cardTempsNo",
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) {
-                                        return Cards(
-                                          eId: widget.eventO.id ?? "",
-                                        );
-                                      },
-                                    ),
-                                  );
-                                },
-                              ),
-                              _buildActionRow(
-                                icon: Icons.sms_outlined,
-                                iconGradient: const [
-                                  Color(0xFFEF4444),
-                                  Color(0xFFF87171),
-                                ],
-                                title: "Temp za SMS",
-                                count: "$evMsgTmpCount",
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) {
-                                        return InvEditor(
-                                          eId: widget.eventO.id ?? "",
-                                        );
-                                      },
-                                    ),
-                                  );
-                                },
-                                isLast: true,
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 28),
-
-                          // ─ Admins & Vendors ────────────
-                          _buildSectionCard(
-                            title: "Wasimamizi & Vendors",
-                            rows: [
-                              _buildActionRow(
-                                icon: Icons.storefront_outlined,
-                                iconGradient: const [
-                                  Color(0xFFEC4899),
-                                  Color(0xFFF472B6),
-                                ],
-                                title: "Vendors",
-                                count: "$scannersCount",
-                                onTap: () async {
-                                  showToast(
-                                    isGood: true,
-                                    msg: "Inakuja hivi karibuni",
-                                  );
-                                },
-                              ),
-                              _buildActionRow(
-                                icon: Clarity.users_line,
-                                iconGradient: const [
-                                  Color(0xFF3B82F6),
-                                  Color(0xFF60A5FA),
-                                ],
-                                title: "Wasimamizi",
-                                count: "$adminsCount",
-                                onTap: () async {
-                                  await Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              Users(eId: event?.id ?? ""),
-                                    ),
-                                  );
-                                  loadData();
-                                },
-                                isLast: true,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                  ],
+                ),
               ),
+            ),
+
+            // ── Dashboard Sections ────────────
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // ─ Invitations & Scanning ──────
+                  _buildSectionCard(
+                    title: "Mialiko ya Digital",
+                    rows: [
+                      _buildActionRow(
+                        icon: Clarity.email_line,
+                        iconGradient: const [
+                          Color(0xFF6366F1),
+                          Color(0xFF818CF8),
+                        ],
+                        title: "Kadi Zote",
+                        count: "$invsCount",
+                        onTap: () async {
+                          try {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => Attendees(
+                                      edata: event!,
+                                      kardType: KardType.invitation,
+                                    ),
+                              ),
+                            );
+                            loadData();
+                          } catch (e) {
+                            showToast(isGood: false, msg: e.toString());
+                          }
+                        },
+                      ),
+                      _buildActionRow(
+                        icon: Clarity.qr_code_line,
+                        iconGradient: const [
+                          Color(0xFF8B5CF6),
+                          Color(0xFFA78BFA),
+                        ],
+                        title: "Skani Kadi",
+                        count: "",
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      CheckPoints(edata: widget.eventO),
+                            ),
+                          );
+                        },
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ─ Contributions & Budget ──────
+                  _buildSectionCard(
+                    title: "Michango & Bajeti",
+                    rows: [
+                      _buildActionRow(
+                        icon: Icons.monetization_on_outlined,
+                        iconGradient: const [
+                          Color(0xFF10B981),
+                          Color(0xFF34D399),
+                        ],
+                        title: "Michango",
+                        count: "$contsCount",
+                        onTap: () async {
+                          try {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => Attendees(
+                                      edata: event!,
+                                      kardType: KardType.contribution,
+                                      title: "Ratibu Michango",
+                                    ),
+                              ),
+                            );
+                            loadData();
+                          } catch (e) {
+                            showToast(isGood: false, msg: e.toString());
+                          }
+                        },
+                      ),
+                      _buildActionRow(
+                        icon: Icons.account_balance_wallet_outlined,
+                        iconGradient: const [
+                          Color(0xFF059669),
+                          Color(0xFF10B981),
+                        ],
+                        title: "Bajeti",
+                        count: "",
+                        onTap: () {
+                          showToast(
+                            isGood: true,
+                            msg: "Feature inakuja hivi karibuni!",
+                          );
+                        },
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ─ Card & SMS Design ───────────
+                  _buildSectionCard(
+                    title: "Dizaini Kadi & SMS",
+                    rows: [
+                      _buildActionRow(
+                        icon: Icons.style_outlined,
+                        iconGradient: const [
+                          Color(0xFFF59E0B),
+                          Color(0xFFFBBF24),
+                        ],
+                        title: "Temp za Kadi",
+                        count: "$cardTempsNo",
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      Cards(eId: widget.eventO.id ?? ""),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildActionRow(
+                        icon: Icons.sms_outlined,
+                        iconGradient: const [
+                          Color(0xFFEF4444),
+                          Color(0xFFF87171),
+                        ],
+                        title: "Temp za SMS",
+                        count: "$evMsgTmpCount",
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      InvEditor(eId: widget.eventO.id ?? ""),
+                            ),
+                          );
+                        },
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ─ Admins & Vendors ────────────
+                  _buildSectionCard(
+                    title: "Wasimamizi & Vendors",
+                    rows: [
+                      _buildActionRow(
+                        icon: Icons.storefront_outlined,
+                        iconGradient: const [
+                          Color(0xFFEC4899),
+                          Color(0xFFF472B6),
+                        ],
+                        title: "Vendors",
+                        count: "$scannersCount",
+                        onTap: () {
+                          showToast(isGood: true, msg: "Inakuja hivi karibuni");
+                        },
+                      ),
+                      _buildActionRow(
+                        icon: Clarity.users_line,
+                        iconGradient: const [
+                          Color(0xFF3B82F6),
+                          Color(0xFF60A5FA),
+                        ],
+                        title: "Wasimamizi",
+                        count: "$adminsCount",
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => Users(eId: event?.id ?? ""),
+                            ),
+                          );
+                          loadData();
+                        },
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+                ]),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -841,43 +819,47 @@ class _ChkpnFormState extends State<ChkpnForm> {
           return Form(
             key: key,
             child: ListView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: psm,
-                vertical: 16,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               children: [
-                const Text(
+                Text(
                   "Checkpoint Name",
-                  style: TextStyle(
+                  style: GoogleFonts.cormorantGaramond(
                     fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                    color: Colors.black87,
+                    fontSize: 22,
+                    color: GusTheme.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: controller,
+                  style: const TextStyle(
+                    color: GusTheme.textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
                   decoration: InputDecoration(
                     hintText: "Enter checkpoint name",
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.9),
+                    fillColor: GusTheme.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: secondaryColor, width: 2),
+                      borderSide: const BorderSide(
+                        color: GusTheme.gold,
+                        width: 2,
+                      ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 18,
                     ),
-                    prefixIcon: Icon(
+                    prefixIcon: const Icon(
                       Icons.edit_rounded,
-                      color: Colors.grey[600],
+                      color: GusTheme.textMuted,
                     ),
-                    hintStyle: TextStyle(color: Colors.grey[500]),
+                    hintStyle: const TextStyle(color: GusTheme.textMuted),
                   ),
                   validator:
                       (value) =>
@@ -885,7 +867,6 @@ class _ChkpnFormState extends State<ChkpnForm> {
                               ? "Name is required"
                               : null,
                   textCapitalization: TextCapitalization.sentences,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 32),
                 if (fcards.isNotEmpty)
@@ -897,15 +878,15 @@ class _ChkpnFormState extends State<ChkpnForm> {
                           Icon(
                             Icons.credit_card_rounded,
                             size: 24,
-                            color: secondaryColor,
+                            color: GusTheme.gold,
                           ),
                           const SizedBox(width: 12),
-                          const Text(
+                          Text(
                             "Accepted Cards",
-                            style: TextStyle(
+                            style: GoogleFonts.cormorantGaramond(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Colors.black87,
+                              color: GusTheme.textPrimary,
                             ),
                           ),
                         ],
@@ -919,14 +900,14 @@ class _ChkpnFormState extends State<ChkpnForm> {
                           decoration: BoxDecoration(
                             color:
                                 isSelected
-                                    ? secondaryColor.withOpacity(0.15)
-                                    : Colors.white.withOpacity(0.9),
+                                    ? GusTheme.gold.withOpacity(0.1)
+                                    : GusTheme.surface,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color:
                                   isSelected
-                                      ? secondaryColor.withOpacity(0.5)
-                                      : Colors.grey.withOpacity(0.3),
+                                      ? GusTheme.gold.withOpacity(0.5)
+                                      : GusTheme.glassBorder,
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -955,9 +936,7 @@ class _ChkpnFormState extends State<ChkpnForm> {
                                   ? Icons.check_circle_rounded
                                   : Icons.circle_outlined,
                               color:
-                                  isSelected
-                                      ? secondaryColor
-                                      : Colors.grey[600],
+                                  isSelected ? GusTheme.gold : Colors.grey[600],
                               size: 28,
                             ),
                             shape: RoundedRectangleBorder(
@@ -993,7 +972,7 @@ class _ChkpnFormState extends State<ChkpnForm> {
                           }
                           : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: secondaryColor,
+                    backgroundColor: GusTheme.gold,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
