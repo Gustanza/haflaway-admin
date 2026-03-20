@@ -114,7 +114,7 @@ buildContrList({
                     builder: (context) {
                       return ImpPreview(
                         event: event,
-                        carddata: kard,
+                        templateCardId: kard.id,
                         atList: selectList,
                         kardType: kardType,
                       );

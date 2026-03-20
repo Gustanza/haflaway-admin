@@ -24,9 +24,10 @@ import 'package:haflaway/utils/urls.dart';
 
 class ImpPreview extends StatefulWidget {
   final Event event;
-  final Kard carddata;
+
   final KardType kardType;
   final List<Attendee>? atList;
+  final String templateCardId;
   final Map<String, dynamic>? mapp;
   final File? xcelFile;
   const ImpPreview({
@@ -35,8 +36,8 @@ class ImpPreview extends StatefulWidget {
     this.atList,
     this.xcelFile,
     required this.event,
+    required this.templateCardId,
     required this.kardType,
-    required this.carddata,
   });
 
   @override
@@ -44,7 +45,6 @@ class ImpPreview extends StatefulWidget {
 }
 
 class _ImpPreviewState extends State<ImpPreview> {
-  CardConfig? data;
   xcl.Excel? excel;
   List chk = [];
   List<Attendee> attendees = [];
@@ -173,12 +173,17 @@ class _ImpPreviewState extends State<ImpPreview> {
       ),
 
       body: FutureBuilder(
-        future: firestore.collection(cardcol).doc(widget.carddata.id).get(),
+        future:
+            firestore
+                .collection(ecol)
+                .doc(widget.event.id)
+                .collection(cardcol)
+                .doc(widget.templateCardId)
+                .get(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             var source = (snapshot.data as dynamic).data();
             if (source != null) {
-              data = CardConfig.fromMap(widget.carddata.id, source);
               return bady();
             } else {
               return buildErr();
@@ -471,7 +476,6 @@ class _ImpPreviewState extends State<ImpPreview> {
           .doc(widget.event.id)
           .collection(atcol)
           .doc(atId);
-      dataCleaner(passcode: atRef.id, lfname: attendee.fullName);
       try {
         attendee.cards = {};
         attendee.checkinStatus = chk;
@@ -480,9 +484,9 @@ class _ImpPreviewState extends State<ImpPreview> {
         var payload = {
           "eventId": widget.event.id,
           "attendees": [attendee.toMap()],
-          "templateCard": data?.toMap(),
           "usepng": widget.event.usepng,
           "kardType": widget.kardType.name,
+          "templateCardId": widget.templateCardId,
         };
         var source = await client.post(
           Uri.parse(crtAtCloudUrl),
@@ -546,23 +550,6 @@ class _ImpPreviewState extends State<ImpPreview> {
         runnable();
       });
     }
-  }
-
-  dataCleaner({passcode, lfname}) {
-    chk = [];
-    for (var i = 0; i < widget.carddata.capacity; i++) {
-      var atentry = {
-        cattendeename: "Slot ${i + 1}",
-        crdChkpns: {
-          for (var chkpnId in widget.carddata.clearAt) chkpnId: false,
-        },
-      };
-
-      chk.add(atentry);
-    }
-    data?.elements[crdattname][lmntvalue] = lfname;
-    data?.elements[crdtype][lmntvalue] = widget.carddata.type;
-    data?.elements[crdQrCode][lmntvalue] = passcode;
   }
 
   popper() {

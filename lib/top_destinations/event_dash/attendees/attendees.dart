@@ -1479,7 +1479,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             return ImpPreview(
                               mapp: mapp,
                               xcelFile: file!,
-                              carddata: carddata,
+                              templateCardId: carddata.id,
                               event: widget.edata,
                               kardType: widget.kardType,
                             );

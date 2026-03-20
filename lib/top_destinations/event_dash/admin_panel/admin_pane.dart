@@ -7,6 +7,7 @@ import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/admin_pane_pub.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/settings/event_settings.dart';
@@ -14,6 +15,7 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/use
 import 'package:haflaway/top_destinations/event_dash/cards/cards.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/components/gus_scaffold.dart';
+import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/gus_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/cupertino.dart';
@@ -392,6 +394,17 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
         ),
       ),
       actions: [
+        // Extra Button
+        _floatingButton(
+          icon: Icons.event,
+          onTap: () async {
+            await Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (context) => DashboardScreen()));
+            loadData();
+          },
+        ),
+        const SizedBox(width: 8),
         _floatingButton(
           icon: Icons.settings_rounded,
           onTap: () async {

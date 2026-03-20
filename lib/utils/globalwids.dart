@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:haflaway/models/event.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/models/card.dart';
@@ -120,7 +121,7 @@ class BuildNoDt extends StatelessWidget {
   }
 }
 
-buildCard(Kard card, Function() tapd) {
+buildCard(Kard card, Function() dTapd, edTapd) {
   return Container(
     margin: const EdgeInsets.only(bottom: psm * 0.5),
     decoration: BoxDecoration(
@@ -133,6 +134,8 @@ buildCard(Kard card, Function() tapd) {
           child: FutureBuilder(
             future:
                 FirebaseFirestore.instance
+                    .collection(ecol)
+                    .doc(card.eventId)
                     .collection(cardcol)
                     .doc(card.id)
                     .get(),
@@ -149,9 +152,9 @@ buildCard(Kard card, Function() tapd) {
                       width: double.maxFinite,
                       child: Stack(
                         children: [
-                          Positioned.fill(
-                            child: buildImage(url: dt[tempccurl]),
-                          ),
+                          // Positioned.fill(
+                          //   child: buildImage(url: dt[tempccurl]),
+                          // ),
                           Positioned(
                             top: psm,
                             right: psm,
@@ -161,10 +164,30 @@ buildCard(Kard card, Function() tapd) {
                                 borderRadius: BorderRadius.circular(brsm),
                               ),
                               onPressed: () {
-                                tapd();
+                                dTapd();
                               },
                               child: const Text(
                                 "Delete",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: psm,
+                            left: psm,
+                            child: MaterialButton(
+                              color: Colors.green,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(brsm),
+                              ),
+                              onPressed: () {
+                                edTapd();
+                              },
+                              child: const Text(
+                                "Edit",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
