@@ -92,19 +92,19 @@ Widget drawer({required BuildContext context}) {
                           );
                         },
                       ),
-                      const SizedBox(height: 8),
-                      _buildDrawerItem(
-                        icon: Icons.people_outline_rounded,
-                        title: "Users Management",
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const AppUsersScreen(),
-                            ),
-                          );
-                        },
-                      ),
+                      // const SizedBox(height: 8),
+                      // _buildDrawerItem(
+                      //   icon: Icons.people_outline_rounded,
+                      //   title: "Users Management",
+                      //   onTap: () {
+                      //     Navigator.of(context).pop();
+                      //     Navigator.of(context).push(
+                      //       MaterialPageRoute(
+                      //         builder: (context) => const AppUsersScreen(),
+                      //       ),
+                      //     );
+                      //   },
+                      // ),
                     ],
                   ),
                 ),

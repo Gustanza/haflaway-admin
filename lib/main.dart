@@ -25,21 +25,18 @@ class HfApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb) {
-      return MaterialApp.router(
-        routerConfig: router,
-        themeMode: ThemeMode.dark,
-        debugShowCheckedModeBanner: false,
-        theme: GusTheme.darkTheme,
-      );
-    } else {
-      return MaterialApp(
-        home: const SplashScreen(),
-        debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.dark,
-        theme: GusTheme.darkTheme,
-      );
-    }
+    return Container(
+      alignment: Alignment.center,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 500),
+        child: MaterialApp(
+          home: const SplashScreen(),
+          debugShowCheckedModeBanner: false,
+          themeMode: ThemeMode.light,
+          // theme: GusTheme.darkTheme,
+        ),
+      ),
+    );
   }
 }
 
