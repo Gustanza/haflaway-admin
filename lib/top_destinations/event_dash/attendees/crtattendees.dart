@@ -40,10 +40,10 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   List? dataList;
   bool isLoading = false;
   bool hasError = false;
-  CardConfig? data;
   bool isPhoneValid = false;
   late String phnnumber;
   bool isWritting = false;
+  String templateCardId = "_";
   Map<String, String> scrdsMp = {};
   late List<Map<String, dynamic>> chekstatuses;
   TextEditingController ncont = TextEditingController();
@@ -60,12 +60,12 @@ class _CreateAttendeesState extends State<CreateAttendees> {
     try {
       var source =
           await firestore
+              .collection(ecol)
+              .doc(widget.event.id)
               .collection(cardcol)
-              .where('eventId', isEqualTo: widget.event.id)
               .where("purpose", isEqualTo: widget.kardType.name)
               .get();
       dataList = source.docs;
-
       scrdsMp = Map.fromIterable(
         dataList as Iterable,
         key: (e) => e.id ?? "",
@@ -83,7 +83,6 @@ class _CreateAttendeesState extends State<CreateAttendees> {
               var dItemMap = dItem.data();
               CardConfig crdConfig = CardConfig.fromMap(dItem.id, dItemMap);
               if (crdConfig.type == attrCrd.name) {
-                data = crdConfig;
                 crdCont.text = crdConfig.type;
                 break;
               }
@@ -157,10 +156,11 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                       controller: crdCont,
                       onSelected: (val) {
                         safeState(() {
-                          var dt = dataList?.firstWhere((d) {
-                            return d.id == val;
-                          });
-                          data = CardConfig.fromMap(dt.id, dt.data());
+                          // var dt = dataList?.firstWhere((d) {
+                          //   return d.id == val;
+                          // });
+                          templateCardId = val ?? "_";
+                          // data = CardConfig.fromMap(dt.id, dt.data());
                         });
                       },
                     ),
@@ -209,7 +209,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   submitForm({attendeeId}) async {
     var isValid = fkey.currentState?.validate() ?? false;
     if (isValid && validatePhone()) {
-      if (data == null) {
+      if (templateCardId == "_") {
         showToast(isGood: false, msg: "Select Card Type");
         return;
       }
@@ -220,7 +220,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
 
       try {
         var atId = attendeeId ?? generateUniqueSequence();
-        dataCleaner(passcode: atId);
+        // dataCleaner(passcode: atId);
         Attendee atdt = Attendee(
           id: atId,
           cards: {},
@@ -235,7 +235,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         var payload = {
           "eventId": widget.event.id,
           "attendees": [atdt.toMap()],
-          "templateCard": data?.toMap(),
+          "templateCardId": templateCardId,
           "usepng": widget.event.usepng,
           "kardType": widget.kardType.name,
         };
@@ -276,22 +276,22 @@ class _CreateAttendeesState extends State<CreateAttendees> {
     return true;
   }
 
-  dataCleaner({passcode}) {
-    chk = [];
-    String type = data?.type ?? "unknown";
-    int cap = data?.capacity ?? 1;
-    List clearAt = data?.clearAt ?? [];
-    for (var i = 0; i < cap; i++) {
-      var atentry = {
-        cattendeename: "Slot: ${i + 1}",
-        crdChkpns: {for (var chkpnId in clearAt) chkpnId: false},
-      };
-      chk.add(atentry);
-    }
-    data?.elements[crdattname][lmntvalue] = ncont.text;
-    data?.elements[crdtype][lmntvalue] = type;
-    data?.elements[crdQrCode][lmntvalue] = passcode;
-  }
+  // dataCleaner({passcode}) {
+  //   chk = [];
+  //   String type = data?.type ?? "unknown";
+  //   int cap = data?.capacity ?? 1;
+  //   List clearAt = data?.clearAt ?? [];
+  //   for (var i = 0; i < cap; i++) {
+  //     var atentry = {
+  //       cattendeename: "Slot: ${i + 1}",
+  //       crdChkpns: {for (var chkpnId in clearAt) chkpnId: false},
+  //     };
+  //     chk.add(atentry);
+  //   }
+  //   data?.elements[crdattname][lmntvalue] = ncont.text;
+  //   data?.elements[crdtype][lmntvalue] = type;
+  //   data?.elements[crdQrCode][lmntvalue] = passcode;
+  // }
 
   safeState(runnable) {
     if (mounted) {

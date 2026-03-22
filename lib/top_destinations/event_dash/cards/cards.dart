@@ -12,6 +12,7 @@ import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/strings.dart';
 import 'package:haflaway/utils/styles.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'create_card.dart';
 
 class Cards extends StatefulWidget {
@@ -32,32 +33,43 @@ class _CardsState extends State<Cards> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: scaback,
-      appBar: appBar(title: dsninv, 
-      leading: appBarActionButton(icon: Icons.arrow_back, onTap: (){
-        popper();
-      })
-      ), 
+      appBar: appBar(
+        title: "Haflaway Designer",
+        leading: appBarActionButton(
+          icon: Icons.arrow_back,
+          onTap: () {
+            popper();
+          },
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: lqassgradBaseColor,shape: RoundedRectangleBorder(
+        backgroundColor: lqassgradBaseColor,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadiusGeometry.circular(bsm),
-          side: BorderSide(color: lqassbdrColor, width: bdrWidthGen)
+          side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
         ),
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) {
-                return CreateCard(eId: widget.eId);
-              },
-            ),
+        onPressed: () async {
+          var _url = Uri.parse(
+            "https://haflaway-designer.web.app/designer/${widget.eId}/create",
           );
+          try {
+            await launchUrl(_url);
+          } catch (e) {
+            showToast(isGood: false, msg: "$e");
+          }
+          // Navigator.of(context).push(
+          //   MaterialPageRoute(
+          //     builder: (context) {
+          //       return CreateCard(eId: widget.eId);
+          //     },
+          //   ),
+          // );
         },
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: scagrad,
-        ),
+        decoration: BoxDecoration(gradient: scagrad),
         child: Column(
           children: [
             Expanded(
@@ -96,9 +108,22 @@ class _CardsState extends State<Cards> {
                                     right: psm,
                                     bottom: psm * 0.25,
                                   ),
-                                  child: buildCard(cList[index], () async {
-                                    await cdelete(cList[index]);
-                                  }),
+                                  child: buildCard(
+                                    cList[index],
+                                    () async {
+                                      await cdelete(cList[index]);
+                                    },
+                                    () async {
+                                      var _url = Uri.parse(
+                                        "https://haflaway-designer.web.app/designer/${widget.eId}/${cList[index].id}/edit",
+                                      );
+                                      try {
+                                        await launchUrl(_url);
+                                      } catch (e) {
+                                        showToast(isGood: false, msg: "$e");
+                                      }
+                                    },
+                                  ),
                                 );
                               },
                             ),
