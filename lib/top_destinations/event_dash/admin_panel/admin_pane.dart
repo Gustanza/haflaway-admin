@@ -398,7 +398,9 @@ class _AdminPanelState extends State<AdminPanel> {
   Widget _contributionsCard() {
     var pl = event?.totalPledge ?? 0.0;
     var py = event?.totalPayment ?? 0.0;
-    double? pct = (py / pl);
+    double pct = (py / pl);
+    if (pct.isNaN || pct.isInfinite) pct = 0.0;
+
     return GestureDetector(
       onTap: () async {
         try {
