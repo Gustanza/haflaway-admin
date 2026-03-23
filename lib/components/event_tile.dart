@@ -35,7 +35,11 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
     var prov = context.read<PackageProvider>();
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
-      child: Card(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Teme.card,
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
