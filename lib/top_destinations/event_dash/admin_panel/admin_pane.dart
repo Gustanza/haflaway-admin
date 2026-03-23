@@ -1,30 +1,65 @@
-import 'dart:ui';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/admin_pane_pub.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/in_check.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/settings/event_settings.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
 import 'package:haflaway/top_destinations/event_dash/cards/cards.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
-import 'package:haflaway/components/gus_scaffold.dart';
-import 'package:haflaway/utils/globalfns.dart';
-import 'package:haflaway/utils/gus_theme.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:haflaway/utils/colors.dart';
+import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/attendees.dart';
-import 'package:haflaway/components/moving_gradient_border.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:haflaway/utils/helpers.dart';
 import 'package:intl/intl.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Design Tokens
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _T {
+  // Backgrounds
+  static const bg = Color(0xFF0A0A0A); // near-black page
+  static const card = Color(0xFF141414); // card surface
+  static const card2 = Color(0xFF1A1A1A); // slightly lighter card
+
+  // Accent — the lime/yellow from the screenshots
+  static const lime = Color(0xFFC9A84C);
+  static const limeDim = Color(0xFF1E2800);
+
+  // Text
+  static const white = Color(0xFFFFFFFF);
+  static const grey1 = Color(0xFFAAAAAA);
+  static const grey2 = Color(0xFF555555);
+  static const grey3 = Color(0xFF333333);
+
+  // ── Typography ─────────────────────────────────────────────────────────────
+
+  static TextStyle f({
+    double size = 14,
+    FontWeight weight = FontWeight.w400,
+    Color color = white,
+    double letterSpacing = 0,
+    double? height,
+  }) => GoogleFonts.inter(
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AdminPanel
+// ─────────────────────────────────────────────────────────────────────────────
 
 class AdminPanel extends StatefulWidget {
   final Event eventO;
@@ -35,7 +70,7 @@ class AdminPanel extends StatefulWidget {
   State<AdminPanel> createState() => _AdminPanelState();
 }
 
-class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
+class _AdminPanelState extends State<AdminPanel> {
   Event? event;
   bool isLoading = false;
   bool hasError = false;
@@ -45,9 +80,10 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
   int scannersCount = 0;
   int cardTempsNo = 0;
   int evMsgTmpCount = 0;
-  GlobalKey<FormState> key = GlobalKey<FormState>();
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
-  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+  List<CheckPoint> checkpoints = [];
+
+  final firestore = FirebaseFirestore.instance;
+  final firebaseAuth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -55,54 +91,77 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
     loadData();
   }
 
-  loadData() async {
+  // ── Data ─────────────────────────────────────────────────────────────────────
+
+  Future<void> loadData() async {
     safeState(() {
       isLoading = true;
       hasError = false;
     });
     try {
-      DocumentReference<Map<String, dynamic>> eventRef = firestore
-          .collection(ecol)
-          .doc(widget.eventO.id);
-      CollectionReference<Map<String, dynamic>> attsRef = firestore
+      final eventRef = firestore.collection(ecol).doc(widget.eventO.id);
+      final attsRef = firestore
           .collection(ecol)
           .doc(widget.eventO.id)
           .collection(atcol);
-      CollectionReference<Map<String, dynamic>> cardsRef = firestore
+      final cardsRef = firestore
           .collection(ecol)
           .doc(widget.eventO.id)
           .collection(cardcol);
-      CollectionReference<Map<String, dynamic>> msgsRef = firestore
+      final msgsRef = firestore
           .collection(ecol)
           .doc(widget.eventO.id)
           .collection(evMsgTmpCol);
-      var result = await Future.wait([
+
+      final checkPointsRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id)
+          .collection(echecksub);
+
+      final result = await Future.wait([
         eventRef.get(),
         attsRef.get(),
         cardsRef.count().get(),
         msgsRef.count().get(),
+        checkPointsRef.get(),
       ]);
-      var eventSnapshot = result[0] as DocumentSnapshot<Map<String, dynamic>>;
-      var attsSnapshot = result[1] as QuerySnapshot<Map<String, dynamic>>;
-      var crdsSnapshot = result[2] as AggregateQuerySnapshot;
-      var msgsSnapshot = result[3] as AggregateQuerySnapshot;
-      invsCount =
-          attsSnapshot.docs.where((t) {
-            Attendee attendee = Attendee.fromMap(t.id, t.data());
-            return attendee.cards.containsKey(KardType.invitation.name);
-          }).length;
 
+      final eventSnapshot = result[0] as DocumentSnapshot<Map<String, dynamic>>;
+      final attsSnapshot = result[1] as QuerySnapshot<Map<String, dynamic>>;
+      final crdsSnapshot = result[2] as AggregateQuerySnapshot;
+      final msgsSnapshot = result[3] as AggregateQuerySnapshot;
+      final checkPnsSnapshot = result[4] as QuerySnapshot<Map<String, dynamic>>;
+
+      invsCount =
+          attsSnapshot.docs
+              .where(
+                (t) => Attendee.fromMap(
+                  t.id,
+                  t.data(),
+                ).cards.containsKey(KardType.invitation.name),
+              )
+              .length;
       contsCount =
-          attsSnapshot.docs.where((t) {
-            Attendee attendee = Attendee.fromMap(t.id, t.data());
-            return attendee.cards.containsKey(KardType.contribution.name);
-          }).length;
+          attsSnapshot.docs
+              .where(
+                (t) => Attendee.fromMap(
+                  t.id,
+                  t.data(),
+                ).cards.containsKey(KardType.contribution.name),
+              )
+              .length;
+
+      checkpoints =
+          checkPnsSnapshot.docs.map<CheckPoint>((el) {
+            return CheckPoint.fromMap(el.id, el.data());
+          }).toList();
 
       event = Event.fromMap(eventSnapshot.id, eventSnapshot.data()!);
       cardTempsNo = crdsSnapshot.count ?? 0;
       evMsgTmpCount = msgsSnapshot.count ?? 0;
       adminsCount = event?.adminsIds?.length ?? 0;
       scannersCount = event?.usersIds?.length ?? 0;
+
       safeState(() {
         isLoading = false;
         hasError = false;
@@ -112,695 +171,931 @@ class _AdminPanelState extends State<AdminPanel> with TickerProviderStateMixin {
         isLoading = false;
         hasError = true;
       });
-      debugPrint("Error is: $e");
+      debugPrint('AdminPanel error: $e');
     }
   }
-
-  // ── Helpers ──────────────────────────────────────────────
 
   String _formattedDate() {
     try {
       if (event?.startDate != null) {
-        final dt = DateTime.parse(event!.startDate!);
-        return DateFormat('EEE, MMM d · h:mm a').format(dt);
+        return DateFormat(
+          'EEE, MMM d · h:mm a',
+        ).format(DateTime.parse(event!.startDate!));
       }
     } catch (_) {}
-    return "";
+    return '';
   }
 
-  // ── Floating glass icon button (back / settings / edit) ─
-  Widget _floatingButton({
+  // ── Build ─────────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    if (hasError) return _buildErrorScaffold();
+    if (isLoading && event == null) return _buildLoadingScaffold();
+    return _buildMainScaffold();
+  }
+
+  // ── Loading ───────────────────────────────────────────────────────────────────
+
+  Widget _buildLoadingScaffold() {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: _T.bg,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _topBar(),
+              const Expanded(
+                child: Center(
+                  child: CupertinoActivityIndicator(color: _T.lime),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Main scaffold ─────────────────────────────────────────────────────────────
+
+  Widget _buildMainScaffold() {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: _T.bg,
+        body: RefreshIndicator(
+          onRefresh: loadData,
+          color: _T.lime,
+          backgroundColor: _T.card,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [_topBar(), _heroBlock()],
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(child: _miniStatRow()),
+              SliverToBoxAdapter(child: _checkpointsSection()),
+              SliverToBoxAdapter(child: _toolsSection()),
+              SliverToBoxAdapter(child: _teamSection()),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: MediaQuery.of(context).padding.bottom + 24,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Top bar ───────────────────────────────────────────────────────────────────
+  // "← Event Details   Edit" — yellow accent arrow + Edit button
+
+  Widget _topBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: _T.lime,
+                  size: 16,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Event Details',
+                  style: _T.f(
+                    size: 15,
+                    weight: FontWeight.w500,
+                    color: _T.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => CreateEvent(event: event)),
+              );
+              loadData();
+            },
+            child: Text(
+              'Edit',
+              style: _T.f(size: 15, weight: FontWeight.w500, color: _T.lime),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Hero block ────────────────────────────────────────────────────────────────
+  // LIVE NOW badge, big title, date + location
+
+  Widget _heroBlock() {
+    final title = event?.title ?? widget.eventO.title ?? '';
+    final date = _formattedDate();
+    final loc = event?.location ?? '';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // LIVE NOW badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: _T.limeDim,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: _T.lime.withOpacity(0.4)),
+            ),
+            child: Text(
+              'LIVE NOW',
+              style: _T.f(
+                size: 11,
+                weight: FontWeight.w700,
+                color: _T.lime,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Big event title
+          Text(
+            title,
+            style: _T.f(
+              size: 32,
+              weight: FontWeight.w800,
+              color: _T.white,
+              letterSpacing: -0.5,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Date
+          if (date.isNotEmpty)
+            Row(
+              children: [
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 13,
+                  color: _T.grey1,
+                ),
+                const SizedBox(width: 7),
+                Text(date, style: _T.f(size: 13, color: _T.grey1)),
+              ],
+            ),
+          if (loc.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(
+                  Icons.location_on_outlined,
+                  size: 13,
+                  color: _T.grey1,
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    loc,
+                    style: _T.f(size: 13, color: _T.grey1),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ── Contributions big card ────────────────────────────────────────────────────
+  // Matches screenshot 1: large number, progress bar, goal text
+
+  Widget _contributionsCard() {
+    var pl = event?.totalPledge ?? 0.0;
+    var py = event?.totalPayment ?? 0.0;
+    double? pct = (py / pl);
+    return GestureDetector(
+      onTap: () async {
+        try {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder:
+                  (_) => Attendees(
+                    edata: event!,
+                    kardType: KardType.contribution,
+                    title: 'Manage Contributions',
+                  ),
+            ),
+          );
+          loadData();
+        } catch (e) {
+          showToast(isGood: false, msg: e.toString());
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: _T.card,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'CONTRIBUTIONS',
+                  style: _T.f(
+                    size: 10,
+                    weight: FontWeight.w700,
+                    color: _T.grey2,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                Text(
+                  '${(pct * 100).round()}%',
+                  style: _T.f(
+                    size: 15,
+                    weight: FontWeight.w700,
+                    color: _T.lime,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${formatMoney(event?.totalPayment, currency: "TZS")}',
+              style: _T.f(
+                size: 24,
+                weight: FontWeight.w800,
+                color: _T.white,
+                letterSpacing: -1.0,
+                height: 1.0,
+              ),
+            ),
+            const SizedBox(height: 14),
+            // Progress bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: pct,
+                minHeight: 4,
+                backgroundColor: _T.grey3,
+                valueColor: AlwaysStoppedAnimation<Color>(_T.lime),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Goal: ${formatMoney(event?.totalPledge ?? 0.0, currency: 'TZS')}',
+              style: _T.f(size: 12, color: _T.grey2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Mini stat row: Invitations + Admins side by side ─────────────────────────
+
+  Widget _miniStatRow() {
+    return Column(
+      children: [
+        _contributionsCard(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: _miniStatCard(
+                  label: 'INVITATIONS',
+                  value: '$invsCount',
+                  sub: 'sent',
+                  icon: Icons.confirmation_number_outlined,
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder:
+                            (_) => Attendees(
+                              edata: event!,
+                              kardType: KardType.invitation,
+                            ),
+                      ),
+                    );
+                    loadData();
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _miniStatCard(
+                  label: 'ADMINS',
+                  value: '$adminsCount',
+                  sub: 'active',
+                  icon: Icons.people_alt_outlined,
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => Users(eId: event?.id ?? ''),
+                      ),
+                    );
+                    loadData();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _miniStatCard({
+    required String label,
+    required String value,
+    required String sub,
     required IconData icon,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.35),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.15),
-                width: 0.5,
-              ),
-            ),
-            child: Icon(icon, color: Colors.white, size: 20),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Single action row (iOS-settings style) ──────────────
-  Widget _buildActionRow({
-    required IconData icon,
-    required List<Color> iconGradient,
-    required String title,
-    required String count,
-    required VoidCallback onTap,
-    bool isLast = false,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            // Slick Dark Glass Icon Pill
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.45),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  width: 0.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: ShaderMask(
-                  shaderCallback:
-                      (bounds) => const LinearGradient(
-                        colors: [GusTheme.gold, GusTheme.goldLight],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ).createShader(bounds),
-                  child: Icon(icon, color: Colors.white, size: 22),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            // Title
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      color: GusTheme.textPrimary.withValues(alpha: 0.95),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  if (count.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      "$count items recorded",
-                      style: GoogleFonts.inter(
-                        color: GusTheme.textMuted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: GusTheme.textMuted,
-              size: 20,
-            ),
-          ],
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _T.card,
+          borderRadius: BorderRadius.circular(16),
         ),
-      ),
-    );
-  }
-
-  // ── Section card (frosted glass container) ──────────────
-  Widget _buildSectionCard({
-    required String title,
-    required List<Widget> rows,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            title.toUpperCase(),
-            style: GoogleFonts.inter(
-              color: GusTheme.textMuted,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.5,
-            ),
-          ),
-        ),
-        MovingGradientBorder(
-          borderRadius: 24,
-          borderWidth: 1.0,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: GusTheme.surface.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    width: 0.5,
-                  ),
-                ),
-                child: Column(
-                  children: List.generate(rows.length * 2 - 1, (i) {
-                    if (i.isOdd) {
-                      return Divider(
-                        height: 1,
-                        thickness: 0.5,
-                        color: Colors.white.withValues(alpha: 0.08),
-                        indent: 72,
-                      );
-                    }
-                    return rows[i ~/ 2];
-                  }),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Error view ──────────────────────────────────────────
-  Widget _buildErrorView() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.wifi_off_rounded,
-                color: Colors.redAccent,
-                size: 64,
-              ),
-            ),
-            const SizedBox(height: 24),
             Text(
-              "Something went wrong",
-              style: GoogleFonts.cormorantGaramond(
-                color: GusTheme.textPrimary,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
+              label,
+              style: _T.f(
+                size: 10,
+                weight: FontWeight.w700,
+                color: _T.grey2,
+                letterSpacing: 1.2,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              "We encountered an error while loading the event data. Please try again.",
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(color: GusTheme.textMuted, fontSize: 14),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () => loadData(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: GusTheme.gold,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Text(
-                "Retry Now",
-                style: TextStyle(fontWeight: FontWeight.w700),
+              value,
+              style: _T.f(
+                size: 40,
+                weight: FontWeight.w800,
+                color: _T.white,
+                letterSpacing: -0.8,
+                height: 1.0,
               ),
             ),
+            const SizedBox(height: 4),
+            Text(sub, style: _T.f(size: 12, color: _T.grey2)),
+            const SizedBox(height: 12),
+            Icon(icon, color: _T.lime, size: 22),
           ],
         ),
       ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // ── BUILD ─────────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════
+  // ── Checkpoints section ───────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    if (hasError) return GusScaffold(title: "", body: _buildErrorView());
-    if (isLoading && event == null) {
-      return const GusScaffold(
-        title: "",
-        body: Center(child: CupertinoActivityIndicator(color: GusTheme.gold)),
-      );
-    }
+  Widget _checkpointsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader(
+          'SCAN CHECKPOINTS',
+          action: 'View all',
+          onAction: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => CheckPoints(edata: widget.eventO),
+              ),
+            );
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: List.generate(checkpoints.length, (idx) {
+              CheckPoint checkpoint = checkpoints[idx];
+              return _checkpointRow(
+                icon: Icons.meeting_room_outlined,
+                name: '${checkpoint.name}',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) {
+                        return InCheckWrapper(
+                          checkpoint: checkpoint,
+                          eId: event?.id ?? "",
+                        );
+                      },
+                    ),
+                  );
+                },
+              );
+            }),
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
 
-    return GusScaffold(
-      title: "",
-      titleWidget: MovingGradientBorder(
-        borderRadius: 8,
-        borderWidth: 1.2,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Text(
-            "Admin Panel",
-            style: GoogleFonts.cormorantGaramond(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: GusTheme.textPrimary,
+  Widget _checkpointRow({
+    required IconData icon,
+    required String name,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: _T.card,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: _T.lime, size: 20),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                name,
+                style: _T.f(size: 15, weight: FontWeight.w500, color: _T.white),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: _T.grey2, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Event tools grid ──────────────────────────────────────────────────────────
+
+  Widget _toolsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader('EVENT TOOLS'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 1.05,
+            padding: EdgeInsets.only(top: psm),
+            children: [
+              _toolCard(
+                icon: Icons.desktop_windows_outlined,
+                count: '$cardTempsNo',
+                title: 'Card Templates',
+                subtitle: 'Design invitations',
+                isActive: true,
+                onTap:
+                    () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => Cards(eId: widget.eventO.id ?? ''),
+                      ),
+                    ),
+              ),
+              _toolCard(
+                icon: Icons.chat_bubble_outline_rounded,
+                count: '$evMsgTmpCount',
+                title: 'SMS Templates',
+                subtitle: 'Broadcast messages',
+                isActive: true,
+                onTap:
+                    () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => InvEditor(eId: widget.eventO.id ?? ''),
+                      ),
+                    ),
+              ),
+              _toolCard(
+                icon: Icons.people_alt_outlined,
+                count: '$contsCount',
+                title: 'Contributions',
+                subtitle: 'Track payments',
+                isActive: true,
+                onTap: () async {
+                  try {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder:
+                            (_) => Attendees(
+                              edata: event!,
+                              kardType: KardType.contribution,
+                              title: 'Manage Contributions',
+                            ),
+                      ),
+                    );
+                    loadData();
+                  } catch (e) {
+                    showToast(isGood: false, msg: e.toString());
+                  }
+                },
+              ),
+              _toolCard(
+                icon: Icons.storefront_outlined,
+                count: '—',
+                title: 'Vendors',
+                subtitle: 'Suppliers list',
+                isActive: false,
+                onTap: () => showToast(isGood: true, msg: 'Coming soon!'),
+              ),
+              _toolCard(
+                icon: Icons.mic_none_rounded,
+                count: '—',
+                title: 'Event MCs',
+                subtitle: 'Hosts & ceremony',
+                isActive: false,
+                onTap: () => showToast(isGood: true, msg: 'Coming soon!'),
+              ),
+              _toolCard(
+                icon: Icons.meeting_room_outlined,
+                count: '—',
+                title: 'Venue',
+                subtitle: 'Hall management',
+                isActive: false,
+                onTap: () => showToast(isGood: true, msg: 'Coming soon!'),
+              ),
+              _toolCard(
+                icon: Icons.account_balance_wallet_outlined,
+                count: '—',
+                title: 'Budget',
+                subtitle: 'Track expenses',
+                isActive: false,
+                onTap: () => showToast(isGood: true, msg: 'Coming soon!'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _toolCard({
+    required IconData icon,
+    required String count,
+    required String title,
+    required String subtitle,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: _T.card,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon top-left
+                Icon(icon, color: isActive ? _T.lime : _T.grey2, size: 22),
+                const Spacer(),
+                // Big count
+                Text(
+                  count,
+                  style: _T.f(
+                    size: 34,
+                    weight: FontWeight.w800,
+                    color: isActive ? _T.white : _T.grey2,
+                    letterSpacing: -0.8,
+                    height: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  style: _T.f(
+                    size: 13,
+                    weight: FontWeight.w600,
+                    color: isActive ? _T.white : _T.grey2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: _T.f(size: 11, color: _T.grey2),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+            // ACTIVE / SOON badge top-right
+            Positioned(top: 0, right: 0, child: _statusBadge(isActive)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statusBadge(bool isActive) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: isActive ? _T.limeDim : _T.card2,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isActive ? _T.lime.withOpacity(0.35) : _T.grey3,
+          width: 0.5,
+        ),
+      ),
+      child: Text(
+        isActive ? 'ACTIVE' : 'SOON',
+        style: _T.f(
+          size: 8,
+          weight: FontWeight.w800,
+          color: isActive ? _T.lime : _T.grey2,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+
+  // ── Team section ──────────────────────────────────────────────────────────────
+
+  Widget _teamSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader(
+          'MANAGEMENT TEAM',
+          action: 'Manage',
+          onAction: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => Users(eId: event?.id ?? '')),
+            );
+            loadData();
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: GestureDetector(
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => Users(eId: event?.id ?? '')),
+              );
+              loadData();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  _avStack(),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$adminsCount Administrators',
+                          style: _T.f(
+                            size: 15,
+                            weight: FontWeight.w600,
+                            color: _T.white,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '$scannersCount scanners',
+                          style: _T.f(size: 12, color: _T.grey2),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: _T.grey2,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _avStack() {
+    const data = [
+      (Color(0xFF3D1A0A), Color(0xFFE07040), 'FA'),
+      (Color(0xFF0A1830), Color(0xFF5A8ADB), 'JK'),
+      (Color(0xFF0D2018), Color(0xFF3DAA76), 'AM'),
+      (Color(0xFF1E0D30), Color(0xFFBF5AF2), 'SK'),
+    ];
+    const double sz = 32;
+    const double ov = 9;
+    final double w = sz + (data.length - 1) * (sz - ov);
+
+    return SizedBox(
+      width: w,
+      height: sz,
+      child: Stack(
+        children:
+            data.asMap().entries.map((e) {
+              final d = e.value;
+              return Positioned(
+                left: e.key * (sz - ov),
+                child: Container(
+                  width: sz,
+                  height: sz,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: d.$1,
+                    border: Border.all(color: _T.card, width: 2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      d.$3,
+                      style: _T.f(
+                        size: 10,
+                        weight: FontWeight.w700,
+                        color: d.$2,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+      ),
+    );
+  }
+
+  // ── Publish button ────────────────────────────────────────────────────────────
+
+  // ── Section header ────────────────────────────────────────────────────────────
+
+  Widget _sectionHeader(
+    String label, {
+    String? action,
+    VoidCallback? onAction,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: _T.f(
+              size: 11,
+              weight: FontWeight.w700,
+              color: _T.grey2,
               letterSpacing: 1.2,
             ),
           ),
-        ),
+          if (action != null)
+            GestureDetector(
+              onTap: onAction,
+              child: Text(
+                action,
+                style: _T.f(size: 12, weight: FontWeight.w600, color: _T.lime),
+              ),
+            ),
+        ],
       ),
-      actions: [
-        // Extra Button
-        _floatingButton(
-          icon: Icons.event,
-          onTap: () async {
-            await Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (context) => DashboardScreen()));
-            loadData();
-          },
-        ),
-        const SizedBox(width: 8),
-        _floatingButton(
-          icon: Icons.settings_rounded,
-          onTap: () async {
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => EventSettings(event: event),
-              ),
-            );
-            loadData();
-          },
-        ),
-        const SizedBox(width: 8),
-        _floatingButton(
-          icon: Icons.edit_rounded,
-          onTap: () async {
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => CreateEvent(event: event),
-              ),
-            );
-            loadData();
-          },
-        ),
-        const SizedBox(width: 12),
-      ],
-      body: RefreshIndicator(
-        onRefresh: () async => loadData(),
-        color: GusTheme.gold,
-        backgroundColor: GusTheme.surface,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          slivers: [
-            // ── Hero Section ───────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  children: [
-                    // Premium Hero Image with Glittering Border
-                    MovingGradientBorder(
-                      borderRadius: 32,
-                      borderWidth: 1.2,
-                      child: Container(
-                        height: 300,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(32),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.4),
-                              blurRadius: 40,
-                              offset: const Offset(0, 20),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(32),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              CachedNetworkImage(
-                                imageUrl: event?.eventThumbnail ?? "",
-                                fit: BoxFit.cover,
-                                placeholder:
-                                    (context, url) => Container(
-                                      color: GusTheme.surface,
-                                      child: const Center(
-                                        child: CupertinoActivityIndicator(
-                                          color: GusTheme.gold,
-                                        ),
-                                      ),
-                                    ),
-                                errorWidget:
-                                    (context, url, error) => Container(
-                                      color: GusTheme.surface,
-                                      child: const Icon(
-                                        Clarity.image_line,
-                                        color: GusTheme.textMuted,
-                                        size: 48,
-                                      ),
-                                    ),
-                              ),
-                              // Deeper Gradient Overlay for Vault-like feel
-                              Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.black.withValues(alpha: 0.2),
-                                      Colors.black.withValues(alpha: 0.85),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              // Event Details Overlay
-                              Positioned(
-                                bottom: 24,
-                                left: 24,
-                                right: 24,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (_formattedDate().isNotEmpty)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: GusTheme.gold.withValues(
-                                            alpha: 0.15,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          _formattedDate().toUpperCase(),
-                                          style: GoogleFonts.inter(
-                                            color: GusTheme.gold,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                            letterSpacing: 1.5,
-                                          ),
-                                        ),
-                                      ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      event?.title ?? "",
-                                      style: GoogleFonts.cormorantGaramond(
-                                        color: Colors.white,
-                                        fontSize: 32,
-                                        fontWeight: FontWeight.w700,
-                                        height: 1.0,
-                                        letterSpacing: -0.5,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    if ((event?.location ?? "").isNotEmpty) ...[
-                                      const SizedBox(height: 10),
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.location_on_rounded,
-                                            color: GusTheme.gold,
-                                            size: 14,
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Expanded(
-                                            child: Text(
-                                              event!.location!,
-                                              style: GoogleFonts.inter(
-                                                color: Colors.white.withValues(
-                                                  alpha: 0.6,
-                                                ),
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ],
+    );
+  }
+
+  // ── Bottom nav bar ────────────────────────────────────────────────────────────
+  // Matches screenshots: 4 icons, active = lime circle background
+  // ── Error scaffold ────────────────────────────────────────────────────────────
+
+  Widget _buildErrorScaffold() {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: _T.bg,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _topBar(),
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: _T.lime.withOpacity(0.08),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.wifi_off_rounded,
+                            color: _T.lime,
+                            size: 48,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Something went wrong',
+                          style: _T.f(
+                            size: 22,
+                            weight: FontWeight.w700,
+                            color: _T.white,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'We couldn\'t load the event data.\nPlease try again.',
+                          textAlign: TextAlign.center,
+                          style: _T.f(size: 14, color: _T.grey1, height: 1.5),
+                        ),
+                        const SizedBox(height: 32),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: loadData,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _T.lime,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              'Retry',
+                              style: _T.f(
+                                size: 16,
+                                weight: FontWeight.w700,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                  ],
+                  ),
                 ),
               ),
-            ),
-
-            // ── Dashboard Sections ────────────
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // ─ Invitations & Scanning ──────
-                  _buildSectionCard(
-                    title: "Mialiko ya Digital",
-                    rows: [
-                      _buildActionRow(
-                        icon: Clarity.email_line,
-                        iconGradient: const [
-                          Color(0xFF6366F1),
-                          Color(0xFF818CF8),
-                        ],
-                        title: "Kadi Zote",
-                        count: "$invsCount",
-                        onTap: () async {
-                          try {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => Attendees(
-                                      edata: event!,
-                                      kardType: KardType.invitation,
-                                    ),
-                              ),
-                            );
-                            loadData();
-                          } catch (e) {
-                            showToast(isGood: false, msg: e.toString());
-                          }
-                        },
-                      ),
-                      _buildActionRow(
-                        icon: Clarity.qr_code_line,
-                        iconGradient: const [
-                          Color(0xFF8B5CF6),
-                          Color(0xFFA78BFA),
-                        ],
-                        title: "Skani Kadi",
-                        count: "",
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder:
-                                  (context) =>
-                                      CheckPoints(edata: widget.eventO),
-                            ),
-                          );
-                        },
-                        isLast: true,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // ─ Contributions & Budget ──────
-                  _buildSectionCard(
-                    title: "Michango & Bajeti",
-                    rows: [
-                      _buildActionRow(
-                        icon: Icons.monetization_on_outlined,
-                        iconGradient: const [
-                          Color(0xFF10B981),
-                          Color(0xFF34D399),
-                        ],
-                        title: "Michango",
-                        count: "$contsCount",
-                        onTap: () async {
-                          try {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => Attendees(
-                                      edata: event!,
-                                      kardType: KardType.contribution,
-                                      title: "Ratibu Michango",
-                                    ),
-                              ),
-                            );
-                            loadData();
-                          } catch (e) {
-                            showToast(isGood: false, msg: e.toString());
-                          }
-                        },
-                      ),
-                      _buildActionRow(
-                        icon: Icons.account_balance_wallet_outlined,
-                        iconGradient: const [
-                          Color(0xFF059669),
-                          Color(0xFF10B981),
-                        ],
-                        title: "Bajeti",
-                        count: "",
-                        onTap: () {
-                          showToast(
-                            isGood: true,
-                            msg: "Feature inakuja hivi karibuni!",
-                          );
-                        },
-                        isLast: true,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // ─ Card & SMS Design ───────────
-                  _buildSectionCard(
-                    title: "Dizaini Kadi & SMS",
-                    rows: [
-                      _buildActionRow(
-                        icon: Icons.style_outlined,
-                        iconGradient: const [
-                          Color(0xFFF59E0B),
-                          Color(0xFFFBBF24),
-                        ],
-                        title: "Temp za Kadi",
-                        count: "$cardTempsNo",
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder:
-                                  (context) =>
-                                      Cards(eId: widget.eventO.id ?? ""),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildActionRow(
-                        icon: Icons.sms_outlined,
-                        iconGradient: const [
-                          Color(0xFFEF4444),
-                          Color(0xFFF87171),
-                        ],
-                        title: "Temp za SMS",
-                        count: "$evMsgTmpCount",
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder:
-                                  (context) =>
-                                      InvEditor(eId: widget.eventO.id ?? ""),
-                            ),
-                          );
-                        },
-                        isLast: true,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // ─ Admins & Vendors ────────────
-                  _buildSectionCard(
-                    title: "Wasimamizi & Vendors",
-                    rows: [
-                      _buildActionRow(
-                        icon: Icons.storefront_outlined,
-                        iconGradient: const [
-                          Color(0xFFEC4899),
-                          Color(0xFFF472B6),
-                        ],
-                        title: "Vendors",
-                        count: "$scannersCount",
-                        onTap: () {
-                          showToast(isGood: true, msg: "Inakuja hivi karibuni");
-                        },
-                      ),
-                      _buildActionRow(
-                        icon: Clarity.users_line,
-                        iconGradient: const [
-                          Color(0xFF3B82F6),
-                          Color(0xFF60A5FA),
-                        ],
-                        title: "Wasimamizi",
-                        count: "$adminsCount",
-                        onTap: () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => Users(eId: event?.id ?? ""),
-                            ),
-                          );
-                          loadData();
-                        },
-                        isLast: true,
-                      ),
-                    ],
-                  ),
-                ]),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  safeState(runnable) {
-    if (mounted) {
-      setState(() {
-        runnable();
-      });
-    }
-  }
+  // ── Helpers ───────────────────────────────────────────────────────────────────
 
-  popper() {
-    Navigator.of(context).pop();
+  void safeState(VoidCallback fn) {
+    if (mounted) setState(fn);
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ChkpnForm — untouched logic, restyled to match
+// ─────────────────────────────────────────────────────────────────────────────
 
 class ChkpnForm extends StatefulWidget {
   final String eId;
@@ -813,9 +1108,9 @@ class ChkpnForm extends StatefulWidget {
 class _ChkpnFormState extends State<ChkpnForm> {
   List selCrdsIds = [];
   bool isLoading = false;
-  GlobalKey<FormState> key = GlobalKey<FormState>();
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
-  TextEditingController controller = TextEditingController();
+  final key = GlobalKey<FormState>();
+  final firestore = FirebaseFirestore.instance;
+  final controller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -823,277 +1118,239 @@ class _ChkpnFormState extends State<ChkpnForm> {
       future:
           firestore.collection(ecol).doc(widget.eId).collection(cardcol).get(),
       builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          List<Kard> fcards =
-              (snapshot.data as dynamic).docs.map<Kard>((doc) {
-                return Kard.fromMap(doc.id, doc.data());
-              }).toList();
+        if (!snapshot.hasData) return const Center();
+        if (snapshot.hasError) return const Center();
 
-          return Form(
-            key: key,
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              children: [
+        final fcards =
+            (snapshot.data as dynamic).docs
+                .map<Kard>((doc) => Kard.fromMap(doc.id, doc.data()))
+                .toList();
+
+        return Form(
+          key: key,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+            children: [
+              Text(
+                'New Checkpoint',
+                style: _T.f(
+                  size: 26,
+                  weight: FontWeight.w800,
+                  color: _T.white,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Name this checkpoint and select accepted card types.',
+                style: _T.f(size: 14, color: _T.grey1, height: 1.5),
+              ),
+              const SizedBox(height: 22),
+
+              // Name field
+              TextFormField(
+                controller: controller,
+                style: _T.f(size: 15, weight: FontWeight.w400, color: _T.white),
+                cursorColor: _T.lime,
+                decoration: InputDecoration(
+                  hintText: 'e.g. Main Entrance',
+                  hintStyle: _T.f(size: 15, color: _T.grey2),
+                  filled: true,
+                  fillColor: _T.card,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: _T.grey3, width: 0.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: _T.grey3, width: 0.5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: _T.lime, width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.edit_rounded,
+                    color: _T.grey2,
+                    size: 18,
+                  ),
+                ),
+                validator:
+                    (v) => (v == null || v.isEmpty) ? 'Name is required' : null,
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 28),
+
+              if (fcards.isNotEmpty) ...[
                 Text(
-                  "Checkpoint Name",
-                  style: GoogleFonts.cormorantGaramond(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 22,
-                    color: GusTheme.textPrimary,
+                  'Accepted Card Types',
+                  style: _T.f(
+                    size: 17,
+                    weight: FontWeight.w600,
+                    color: _T.white,
+                    letterSpacing: -0.2,
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: controller,
-                  style: const TextStyle(
-                    color: GusTheme.textPrimary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: "Enter checkpoint name",
-                    filled: true,
-                    fillColor: GusTheme.surface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(
-                        color: GusTheme.gold,
-                        width: 2,
+                ...fcards.map((card) {
+                  final sel = selCrdsIds.contains(card.id);
+                  return GestureDetector(
+                    onTap:
+                        () => setState(
+                          () =>
+                              sel
+                                  ? selCrdsIds.remove(card.id)
+                                  : selCrdsIds.add(card.id),
+                        ),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 160),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
                       ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 18,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.edit_rounded,
-                      color: GusTheme.textMuted,
-                    ),
-                    hintStyle: const TextStyle(color: GusTheme.textMuted),
-                  ),
-                  validator:
-                      (value) =>
-                          value == null || value.isEmpty
-                              ? "Name is required"
-                              : null,
-                  textCapitalization: TextCapitalization.sentences,
-                ),
-                const SizedBox(height: 32),
-                if (fcards.isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                      decoration: BoxDecoration(
+                        color: sel ? _T.limeDim : _T.card,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: sel ? _T.lime.withOpacity(0.4) : _T.grey3,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Row(
                         children: [
                           Icon(
-                            Icons.credit_card_rounded,
-                            size: 24,
-                            color: GusTheme.gold,
+                            sel
+                                ? Icons.check_circle_rounded
+                                : Icons.circle_outlined,
+                            color: sel ? _T.lime : _T.grey2,
+                            size: 22,
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            "Accepted Cards",
-                            style: GoogleFonts.cormorantGaramond(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: GusTheme.textPrimary,
+                            card.type,
+                            style: _T.f(
+                              size: 15,
+                              weight: sel ? FontWeight.w600 : FontWeight.w400,
+                              color: sel ? _T.lime : _T.white,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      ...List.generate(fcards.length, (idx) {
-                        bool isSelected = selCrdsIds.contains(fcards[idx].id);
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color:
-                                isSelected
-                                    ? GusTheme.gold.withOpacity(0.1)
-                                    : GusTheme.surface,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color:
-                                  isSelected
-                                      ? GusTheme.gold.withOpacity(0.5)
-                                      : GusTheme.glassBorder,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(
-                                  isSelected ? 0.15 : 0.1,
-                                ),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: CheckboxListTile(
-                            value: isSelected,
-                            title: Text(
-                              fcards[idx].type,
-                              style: TextStyle(
-                                fontWeight:
-                                    isSelected
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            secondary: Icon(
-                              isSelected
-                                  ? Icons.check_circle_rounded
-                                  : Icons.circle_outlined,
-                              color:
-                                  isSelected ? GusTheme.gold : Colors.grey[600],
-                              size: 28,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                            ),
-                            onChanged: (val) {
-                              setState(() {
-                                if (isSelected) {
-                                  selCrdsIds.remove(fcards[idx].id);
-                                } else {
-                                  selCrdsIds.add(fcards[idx].id);
-                                }
-                              });
-                            },
-                          ),
-                        );
-                      }),
-                    ],
-                  )
-                else
-                  _buildEmptyCardsState(),
-                const SizedBox(height: 40),
-                ElevatedButton(
+                    ),
+                  );
+                }),
+              ] else
+                _emptyCards(),
+
+              const SizedBox(height: 32),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
                   onPressed:
-                      !isLoading
-                          ? () async {
+                      isLoading
+                          ? null
+                          : () async {
                             if (key.currentState?.validate() ?? false) {
                               await crtActn(selCrdsIds: selCrdsIds);
                             }
-                          }
-                          : null,
+                          },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: GusTheme.gold,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    backgroundColor: _T.lime,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
-                    shadowColor: Colors.black.withOpacity(0.2),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (isLoading)
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 3,
+                  child:
+                      isLoading
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.black,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                          : Text(
+                            'Save Checkpoint',
+                            style: _T.f(
+                              size: 16,
+                              weight: FontWeight.w700,
+                              color: Colors.black,
+                            ),
                           ),
-                        )
-                      else
-                        const Icon(Icons.save_rounded, size: 24),
-                      const SizedBox(width: 12),
-                      Text(
-                        isLoading ? "Saving..." : "Save Checkpoint",
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
-                const SizedBox(height: 24),
-              ],
-            ),
-          );
-        } else if (snapshot.hasError) {
-          return Center();
-        }
-        return Center();
+              ),
+            ],
+          ),
+        );
       },
     );
   }
 
-  Widget _buildEmptyCardsState() {
+  Widget _emptyCards() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.credit_card_off_rounded,
-              size: 60,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 20),
-            Text(
-              "No Cards Available",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        children: [
+          const Icon(Icons.credit_card_off_rounded, size: 48, color: _T.grey2),
+          const SizedBox(height: 16),
+          Text(
+            'No card types available',
+            style: _T.f(size: 15, weight: FontWeight.w500, color: _T.grey1),
+          ),
+        ],
       ),
     );
   }
 
-  Future<void> crtActn({selCrdsIds}) async {
+  Future<void> crtActn({required List selCrdsIds}) async {
     setState(() => isLoading = true);
     try {
-      WriteBatch batch = firestore.batch();
-      var chkpnRef =
+      final batch = firestore.batch();
+      final chkpnRef =
           firestore
               .collection(ecol)
               .doc(widget.eId)
               .collection(echecksub)
               .doc();
-      List<DocumentReference<Map<String, dynamic>>> crdRefs = [];
-      for (var selCrdsId in selCrdsIds) {
-        var tmp = firestore
-            .collection(ecol)
-            .doc(widget.eId)
-            .collection(cardcol)
-            .doc(selCrdsId);
-        crdRefs.add(tmp);
-      }
-      CheckPoint checkPoint = CheckPoint(
-        id: chkpnRef.id,
-        name: controller.text,
+
+      final crdRefs =
+          selCrdsIds
+              .map(
+                (id) => firestore
+                    .collection(ecol)
+                    .doc(widget.eId)
+                    .collection(cardcol)
+                    .doc(id as String),
+              )
+              .toList();
+
+      batch.set(
+        chkpnRef,
+        CheckPoint(id: chkpnRef.id, name: controller.text).toMap(),
       );
-      batch.set(chkpnRef, checkPoint.toMap());
-      for (var crdRef in crdRefs) {
-        batch.update(crdRef, {
+      for (final ref in crdRefs) {
+        batch.update(ref, {
           crdClrnc: FieldValue.arrayUnion([chkpnRef.id]),
         });
       }
+
       await batch.commit();
       setState(() => isLoading = false);
-      Navigator.pop(context);
-      showToast(isGood: true, msg: "Checkpoint created successfully");
+      if (mounted) Navigator.pop(context);
+      showToast(isGood: true, msg: 'Checkpoint created successfully');
     } catch (e) {
       setState(() => isLoading = false);
-      showToast(isGood: false, msg: "$e");
+      showToast(isGood: false, msg: '$e');
     }
   }
 }

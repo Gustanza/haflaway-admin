@@ -6,10 +6,12 @@ import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:go_router/go_router.dart';
 import 'package:haflaway/firebase_options.dart';
 import 'package:haflaway/models/card.dart';
+import 'package:haflaway/providers/package_provider.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/public_attendees.dart';
 import 'package:haflaway/top_destinations/splash_screen.dart';
 import 'package:haflaway/utils/gus_theme.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +19,14 @@ void main(List<String> args) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('sw', null);
 
-  runApp(Phoenix(child: const HfApp()));
+  runApp(
+    Phoenix(
+      child: MultiProvider(
+        providers: [ChangeNotifierProvider(create: (_) => PackageProvider())],
+        child: const HfApp(),
+      ),
+    ),
+  );
 }
 
 class HfApp extends StatelessWidget {
@@ -25,39 +34,20 @@ class HfApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb) {
-      return MaterialApp.router(
-        routerConfig: router,
-        themeMode: ThemeMode.dark,
-        debugShowCheckedModeBanner: false,
-        theme: GusTheme.darkTheme,
-      );
-    } else {
-      return MaterialApp(
-        home: const SplashScreen(),
-        debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.dark,
-        theme: GusTheme.darkTheme,
-      );
-    }
+    // if (false) {
+    //   return MaterialApp.router(
+    //     routerConfig: router,
+    //     themeMode: ThemeMode.dark,
+    //     debugShowCheckedModeBanner: false,
+    //     theme: GusTheme.darkTheme,
+    //   );
+    // } else {
+    return MaterialApp(
+      home: const SplashScreen(),
+      debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.dark,
+      theme: GusTheme.darkTheme,
+    );
+    // }
   }
 }
-
-var router = GoRouter(
-  routes: [
-    GoRoute(
-      path: '/',
-      name: "app",
-      builder: (context, state) => SplashScreen(),
-    ),
-    GoRoute(
-      path: '/cards/:eventId',
-      name: "cards",
-      builder:
-          (context, state) => PubAttendees(
-            eventId: state.pathParameters['eventId'] ?? "poh",
-            kardType: KardType.invitation,
-          ),
-    ),
-  ],
-);

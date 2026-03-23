@@ -9,6 +9,7 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/event_tile.dart';
 import 'package:haflaway/components/moving_gradient_border.dart';
 import 'package:haflaway/models/event.dart';
+import 'package:haflaway/providers/package_provider.dart';
 import 'package:haflaway/top_destinations/drawer/drawer.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/admin_pane.dart';
@@ -18,6 +19,7 @@ import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/gus_theme.dart';
 import 'package:in_app_update/in_app_update.dart';
+import 'package:provider/provider.dart';
 
 class HaflaWayHome extends StatefulWidget {
   const HaflaWayHome({super.key});
@@ -65,13 +67,21 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
     safeState(() {
       isLoading = true;
     });
+    var prov = context.read<PackageProvider>();
     try {
       QuerySnapshot<Map<String, dynamic>> res =
-          await firestore
-              .collection(ecol)
-              .orderBy('startDate', descending: true)
-              .limit(pageSize)
-              .get();
+          prov.isSuperAdmin
+              ? await firestore
+                  .collection(ecol)
+                  .orderBy('startDate', descending: true)
+                  .limit(pageSize)
+                  .get()
+              : await firestore
+                  .collection(ecol)
+                  .where("adminsIds", arrayContains: uid)
+                  .orderBy('startDate', descending: true)
+                  .limit(pageSize)
+                  .get();
       lastEvent = res.docs.last;
       events =
           res.docs.map<Event>((e) {
@@ -90,13 +100,22 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       isLoading = true;
     });
     try {
+      var prov = context.read<PackageProvider>();
       QuerySnapshot<Map<String, dynamic>> res =
-          await firestore
-              .collection(ecol)
-              .orderBy('startDate', descending: true)
-              .startAfterDocument(lastEvent!)
-              .limit(pageSize)
-              .get();
+          prov.isSuperAdmin
+              ? await firestore
+                  .collection(ecol)
+                  .orderBy('startDate', descending: true)
+                  .startAfterDocument(lastEvent!)
+                  .limit(pageSize)
+                  .get()
+              : await firestore
+                  .collection(ecol)
+                  .where("adminsIds", arrayContains: uid)
+                  .orderBy('startDate', descending: true)
+                  .startAfterDocument(lastEvent!)
+                  .limit(pageSize)
+                  .get();
       lastEvent = res.docs.last;
       var tmpevents =
           res.docs.map<Event>((e) {
@@ -252,11 +271,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                           },
                           child: Container(
                             margin: const EdgeInsets.only(bottom: spaceTiles),
-                            child: MovingGradientBorder(
-                              borderRadius: 20,
-                              borderWidth: 1.2,
-                              child: EventTile(eventData: events[index]),
-                            ),
+                            child: EventTile(eventData: events[index]),
                           ),
                         );
                       },

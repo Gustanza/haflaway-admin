@@ -9,14 +9,12 @@ import 'package:haflaway/components/splash_affiliates.dart';
 import 'package:haflaway/components/updateAppState.dart';
 import 'package:haflaway/models/appState.dart';
 import 'package:haflaway/models/user.dart';
+import 'package:haflaway/providers/package_provider.dart';
 import 'package:haflaway/top_destinations/eventz/navhost.dart';
-import 'package:haflaway/utils/colors.dart';
-import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/gus_theme.dart';
-import 'package:haflaway/utils/styles.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -73,8 +71,10 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _gateKeeper({required String userId}) async {
     try {
       FirebaseFirestore firestore = FirebaseFirestore.instance;
-      PackageInfo packageInfo = await PackageInfo.fromPlatform();
-      int buildNumber = int.tryParse(packageInfo.buildNumber) ?? 0;
+      var conte = context.read<PackageProvider>();
+      await conte.getAppInfo();
+      String bno = conte.buildNumber;
+      int buildNumber = int.tryParse(bno) ?? 0;
 
       final futures = await Future.wait([
         firestore.collection(ucol).doc(userId).get(),

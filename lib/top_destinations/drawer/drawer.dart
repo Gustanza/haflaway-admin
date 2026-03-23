@@ -3,13 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/models/event.dart';
+import 'package:haflaway/providers/package_provider.dart';
 import 'package:haflaway/top_destinations/app_users/app_users.dart';
 import 'package:haflaway/top_destinations/settings/account.dart';
-import 'package:haflaway/utils/constants.dart';
-import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/gus_theme.dart';
+import 'package:provider/provider.dart';
 
 Widget drawer({required BuildContext context}) {
+  var provider = Provider.of<PackageProvider>(context, listen: false);
   return Drawer(
     backgroundColor: Colors.transparent,
     elevation: 0,
@@ -93,18 +94,19 @@ Widget drawer({required BuildContext context}) {
                         },
                       ),
                       const SizedBox(height: 8),
-                      _buildDrawerItem(
-                        icon: Icons.people_outline_rounded,
-                        title: "Users Management",
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const AppUsersScreen(),
-                            ),
-                          );
-                        },
-                      ),
+                      if (provider.isSuperAdmin)
+                        _buildDrawerItem(
+                          icon: Icons.people_outline_rounded,
+                          title: "Users Management",
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const AppUsersScreen(),
+                              ),
+                            );
+                          },
+                        ),
                     ],
                   ),
                 ),
@@ -112,7 +114,7 @@ Widget drawer({required BuildContext context}) {
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Text(
-                    "VERSION 1.0.0",
+                    "${provider.appVersion}",
                     style: GoogleFonts.inter(
                       fontSize: 10,
                       color: GusTheme.textMuted.withOpacity(0.5),
