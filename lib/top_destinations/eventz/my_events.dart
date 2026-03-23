@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/event_tile.dart';
-import 'package:haflaway/components/moving_gradient_border.dart';
 import 'package:haflaway/models/event.dart';
+import 'package:haflaway/providers/package_provider.dart';
 import 'package:haflaway/top_destinations/drawer/drawer.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/admin_pane.dart';
@@ -18,6 +18,7 @@ import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/gus_theme.dart';
 import 'package:in_app_update/in_app_update.dart';
+import 'package:provider/provider.dart';
 
 class HaflaWayHome extends StatefulWidget {
   const HaflaWayHome({super.key});
@@ -35,6 +36,8 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   ScrollController scrollController = ScrollController();
   QueryDocumentSnapshot<Map<String, dynamic>>? lastEvent;
+  String currentFilter = "Today";
+  final List<String> filters = ['Upcoming', "Today", 'This Week', 'Past'];
 
   @override
   void initState() {
@@ -65,19 +68,91 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
     safeState(() {
       isLoading = true;
     });
+    var prov = context.read<PackageProvider>();
+    var nowDt = DateTime.now();
+    var now = nowDt.toIso8601String();
+    var todayStart =
+        DateTime(nowDt.year, nowDt.month, nowDt.day).toIso8601String();
+    var todayEnd =
+        DateTime(
+          nowDt.year,
+          nowDt.month,
+          nowDt.day,
+          23,
+          59,
+          59,
+        ).toIso8601String();
     try {
+      Query<Map<String, dynamic>> query = firestore.collection(ecol);
+
+      if (!prov.isSuperAdmin) {
+        query = query.where("adminsIds", arrayContains: uid);
+      }
+
+      if (currentFilter == 'Upcoming') {
+        query = query
+            .where('startDate', isGreaterThan: now)
+            .orderBy('startDate', descending: false);
+      } else if (currentFilter == 'Past') {
+        query = query
+            .where('endDate', isLessThan: now)
+            .orderBy('endDate', descending: true);
+      } else {
+        // Today's or This Week: Any event that overlaps with the target range.
+        // We query by startDate <= targetEnd to find potential matches.
+        var targetEnd = todayEnd;
+        if (currentFilter == 'This Week') {
+          var sunday = nowDt.add(Duration(days: 7 - nowDt.weekday));
+          targetEnd =
+              DateTime(
+                sunday.year,
+                sunday.month,
+                sunday.day,
+                23,
+                59,
+                59,
+              ).toIso8601String();
+        }
+
+        query = query
+            .where('startDate', isLessThanOrEqualTo: targetEnd)
+            .orderBy('startDate', descending: true);
+      }
+
       QuerySnapshot<Map<String, dynamic>> res =
-          await firestore
-              .collection(ecol)
-              .where("adminsIds", arrayContains: uid)
-              .orderBy('startDate', descending: true)
-              .limit(pageSize)
-              .get();
-      lastEvent = res.docs.last;
+          await query.limit(pageSize).get();
+      lastEvent = res.docs.isNotEmpty ? res.docs.last : null;
       events =
-          res.docs.map<Event>((e) {
-            return Event.fromMap(e.id, e.data());
-          }).toList();
+          res.docs.map<Event>((e) => Event.fromMap(e.id, e.data())).toList();
+
+      if (currentFilter == "Today" || currentFilter == 'This Week') {
+        var rangeStart = todayStart;
+        var rangeEnd = todayEnd;
+
+        if (currentFilter == 'This Week') {
+          var monday = nowDt.subtract(Duration(days: nowDt.weekday - 1));
+          var sunday = nowDt.add(Duration(days: 7 - nowDt.weekday));
+          rangeStart =
+              DateTime(monday.year, monday.month, monday.day).toIso8601String();
+          rangeEnd =
+              DateTime(
+                sunday.year,
+                sunday.month,
+                sunday.day,
+                23,
+                59,
+                59,
+              ).toIso8601String();
+        }
+
+        events =
+            events.where((e) {
+              var start = e.startDate ?? rangeEnd;
+              var end = e.endDate ?? rangeEnd;
+              return start.compareTo(rangeEnd) <= 0 &&
+                  end.compareTo(rangeStart) >= 0;
+            }).toList();
+      }
     } catch (e) {
       showToast(isGood: false, msg: "$e");
     }
@@ -90,20 +165,89 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
     safeState(() {
       isLoading = true;
     });
+    var nowDt = DateTime.now();
+    var now = nowDt.toIso8601String();
+    var todayStart =
+        DateTime(nowDt.year, nowDt.month, nowDt.day).toIso8601String();
+    var todayEnd =
+        DateTime(
+          nowDt.year,
+          nowDt.month,
+          nowDt.day,
+          23,
+          59,
+          59,
+        ).toIso8601String();
     try {
+      var prov = context.read<PackageProvider>();
+      Query<Map<String, dynamic>> query = firestore.collection(ecol);
+
+      if (!prov.isSuperAdmin) {
+        query = query.where("adminsIds", arrayContains: uid);
+      }
+
+      if (currentFilter == 'Upcoming') {
+        query = query
+            .where('startDate', isGreaterThan: now)
+            .orderBy('startDate', descending: false);
+      } else if (currentFilter == 'Past') {
+        query = query
+            .where('endDate', isLessThan: now)
+            .orderBy('endDate', descending: true);
+      } else {
+        var targetEnd = todayEnd;
+        if (currentFilter == 'This Week') {
+          var sunday = nowDt.add(Duration(days: 7 - nowDt.weekday));
+          targetEnd =
+              DateTime(
+                sunday.year,
+                sunday.month,
+                sunday.day,
+                23,
+                59,
+                59,
+              ).toIso8601String();
+        }
+        query = query
+            .where('startDate', isLessThanOrEqualTo: targetEnd)
+            .orderBy('startDate', descending: true);
+      }
+
       QuerySnapshot<Map<String, dynamic>> res =
-          await firestore
-              .collection(ecol)
-              .where("adminsIds", arrayContains: uid)
-              .orderBy('startDate', descending: true)
-              .startAfterDocument(lastEvent!)
-              .limit(pageSize)
-              .get();
-      lastEvent = res.docs.last;
+          await query.startAfterDocument(lastEvent!).limit(pageSize).get();
+
+      lastEvent = res.docs.isNotEmpty ? res.docs.last : lastEvent;
       var tmpevents =
-          res.docs.map<Event>((e) {
-            return Event.fromMap(e.id, e.data());
-          }).toList();
+          res.docs.map<Event>((e) => Event.fromMap(e.id, e.data())).toList();
+
+      if (currentFilter == "Today" || currentFilter == 'This Week') {
+        var rangeStart = todayStart;
+        var rangeEnd = todayEnd;
+
+        if (currentFilter == 'This Week') {
+          var monday = nowDt.subtract(Duration(days: nowDt.weekday - 1));
+          var sunday = nowDt.add(Duration(days: 7 - nowDt.weekday));
+          rangeStart =
+              DateTime(monday.year, monday.month, monday.day).toIso8601String();
+          rangeEnd =
+              DateTime(
+                sunday.year,
+                sunday.month,
+                sunday.day,
+                23,
+                59,
+                59,
+              ).toIso8601String();
+        }
+        tmpevents =
+            tmpevents.where((e) {
+              var start = e.startDate ?? rangeEnd;
+              var end = e.endDate ?? rangeEnd;
+              return start.compareTo(rangeEnd) <= 0 &&
+                  end.compareTo(rangeStart) >= 0;
+            }).toList();
+      }
+
       events.addAll(tmpevents);
     } catch (e) {
       showToast(isGood: false, msg: "$e");
@@ -133,20 +277,58 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       backgroundColor: GusTheme.obsidian,
       drawer: drawer(context: context),
       appBar: appBar(
-        titleWidget: MovingGradientBorder(
-          borderRadius: 8,
-          borderWidth: 1.5,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Text(
-              "Haflaway",
-              style: GoogleFonts.cormorantGaramond(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: GusTheme.textPrimary,
-                letterSpacing: 1.5,
+        titleWidget: PopupMenuButton<String>(
+          offset: const Offset(0, 40),
+          color: const Color(0xFF141414), // _T.card
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          onSelected: (String value) {
+            safeState(() {
+              currentFilter = value;
+              events = [];
+              loadEvents();
+            });
+          },
+          itemBuilder: (BuildContext context) {
+            return filters.map((String choice) {
+              return PopupMenuItem<String>(
+                value: choice,
+                child: Text(
+                  choice,
+                  style: GoogleFonts.inter(
+                    color:
+                        currentFilter == choice
+                            ? const Color(0xFFC9A84C)
+                            : Colors.white,
+                    fontWeight:
+                        currentFilter == choice
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                  ),
+                ),
+              );
+            }).toList();
+          },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                currentFilter,
+                style: GoogleFonts.inter(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                ),
               ),
-            ),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Color(0xFFC9A84C), // _T.lime
+                size: 24,
+              ),
+            ],
           ),
         ),
         leading: appBarActionButton(
@@ -164,14 +346,6 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
         actions: Row(
           children: [
             appBarActionButton(
-              icon: Icons.refresh,
-              onTap: () {
-                showToast(isGood: true, msg: "Refreshing feed");
-                loadEvents();
-              },
-            ),
-            const SizedBox(width: spaceTiles),
-            appBarActionButton(
               icon: Icons.add,
               onTap: () async {
                 await Navigator.of(context).push(
@@ -182,6 +356,15 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                   ),
                 );
                 loadEvents();
+              },
+            ),
+            const SizedBox(width: spaceTiles),
+            // Profile icon mimicking admin_pane / user screenshot
+            appBarActionButton(
+              icon: Icons.refresh,
+              onTap: () async {
+                await loadEvents();
+                showToast(isGood: true, msg: "Events Refreshed");
               },
             ),
           ],
@@ -254,11 +437,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                           },
                           child: Container(
                             margin: const EdgeInsets.only(bottom: spaceTiles),
-                            child: MovingGradientBorder(
-                              borderRadius: 20,
-                              borderWidth: 1.2,
-                              child: EventTile(eventData: events[index]),
-                            ),
+                            child: EventTile(eventData: events[index]),
                           ),
                         );
                       },

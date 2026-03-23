@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 const primaryColor = CupertinoColors.systemBlue;
 const primaryGreen = Colors.green;
@@ -41,3 +42,36 @@ var lqassgrad = LinearGradient(
 var lqassbdrColor = Colors.white.withOpacity(0.4);
 
 var lqassbdr = Border.all(color: lqassbdrColor, width: 0.5);
+
+class Teme {
+  // Backgrounds
+  static const bg = Color(0xFF0A0A0A); // near-black page
+  static const card = Color(0xFF141414); // card surface
+  static const card2 = Color(0xFF1A1A1A); // slightly lighter card
+
+  // Accent — the lime/yellow from the screenshots
+  static const lime = Color(0xFFC9A84C);
+  static const limeDim = Color(0xFF1E2800);
+
+  // Text
+  static const white = Color(0xFFFFFFFF);
+  static const grey1 = Color(0xFFAAAAAA);
+  static const grey2 = Color(0xFF555555);
+  static const grey3 = Color(0xFF333333);
+
+  // ── Typography ─────────────────────────────────────────────────────────────
+
+  static TextStyle f({
+    double size = 14,
+    FontWeight weight = FontWeight.w400,
+    Color color = white,
+    double letterSpacing = 0,
+    double? height,
+  }) => GoogleFonts.inter(
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
+}

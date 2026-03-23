@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:haflaway/providers/package_provider.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:haflaway/utils/globalwids.dart';
+import 'package:provider/provider.dart';
 
 class EventTile extends StatefulWidget {
   final Event eventData;
@@ -29,16 +31,15 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     var dt = widget.eventData.startDate;
     var eventDate = dformtr.format(DateTime.parse(dt!));
-    var eventfDt = formatDate(dtime: DateTime.parse(dt!));
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: secscagrad.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+    var eventfDt = formatDate(dtime: DateTime.parse(dt));
+    var prov = context.read<PackageProvider>();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Teme.card,
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -63,11 +64,11 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                       ),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black54],
-                      ),
+                      // gradient: LinearGradient(
+                      //   begin: Alignment.topCenter,
+                      //   end: Alignment.bottomCenter,
+                      //   colors: [Colors.transparent, Colors.black54],
+                      // ),
                     ),
                   ),
                 ),
@@ -174,7 +175,8 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                   const SizedBox(height: 12),
                   GestureDetector(
                     onTap: () async {
-                      await showPublish(eventId: widget.eventData.id ?? "_");
+                      if (prov.isSuperAdmin)
+                        await showPublish(eventId: widget.eventData.id ?? "_");
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
