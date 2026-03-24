@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/hfhttp/clientelle.dart';
@@ -16,7 +16,6 @@ import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
-import 'package:haflaway/utils/errorstrs.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/styles.dart';
@@ -29,12 +28,12 @@ class ImpPreview extends StatefulWidget {
   final List<Attendee>? atList;
   final String templateCardId;
   final Map<String, dynamic>? mapp;
-  final File? xcelFile;
+  final Uint8List? xcelBytes;
   const ImpPreview({
     super.key,
     this.mapp,
     this.atList,
-    this.xcelFile,
+    this.xcelBytes,
     required this.event,
     required this.templateCardId,
     required this.kardType,
@@ -58,7 +57,7 @@ class _ImpPreviewState extends State<ImpPreview> {
   @override
   void initState() {
     super.initState();
-    if (widget.xcelFile != null) {
+    if (widget.xcelBytes != null) {
       manouverExcel();
     } else {
       setAtList();
@@ -95,8 +94,8 @@ class _ImpPreviewState extends State<ImpPreview> {
       int? atahadiidx = widget.mapp!['ahadi'];
       int? atmchangoidx = widget.mapp!['mchango'];
       //
-      File? file = widget.xcelFile;
-      var bytes = file?.readAsBytesSync();
+      //
+      var bytes = widget.xcelBytes;
       excel = xcl.Excel.decodeBytes(bytes!);
       var tblKey = excel?.tables.keys.firstOrNull;
       var table = excel?.tables[tblKey];
@@ -110,8 +109,8 @@ class _ImpPreviewState extends State<ImpPreview> {
         }
         var namecell = rows[i][atnidx];
         var phonecell = rows[i][atphnidx];
-        var ahadicell = rows[i][atahadiidx ?? 0];
-        var mchangocell = rows[i][atmchangoidx ?? 0];
+        var ahadicell = atahadiidx != null ? rows[i][atahadiidx] : null;
+        var mchangocell = atmchangoidx != null ? rows[i][atmchangoidx] : null;
         var phoneItself = transformNumber("${phonecell?.value}");
         Attendee attendee = Attendee(
           cards: {},
@@ -467,55 +466,72 @@ class _ImpPreviewState extends State<ImpPreview> {
     safeState(() {
       isWritting = true;
     });
-    List<Attendee> attendeesCpy = List.from(attendees);
+
     HttpService client = HttpService();
-    for (var attendee in attendeesCpy) {
-      var atId = attendee.id ?? generateUniqueSequence();
-      var atRef = firestore
-          .collection(ecol)
-          .doc(widget.event.id)
-          .collection(atcol)
-          .doc(atId);
-      try {
+    // Create a copy to iterate while modifying the original list
+    List<Attendee> attendeesCpy = List.from(attendees);
+
+    for (var i = 0; i < attendeesCpy.length; i += 5) {
+      int end = (i + 5 < attendeesCpy.length) ? i + 5 : attendeesCpy.length;
+      List<Attendee> batch = attendeesCpy.sublist(i, end);
+
+      List<Map<String, dynamic>> batchPayload = [];
+      for (var attendee in batch) {
+        var atId = attendee.id ?? generateUniqueSequence();
+        attendee.id = atId;
         attendee.cards = {};
         attendee.checkinStatus = chk;
-        attendee.id = attendee.id ?? atId;
         attendee.createdAt = DateTime.now();
+        batchPayload.add(attendee.toMap());
+      }
+
+      try {
         var payload = {
           "eventId": widget.event.id,
-          "attendees": [attendee.toMap()],
+          "attendees": batchPayload,
           "usepng": widget.event.usepng,
           "kardType": widget.kardType.name,
           "templateCardId": widget.templateCardId,
         };
+
         var source = await client.post(
           Uri.parse(crtAtCloudUrl),
           body: jsonEncode(payload),
         );
-        var message = "Failed";
+
         var body = jsonDecode(source.body);
-        if (body == null || !body['status']) {
-          message = body != null ? body['message'] : "Failed";
-          showToast(isGood: false, msg: "$message");
+        if (body != null && body['status']) {
+          var results = body['data'] as List;
+          for (var res in results) {
+            if (res['status']) {
+              var atId = res['attendeeId'];
+              // Find attendee in batch to get paidAmount
+              var attendee = batch.firstWhere(
+                (a) => a.id == atId,
+                orElse: () => batch[0],
+              );
+              setMchango(amount: attendee.paidAmount, atId: atId);
+
+              safeState(() {
+                attendees.removeWhere((test) => test.id == atId);
+              });
+            } else {
+              showToast(
+                isGood: false,
+                msg: res['message'] ?? "Failed for one item",
+              );
+            }
+          }
+          showToast(isGood: true, msg: body['message'] ?? "Batch Success");
         } else {
-          message = body['message'] ?? "Success";
-          setMchango(amount: attendee.paidAmount, atId: atRef.id);
-          showToast(isGood: true, msg: "$message");
-          safeState(() {
-            try {
-              var atte = body['data'][0];
-              if (atte['status']) {
-                attendees.removeWhere((test) {
-                  return test.id == atte['attendeeId'];
-                });
-              }
-            } catch (e) {}
-          });
+          var message = body != null ? body['message'] : "Batch Failed";
+          showToast(isGood: false, msg: "$message");
         }
       } catch (e) {
-        showToast(isGood: false, msg: genErrMsg);
+        showToast(isGood: false, msg: "Batch Error: $e");
       }
     }
+
     client.close();
     safeState(() {
       isWritting = false;

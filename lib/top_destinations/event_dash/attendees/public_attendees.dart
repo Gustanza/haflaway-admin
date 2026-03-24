@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -42,7 +42,7 @@ class PubAttendees extends StatefulWidget {
 
 class _PubAttendeesState extends State<PubAttendees>
     with TickerProviderStateMixin {
-  File? file;
+  Uint8List? xcelBytes;
   List<Kard> lcrds = [];
   String? _selectedKardFilter;
   List<Attendee> atList = [];
