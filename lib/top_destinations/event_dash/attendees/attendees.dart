@@ -324,24 +324,25 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             _loadAttendees();
           },
         ),
-        PopClickers(
-          leading: Icon(Icons.mail),
-          title: Text("Tuma Reminder"),
-          onTap: () async {
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) {
-                  return InvitesIssuers(
-                    event: widget.edata,
-                    kardType: widget.kardType,
-                    campaignId: invRemCampId,
-                  );
-                },
-              ),
-            );
-            _loadAttendees();
-          },
-        ),
+        if (widget.kardType == KardType.invitation)
+          PopClickers(
+            leading: Icon(Icons.mail),
+            title: Text("Tuma Reminder"),
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return InvitesIssuers(
+                      event: widget.edata,
+                      kardType: widget.kardType,
+                      campaignId: invRemCampId,
+                    );
+                  },
+                ),
+              );
+              _loadAttendees();
+            },
+          ),
         PopClickers(
           leading: Icon(Icons.sms),
           title: Text("Tuma Bulk SMS"),

@@ -59,7 +59,7 @@ class Attendee {
     required this.fullName,
     required this.phone,
     this.attendanceStatus,
-    this.messageIndexes = const [],
+    this.messageIndexes,
     this.idComment = 'No Comment',
     required this.messages,
   });
@@ -72,7 +72,7 @@ class Attendee {
     "fullName": fullName,
     "messages": messages,
     "idComment": idComment,
-    "messageIndexes": messageIndexes,
+    if (messageIndexes != null) "messageIndexes": messageIndexes,
     "attendanceStatus": attendanceStatus,
     "checkinStatus": checkinStatus,
     "createdAt": createdAt.toIso8601String(),

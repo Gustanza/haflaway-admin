@@ -59,6 +59,12 @@ class SendPreviewerState extends State<SendPreviewer> {
                 .where('category', isEqualTo: "whatsapp-wedding-invitations")
                 .where("language", isEqualTo: widget.event.language)
                 .get()
+            : widget.campaignId == invRemCampId
+            ? firestore
+                .collection("messageTemplates")
+                .where('category', isEqualTo: invRemCampId)
+                .where("language", isEqualTo: widget.event.language)
+                .get()
             : firestore
                 .collection("messageTemplates")
                 .where('category', isEqualTo: "whatsapp-wedding-save-the-date")
@@ -429,7 +435,6 @@ class SendPreviewerState extends State<SendPreviewer> {
             shrinkWrap: true,
             children: [
               const SizedBox(height: psm),
-
               // Icon indicator
               Center(
                 child: Container(
@@ -479,7 +484,8 @@ class SendPreviewerState extends State<SendPreviewer> {
                       var _url =
                           widget.campaignId == contrCampId
                               ? sendWspContr
-                              : widget.campaignId == invCampId
+                              : widget.campaignId == invCampId ||
+                                  widget.campaignId == invRemCampId
                               ? sendWspInv
                               : sendWspSvDt;
                       response = await client.post(
