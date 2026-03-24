@@ -221,9 +221,10 @@ String cleanStr({String? input}) {
 }
 
 String generateUniqueSequence() {
-  final random = Random();
-  // Generate random 4-digit number (1000-9999)
-  return (1000 + random.nextInt(9000)).toString();
+  const chars =
+      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  final random = Random.secure(); // More secure than Random()
+  return List.generate(4, (_) => chars[random.nextInt(chars.length)]).join();
 }
 
 buildPop({list, icon, onTap}) {

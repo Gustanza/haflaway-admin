@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -49,7 +49,7 @@ class Attendees extends StatefulWidget {
 }
 
 class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
-  File? file;
+  Uint8List? xcelBytes;
   List<Kard> lcrds = [];
   String? _selectedKardFilter;
   List<Attendee> atList = [];
@@ -60,6 +60,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   TextEditingController impcard = TextEditingController();
   TextEditingController impahadi = TextEditingController();
   TextEditingController impmchango = TextEditingController();
+  bool _mapAhadi = true;
+  bool _mapMchango = true;
   FirebaseStorage storage = FirebaseStorage.instance;
   TextEditingController scont = TextEditingController();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -324,6 +326,25 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             _loadAttendees();
           },
         ),
+        if (widget.kardType == KardType.invitation)
+          PopClickers(
+            leading: Icon(Icons.mail),
+            title: Text("Tuma Reminder"),
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return InvitesIssuers(
+                      event: widget.edata,
+                      kardType: widget.kardType,
+                      campaignId: invRemCampId,
+                    );
+                  },
+                ),
+              );
+              _loadAttendees();
+            },
+          ),
         PopClickers(
           leading: Icon(Icons.sms),
           title: Text("Tuma Bulk SMS"),
@@ -1320,10 +1341,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['xls', 'xlsx', 'xlsm', 'xlsb'],
+      withData: true,
     );
     if (result != null) {
-      file = File(result.files.single.path!);
-      var bytes = file?.readAsBytesSync();
+      var bytes = result.files.single.bytes;
       var excel = exl.Excel.decodeBytes(bytes!);
       var tblKey = excel.tables.keys.firstOrNull;
       var table = excel.tables[tblKey];
@@ -1333,6 +1354,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       for (var cell in frow) {
         sels[cell!.columnIndex] = cell.value;
       }
+      xcelBytes = bytes;
       await showMatcher(sels);
     } else {
       showToast(isGood: false, msg: genErrMsg);
@@ -1360,139 +1382,169 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       ),
       context: context,
       builder: (context) {
-        return modalBtmSheet(
-          bdrdm: bmd,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: psm),
-                Text(
-                  "Import from File",
-                  style: TextStyle(
-                    fontSize: fsm + 4,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(psm),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Name",
-                        style: TextStyle(
-                          fontSize: fsm + 2,
-                          fontWeight: FontWeight.w600,
-                        ),
+        return StatefulBuilder(
+          builder: (context, setAltState) {
+            return modalBtmSheet(
+              bdrdm: bmd,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: psm),
+                    Text(
+                      "Import from File",
+                      style: TextStyle(
+                        fontSize: fsm + 4,
+                        fontWeight: FontWeight.bold,
                       ),
-                      buildDrop(sels, impname),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(psm),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Phone",
-                        style: TextStyle(
-                          fontSize: fsm + 2,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      buildDrop(sels, impphone),
-                    ],
-                  ),
-                ),
-                // Ahadi & Michango Stuff
-                if (widget.kardType == KardType.contribution)
-                  Padding(
-                    padding: const EdgeInsets.all(psm),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Ahadi",
-                          style: TextStyle(
-                            fontSize: fsm + 2,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        buildDrop(sels, impahadi),
-                      ],
                     ),
-                  ),
-                if (widget.kardType == KardType.contribution)
-                  Padding(
-                    padding: const EdgeInsets.all(psm),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Mchango",
-                          style: TextStyle(
-                            fontSize: fsm + 2,
-                            fontWeight: FontWeight.w600,
+                    Padding(
+                      padding: const EdgeInsets.all(psm),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Name",
+                            style: TextStyle(
+                              fontSize: fsm + 2,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        buildDrop(sels, impmchango),
-                      ],
+                          buildDrop(sels, impname),
+                        ],
+                      ),
                     ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.all(psm),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Card",
-                        style: TextStyle(
-                          fontSize: fsm + 2,
-                          fontWeight: FontWeight.w600,
+                    Padding(
+                      padding: const EdgeInsets.all(psm),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Phone",
+                            style: TextStyle(
+                              fontSize: fsm + 2,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          buildDrop(sels, impphone),
+                        ],
+                      ),
+                    ),
+                    // Ahadi & Michango Stuff
+                    if (widget.kardType == KardType.contribution)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: psm),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: _mapAhadi,
+                                  onChanged: (v) {
+                                    setAltState(() {
+                                      _mapAhadi = v ?? false;
+                                    });
+                                  },
+                                ),
+                                const Text(
+                                  "Ahadi",
+                                  style: TextStyle(
+                                    fontSize: fsm + 2,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_mapAhadi) buildDrop(sels, impahadi),
+                          ],
                         ),
                       ),
-                      buildDrop(synCrdmap, impcard),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: psm),
-                lqAssButton(
-                  label: "Continue",
-                  onPressed: () async {
-                    if (isGreen()) {
-                      poper();
-                      Map<String, dynamic> mapp = {
-                        'fullName': int.parse(impname.text),
-                        'phone': int.parse(impphone.text),
-                        if (widget.kardType == KardType.contribution)
-                          'ahadi': int.parse(impahadi.text),
-                        if (widget.kardType == KardType.contribution)
-                          'mchango': int.parse(impmchango.text),
-                      };
-                      var carddata = lcrds.firstWhere((lcrd) {
-                        return lcrd.id == impcard.text;
-                      });
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) {
-                            return ImpPreview(
-                              mapp: mapp,
-                              xcelFile: file!,
-                              templateCardId: carddata.id,
-                              event: widget.edata,
-                              kardType: widget.kardType,
-                            );
-                          },
+                    if (widget.kardType == KardType.contribution)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: psm),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: _mapMchango,
+                                  onChanged: (v) {
+                                    setAltState(() {
+                                      _mapMchango = v ?? false;
+                                    });
+                                  },
+                                ),
+                                const Text(
+                                  "Mchango",
+                                  style: TextStyle(
+                                    fontSize: fsm + 2,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_mapMchango) buildDrop(sels, impmchango),
+                          ],
                         ),
-                      );
-                      await _loadAttendees();
-                    }
-                  },
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.all(psm),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Card",
+                            style: TextStyle(
+                              fontSize: fsm + 2,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          buildDrop(synCrdmap, impcard),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: psm),
+                    lqAssButton(
+                      label: "Continue",
+                      onPressed: () async {
+                        if (isGreen()) {
+                          poper();
+                          Map<String, dynamic> mapp = {
+                            'fullName': int.parse(impname.text),
+                            'phone': int.parse(impphone.text),
+                            if (widget.kardType == KardType.contribution &&
+                                _mapAhadi)
+                              'ahadi': int.parse(impahadi.text),
+                            if (widget.kardType == KardType.contribution &&
+                                _mapMchango)
+                              'mchango': int.parse(impmchango.text),
+                          };
+                          var carddata = lcrds.firstWhere((lcrd) {
+                            return lcrd.id == impcard.text;
+                          });
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) {
+                                return ImpPreview(
+                                  mapp: mapp,
+                                  xcelBytes: xcelBytes!,
+                                  templateCardId: carddata.id,
+                                  event: widget.edata,
+                                  kardType: widget.kardType,
+                                );
+                              },
+                            ),
+                          );
+                          await _loadAttendees();
+                        }
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -1519,6 +1571,16 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       return false;
     } else if (impphone.text.isEmpty) {
       showToast(isGood: false, msg: "Select a column with values for phone");
+      return false;
+    } else if (widget.kardType == KardType.contribution &&
+        _mapAhadi &&
+        impahadi.text.isEmpty) {
+      showToast(isGood: false, msg: "Select a column for ahadi or opt out");
+      return false;
+    } else if (widget.kardType == KardType.contribution &&
+        _mapMchango &&
+        impmchango.text.isEmpty) {
+      showToast(isGood: false, msg: "Select a column for mchango or opt out");
       return false;
     } else if (impcard.text.isEmpty) {
       showToast(isGood: false, msg: "Select a card to assign the attendees");
