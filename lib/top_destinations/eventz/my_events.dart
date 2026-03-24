@@ -36,7 +36,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   ScrollController scrollController = ScrollController();
   QueryDocumentSnapshot<Map<String, dynamic>>? lastEvent;
-  String currentFilter = "Today";
+  String currentFilter = "This Week";
   final List<String> filters = ['Upcoming', "Today", 'This Week', 'Past'];
 
   @override
