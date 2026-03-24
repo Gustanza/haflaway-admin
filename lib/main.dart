@@ -42,11 +42,16 @@ class HfApp extends StatelessWidget {
     //     theme: GusTheme.darkTheme,
     //   );
     // } else {
-    return MaterialApp(
-      home: const SplashScreen(),
-      debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
-      theme: GusTheme.darkTheme,
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 450),
+        child: MaterialApp(
+          home: const SplashScreen(),
+          debugShowCheckedModeBanner: false,
+          themeMode: ThemeMode.dark,
+          theme: GusTheme.darkTheme,
+        ),
+      ),
     );
     // }
   }
