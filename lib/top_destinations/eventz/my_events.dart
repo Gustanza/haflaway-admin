@@ -5,11 +5,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/event_tile.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/providers/package_provider.dart';
-import 'package:haflaway/top_destinations/drawer/drawer.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/admin_pane.dart';
 import 'package:haflaway/utils/constants.dart';
@@ -18,6 +16,8 @@ import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/gus_theme.dart';
 import 'package:in_app_update/in_app_update.dart';
+import 'package:haflaway/top_destinations/app_users/app_users.dart';
+import 'package:haflaway/top_destinations/settings/account.dart';
 import 'package:provider/provider.dart';
 
 class HaflaWayHome extends StatefulWidget {
@@ -36,7 +36,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   ScrollController scrollController = ScrollController();
   QueryDocumentSnapshot<Map<String, dynamic>>? lastEvent;
-  String currentFilter = "Today";
+  String currentFilter = "This Week";
   final List<String> filters = ['Upcoming', "Today", 'This Week', 'Past'];
 
   @override
@@ -275,101 +275,6 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       key: _scaffoldKey,
       extendBodyBehindAppBar: true,
       backgroundColor: GusTheme.obsidian,
-      drawer: drawer(context: context),
-      appBar: appBar(
-        titleWidget: PopupMenuButton<String>(
-          offset: const Offset(0, 40),
-          color: const Color(0xFF141414), // _T.card
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          onSelected: (String value) {
-            safeState(() {
-              currentFilter = value;
-              events = [];
-              loadEvents();
-            });
-          },
-          itemBuilder: (BuildContext context) {
-            return filters.map((String choice) {
-              return PopupMenuItem<String>(
-                value: choice,
-                child: Text(
-                  choice,
-                  style: GoogleFonts.inter(
-                    color:
-                        currentFilter == choice
-                            ? const Color(0xFFC9A84C)
-                            : Colors.white,
-                    fontWeight:
-                        currentFilter == choice
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                  ),
-                ),
-              );
-            }).toList();
-          },
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                currentFilter,
-                style: GoogleFonts.inter(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: Color(0xFFC9A84C), // _T.lime
-                size: 24,
-              ),
-            ],
-          ),
-        ),
-        leading: appBarActionButton(
-          onTap: () {
-            if (_scaffoldKey.currentState != null) {
-              if (_scaffoldKey.currentState!.isDrawerOpen) {
-                _scaffoldKey.currentState!.closeDrawer();
-              } else {
-                _scaffoldKey.currentState!.openDrawer();
-              }
-            }
-          },
-          icon: Icons.menu,
-        ),
-        actions: Row(
-          children: [
-            appBarActionButton(
-              icon: Icons.add,
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return CreateEvent();
-                    },
-                  ),
-                );
-                loadEvents();
-              },
-            ),
-            const SizedBox(width: spaceTiles),
-            // Profile icon mimicking admin_pane / user screenshot
-            appBarActionButton(
-              icon: Icons.refresh,
-              onTap: () async {
-                await loadEvents();
-                showToast(isGood: true, msg: "Events Refreshed");
-              },
-            ),
-          ],
-        ),
-      ),
       body: Stack(
         children: [
           // ── ambient orbs ───────────────────────────────────────────────────
@@ -385,65 +290,256 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
           ),
 
           // ── main content ───────────────────────────────────────────────────
-          RefreshIndicator(
-            onRefresh: () async {
-              await loadEvents();
-            },
-            child:
-                events.isEmpty && isLoading
-                    ? buildLoader()
-                    : events.isEmpty && !isLoading
-                    ? BuildNoDt(
-                      string: "No Events Found",
-                      isRefreshed: () async {
-                        await loadEvents();
-                      },
-                    )
-                    : ListView.builder(
-                      itemCount: events.length + 1,
-                      controller: scrollController,
-                      padding: const EdgeInsets.only(
-                        left: psm,
-                        right: psm,
-                        top: 140,
-                        bottom: 100,
-                      ),
-                      itemBuilder: (context, index) {
-                        if (index == events.length && isLoading) {
-                          return Padding(
-                            padding: const EdgeInsets.all(psm),
-                            child: Center(child: CupertinoActivityIndicator()),
-                          );
-                        } else if (index == events.length && !isLoading) {
-                          return const SizedBox.shrink();
-                        }
-                        var evlvl = events[index].categoryLevel;
+          SafeArea(
+            child: Column(
+              children: [
+                _appleHeader(context),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      await loadEvents();
+                    },
+                    child:
+                        events.isEmpty && isLoading
+                            ? buildLoader()
+                            : events.isEmpty && !isLoading
+                            ? BuildNoDt(
+                              string: "No Events Found",
+                              isRefreshed: () async {
+                                await loadEvents();
+                              },
+                            )
+                            : ListView.builder(
+                              itemCount: events.length + 1,
+                              controller: scrollController,
+                              padding: const EdgeInsets.only(
+                                left: psm,
+                                right: psm,
+                                top: 20,
+                                bottom: 100,
+                              ),
+                              itemBuilder: (context, index) {
+                                if (index == events.length && isLoading) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(psm),
+                                    child: Center(
+                                      child: CupertinoActivityIndicator(),
+                                    ),
+                                  );
+                                } else if (index == events.length &&
+                                    !isLoading) {
+                                  return const SizedBox.shrink();
+                                }
+                                var evlvl = events[index].categoryLevel;
 
-                        return GestureDetector(
-                          onTap: () async {
-                            if (evlvl == '0') {
-                              await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return AdminPanel(
-                                      isAdmin: true,
-                                      eventO: events[index],
-                                    );
+                                return GestureDetector(
+                                  onTap: () async {
+                                    if (evlvl == '0') {
+                                      await Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) {
+                                            return AdminPanel(
+                                              isAdmin: true,
+                                              eventO: events[index],
+                                            );
+                                          },
+                                        ),
+                                      );
+                                      loadEvents();
+                                    }
                                   },
-                                ),
-                              );
-                              loadEvents();
-                            }
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: spaceTiles),
-                            child: EventTile(eventData: events[index]),
-                          ),
-                        );
-                      },
-                    ),
+                                  child: Container(
+                                    margin: const EdgeInsets.only(
+                                      bottom: spaceTiles,
+                                    ),
+                                    child: EventTile(eventData: events[index]),
+                                  ),
+                                );
+                              },
+                            ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _appleHeader(BuildContext context) {
+    var prov = context.read<PackageProvider>();
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Row(
+        children: [
+          // Filter Popup Menu as the clickable title
+          PopupMenuButton<String>(
+            offset: const Offset(0, 40),
+            color: const Color(0xFF141414), // _T.card
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            onSelected: (String value) {
+              safeState(() {
+                currentFilter = value;
+                events = [];
+                loadEvents();
+              });
+            },
+            itemBuilder: (BuildContext context) {
+              return filters.map((String choice) {
+                return PopupMenuItem<String>(
+                  value: choice,
+                  child: Text(
+                    choice,
+                    style: GoogleFonts.inter(
+                      color:
+                          currentFilter == choice
+                              ? const Color(0xFFC9A84C)
+                              : Colors.white,
+                      fontWeight:
+                          currentFilter == choice
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                    ),
+                  ),
+                );
+              }).toList();
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  currentFilter,
+                  style: GoogleFonts.inter(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Color(0xFFC9A84C), // _T.lime
+                  size: 24,
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          // Actions
+          Row(
+            children: [
+              _appleHeaderAction(
+                icon: Icons.add,
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) {
+                        return const CreateEvent();
+                      },
+                    ),
+                  );
+                  loadEvents();
+                },
+              ),
+              const SizedBox(width: 12),
+              _appleHeaderAction(
+                icon: Icons.refresh,
+                onTap: () async {
+                  await loadEvents();
+                  showToast(isGood: true, msg: "Events Refreshed");
+                },
+              ),
+              const SizedBox(width: 12),
+              // "More" menu to replace Drawer
+              PopupMenuButton<int>(
+                offset: const Offset(0, 40),
+                color: const Color(0xFF141414),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                icon: const Icon(
+                  Icons.more_horiz_rounded,
+                  color: Colors.white70,
+                  size: 26,
+                ),
+                onSelected: (int value) {
+                  if (value == 1) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const Mipangilio(),
+                      ),
+                    );
+                  } else if (value == 2) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const AppUsersScreen(),
+                      ),
+                    );
+                  }
+                },
+                itemBuilder:
+                    (context) => [
+                      PopupMenuItem(
+                        value: 1,
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.settings_outlined,
+                              color: Color(0xFFC9A84C),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              "Settings",
+                              style: GoogleFonts.inter(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (prov.isSuperAdmin)
+                        PopupMenuItem(
+                          value: 2,
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.people_outline_rounded,
+                                color: Color(0xFFC9A84C),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                "Users",
+                                style: GoogleFonts.inter(color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _appleHeaderAction({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white70, size: 22),
       ),
     );
   }

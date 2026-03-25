@@ -220,7 +220,6 @@ class _CreateAttendeesState extends State<CreateAttendees> {
 
       try {
         var atId = attendeeId ?? generateUniqueSequence();
-        // dataCleaner(passcode: atId);
         Attendee atdt = Attendee(
           id: atId,
           cards: {},
