@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:excel/excel.dart' as exl;
 import 'package:file_picker/file_picker.dart';
@@ -27,12 +28,10 @@ import 'package:haflaway/models/card.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/errorstrs.dart';
 import 'package:haflaway/utils/globalfns.dart';
+import 'package:haflaway/utils/helpers.dart';
 import 'package:haflaway/utils/styles.dart';
-import 'package:haflaway/components/gus_scaffold.dart';
-import 'package:haflaway/utils/gus_theme.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'imp_preview.dart';
-import 'package:haflaway/components/moving_gradient_border.dart';
 
 class Attendees extends StatefulWidget {
   final Event edata;
@@ -42,7 +41,7 @@ class Attendees extends StatefulWidget {
     super.key,
     required this.edata,
     required this.kardType,
-    this.title = "Ratibu Mialiko",
+    this.title = "Manage Invitations",
   });
   @override
   State<Attendees> createState() => _AttendeesState();
@@ -354,7 +353,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 builder: (context) {
                   return AdminCampaigns(
                     event: widget.edata,
-                    title: "Tuma Bulk SMS",
+                    title: "Send Bulk SMS",
                     kardType: widget.kardType,
                   );
                 },
@@ -375,9 +374,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           leading: Icon(Icons.group_add),
           title: Text(
             widget.kardType == KardType.invitation
-                ? "Ongeza Mwalikwa"
+                ? "Add Invitee"
                 : widget.kardType == KardType.contribution
-                ? "Ongeza Mchangiaji"
+                ? "Add Contributor"
                 : "",
           ),
           onTap: () async {
@@ -398,7 +397,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         ),
         PopClickers(
           leading: Icon(Icons.note_add_rounded),
-          title: Text("Pandisha Faili"),
+          title: Text("Upload File"),
           onTap: () {
             importFile();
           },
@@ -406,7 +405,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         if (widget.kardType == KardType.invitation)
           PopClickers(
             leading: Icon(Icons.monetization_on_sharp),
-            title: Text("Pandisha Mchangiaji"),
+            title: Text("Upload Contributor"),
             onTap: () {
               showSelectCard();
             },
@@ -419,185 +418,274 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final bool inSelectMode = selectList.isNotEmpty;
 
-    return GusScaffold(
-      title: widget.title,
-      subtitle:
-          widget.kardType == KardType.contribution
-              ? "COLLECTION"
-              : "INVITATION",
-      actions: [
-        if (!inSelectMode) ...[
-          _buildFilterButton(),
-          const SizedBox(width: 4),
-          _floatingButton(
-            icon: Icons.search,
-            onTap: () {
-              showSearch(
-                context: context,
-                delegate: DhaSearchDelegate(
-                  edata: widget.edata,
-                  kardType: widget.kardType,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0A0A0A),
+        floatingActionButton: _buildFloatingActions(),
+        body: RefreshIndicator(
+          onRefresh: () async {
+            await _loadAttendees();
+          },
+          color: const Color(0xFFC9A84C),
+          backgroundColor: const Color(0xFF141414),
+          child: CustomScrollView(
+            controller: scrollController,
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              // ── Header Section ──
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [_topBar(inSelectMode), _titleBlock()],
+                  ),
                 ),
-              );
-            },
+              ),
+
+              // ── Hero Card for Contributions ──
+              if (widget.kardType == KardType.contribution && atList.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Builder(
+                      builder: (context) {
+                        final double pct =
+                            widget.edata.totalPledge! > 0
+                                ? widget.edata.totalPayment! /
+                                    widget.edata.totalPledge!
+                                : 0.0;
+                        return _HeroCard(
+                          totalPledged: widget.edata.totalPledge!,
+                          totalPaid: widget.edata.totalPayment!,
+                          pct: pct,
+                          progressAnim: AlwaysStoppedAnimation(pct),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+
+              // ── Content ──
+              if (atList.isEmpty && isLoading)
+                const SliverFillRemaining(
+                  child: Center(
+                    child: CupertinoActivityIndicator(color: Color(0xFFC9A84C)),
+                  ),
+                )
+              else if (atList.isEmpty && !isLoading)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _buildEmptyState(),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      // Pagination loader or end-of-list indicator
+                      if (index == atList.length) {
+                        return _buildListFooter();
+                      }
+
+                      final attendee = atList[index];
+                      final hasKey = selectList.any((t) => t.id == attendee.id);
+                      final campaignId =
+                          widget.kardType == KardType.invitation
+                              ? invCampId
+                              : contrCampId;
+
+                      return TweenAnimationBuilder<double>(
+                        key: ValueKey('anim_${attendee.id}'),
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: Duration(
+                          milliseconds: 350 + (index.clamp(0, 10) * 50),
+                        ),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, child) {
+                          return Opacity(
+                            opacity: value,
+                            child: Transform.translate(
+                              offset: Offset(0, 16 * (1 - value)),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: buildAttendeeCard(
+                          hasKey: hasKey,
+                          attendee: attendee,
+                          kardType: widget.kardType,
+                          eventId: widget.edata.id ?? "_",
+                          campaignId: campaignId,
+                          onEdit: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => CreateAttendees(
+                                      event: widget.edata,
+                                      kardType: widget.kardType,
+                                      attendee: attendee,
+                                    ),
+                              ),
+                            );
+                            _loadAttendees();
+                          },
+                          onSelected: () {
+                            if (hasKey) {
+                              selectList.removeWhere(
+                                (t) => t.id == attendee.id,
+                              );
+                            } else {
+                              selectList.add(attendee);
+                            }
+                            safeState(() {});
+                          },
+                          onStatusChange: (status) {
+                            if (widget.kardType == KardType.contribution) {
+                              return _loadAttendees();
+                            }
+                            int idx = atList.indexWhere(
+                              (element) => element.id == attendee.id,
+                            );
+                            if (idx != -1) {
+                              atList[idx].attendanceStatus = status;
+                            }
+                            safeState(() {});
+                          },
+                        ),
+                      );
+                    }, childCount: atList.length + 1),
+                  ),
+                ),
+
+              // ── Bottom Padding ──
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: MediaQuery.of(context).padding.bottom + 100,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-        ],
-        if (inSelectMode) ...[
-          _glassActionChip(
-            icon: Clarity.trash_solid,
-            label: "Futa",
-            color: Colors.redAccent,
-            onTap: () => delSelect(),
-          ),
-          const SizedBox(width: 12),
-        ],
-      ],
-      floatingActionButton: _buildFloatingActions(),
-      body:
-          atList.isEmpty && isLoading
-              ? Center(child: CupertinoActivityIndicator())
-              : atList.isEmpty && !isLoading
-              ? _buildEmptyState()
-              : buildAtList(atList),
+        ),
+      ),
     );
   }
 
-  buildAtList(List<Attendee> atdata) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        await _loadAttendees();
-      },
-      color: Colors.white,
-      backgroundColor: Colors.black.withValues(alpha: 0.3),
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        controller: scrollController,
-        itemCount:
-            atdata.length + (widget.kardType == KardType.contribution ? 3 : 2),
-        itemBuilder: (context, index) {
-          if (widget.kardType == KardType.contribution && index == 0) {
-            final double pct =
-                widget.edata.totalPledge! > 0
-                    ? widget.edata.totalPayment! / widget.edata.totalPledge!
-                    : 0.0;
-
-            return _HeroCard(
-              totalPledged: widget.edata.totalPledge!,
-              totalPaid: widget.edata.totalPayment!,
-              pct: pct,
-              progressAnim: AlwaysStoppedAnimation(pct),
-            );
-          }
-
-          final dataIndex =
-              widget.kardType == KardType.contribution ? index - 2 : index - 1;
-
-          if ((widget.kardType == KardType.contribution && index == 1) ||
-              (widget.kardType != KardType.contribution && index == 0)) {
-            return _buildListHeader(atdata.length);
-          }
-
-          if (dataIndex == atdata.length) {
-            if (isLoading) {
-              return const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(child: CupertinoActivityIndicator()),
-              );
-            } else if (!hasMore && atdata.isNotEmpty) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      "Umefika mwisho",
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.35),
-                        fontSize: 13,
-                        fontStyle: FontStyle.italic,
+  Widget _topBar(bool inSelectMode) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Color(0xFFC9A84C),
+                  size: 16,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Back',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          if (inSelectMode)
+            _glassActionChip(
+              icon: Clarity.trash_solid,
+              label: "Delete",
+              color: Colors.redAccent,
+              onTap: delSelect,
+            )
+          else
+            Row(
+              children: [
+                _buildFilterButton(),
+                const SizedBox(width: 8),
+                _floatingButton(
+                  icon: Icons.search,
+                  onTap: () {
+                    showSearch(
+                      context: context,
+                      delegate: DhaSearchDelegate(
+                        edata: widget.edata,
+                        kardType: widget.kardType,
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
-              );
-            } else {
-              return const SizedBox(height: 20);
-            }
-          }
-
-          Attendee attendee = atdata[dataIndex];
-          var hasKey = selectList.any((test) => test.id == attendee.id);
-          var campaignId =
-              widget.kardType == KardType.invitation ? invCampId : contrCampId;
-
-          return TweenAnimationBuilder<double>(
-            key: ValueKey('anim_${attendee.id}'),
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(
-              milliseconds: 350 + (dataIndex.clamp(0, 10) * 50),
+              ],
             ),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, child) {
-              return Opacity(
-                opacity: value,
-                child: Transform.translate(
-                  offset: Offset(0, 18 * (1 - value)),
-                  child: child,
-                ),
-              );
-            },
-            child: buildAttendeeCard(
-              hasKey: hasKey,
-              attendee: attendee,
-              kardType: widget.kardType,
-              eventId: widget.edata.id ?? "_",
-              campaignId: campaignId,
-              onEdit: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder:
-                        (context) => CreateAttendees(
-                          event: widget.edata,
-                          kardType: widget.kardType,
-                          attendee: attendee,
-                        ),
-                  ),
-                );
-                _loadAttendees();
-              },
-              onSelected: () {
-                if (hasKey) {
-                  selectList.removeWhere((test) => test.id == attendee.id);
-                } else {
-                  selectList.add(attendee);
-                }
-                safeState(() {});
-              },
-              onStatusChange: (status) {
-                if (widget.kardType == KardType.contribution)
-                  return _loadAttendees();
-                int idx = atdata.indexWhere(
-                  (element) => element.id == attendee.id,
-                );
-                if (idx != -1) atdata[idx].attendanceStatus = status;
-                safeState(() {});
-              },
-            ),
-          );
-        },
+        ],
       ),
     );
+  }
+
+  Widget _titleBlock() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.title,
+            style: GoogleFonts.inter(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          _buildListHeader(atList.length),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListFooter() {
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: CupertinoActivityIndicator(color: Color(0xFFC9A84C)),
+        ),
+      );
+    } else if (!hasMore && atList.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              "End of list",
+              style: GoogleFonts.inter(
+                color: Colors.white.withValues(alpha: 0.35),
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return const SizedBox(height: 20);
   }
 
   // Build elegant filter button for app bar
@@ -1011,7 +1099,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 20),
             Text(
-              "Hakuna Walikwa",
+              widget.kardType == KardType.invitation
+                  ? "No Invitees yet"
+                  : "No Contributors yet",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -1021,7 +1111,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 8),
             Text(
-              "Bonyeza + kuongeza walikwa wapya",
+              "Tap + to add new ones",
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white.withValues(alpha: 0.4),
@@ -1055,7 +1145,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      "Jaribu tena",
+                      "Try again",
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 14,
@@ -1126,7 +1216,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       child: Row(
         children: [
           Text(
-            "$count Walikwa",
+            "$count ${widget.kardType == KardType.invitation ? 'Invitees' : 'Contributors'}",
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -1190,7 +1280,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             return Kard.fromMap(doc.id, doc.data());
           }).toList();
     } catch (e) {
-      debugPrint("shida: $e");
+      debugPrint("Error loading cards: $e");
     }
     safeState(() {});
   }
@@ -1619,150 +1709,72 @@ class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 24, top: 8),
-      child: MovingGradientBorder(
-        borderRadius: 28,
-        borderWidth: 1.2,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: GusTheme.surface.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  width: 0.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 25,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildStat(
-                        "Pledged",
-                        "TSh ${totalPledged.toInt()}",
-                        Clarity.dollar_line,
-                      ),
-                      _buildStat(
-                        "Collected",
-                        "TSh ${totalPaid.toInt()}",
-                        Clarity.wallet_line,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            Container(
-                              height: 14,
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(7),
-                              ),
-                            ),
-                            AnimatedBuilder(
-                              animation: progressAnim,
-                              builder: (context, _) {
-                                return FractionallySizedBox(
-                                  widthFactor: progressAnim.value.clamp(
-                                    0.0,
-                                    1.0,
-                                  ),
-                                  child: Container(
-                                    height: 14,
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          GusTheme.gold,
-                                          GusTheme.goldLight,
-                                        ],
-                                        begin: Alignment.centerLeft,
-                                        end: Alignment.centerRight,
-                                      ),
-                                      borderRadius: BorderRadius.circular(7),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: GusTheme.gold.withValues(
-                                            alpha: 0.4,
-                                          ),
-                                          blurRadius: 12,
-                                          spreadRadius: 1,
-                                          offset: const Offset(0, 0),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Text(
-                        "${(pct * 100).toStringAsFixed(1)}%",
-                        style: GoogleFonts.inter(
-                          color: GusTheme.gold,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      margin: const EdgeInsets.only(bottom: 24, top: 12),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF1F1F1F), width: 0.5),
       ),
-    );
-  }
-
-  Widget _buildStat(String label, String value, IconData icon) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: GusTheme.gold, size: 14),
-            const SizedBox(width: 6),
-            Text(
-              label.toUpperCase(),
-              style: GoogleFonts.inter(
-                color: GusTheme.textMuted,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.0,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'CONTRIBUTIONS',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF555555),
+                  letterSpacing: 1.2,
+                ),
+              ),
+              Text(
+                '${(pct * 100).round()}%',
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFFC9A84C),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            formatMoney(totalPaid, currency: "TZS"),
+            style: GoogleFonts.inter(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -1.0,
+              height: 1.0,
+            ),
+          ),
+          const SizedBox(height: 14),
+          // Progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: pct,
+              minHeight: 4,
+              backgroundColor: const Color(0xFF333333),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color(0xFFC9A84C),
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: GoogleFonts.cormorantGaramond(
-            color: GusTheme.textPrimary,
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            'Goal: ${formatMoney(totalPledged, currency: "TZS")}',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: const Color(0xFF555555),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
