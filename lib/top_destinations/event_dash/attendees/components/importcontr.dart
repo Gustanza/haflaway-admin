@@ -14,7 +14,13 @@ import 'package:string_similarity/string_similarity.dart';
 class ImportContributor extends StatefulWidget {
   final Event event;
   final Kard kard;
-  const ImportContributor({super.key, required this.event, required this.kard});
+  final bool isContactImport;
+  const ImportContributor({
+    super.key,
+    required this.event,
+    required this.kard,
+    this.isContactImport = false,
+  });
 
   @override
   State<ImportContributor> createState() => _ImportContributorState();
@@ -41,8 +47,13 @@ class _ImportContributorState extends State<ImportContributor> {
                 source
                     .where((el) {
                       Attendee att = Attendee.fromMap(el.id, el.data());
-                      return (att.cards[KardType.invitation.name] == null &&
-                          att.cards[KardType.contribution.name] != null);
+                      bool hasInvitation =
+                          att.cards[KardType.invitation.name] != null;
+                      bool hasTargetType =
+                          widget.isContactImport
+                              ? att.cards[KardType.contact.name] != null
+                              : att.cards[KardType.contribution.name] != null;
+                      return (!hasInvitation && hasTargetType);
                     })
                     .map<Attendee>((e) {
                       return Attendee.fromMap(e.id, e.data());
@@ -53,6 +64,7 @@ class _ImportContributorState extends State<ImportContributor> {
               kard: widget.kard,
               event: widget.event,
               kardType: KardType.invitation,
+              isContactImport: widget.isContactImport,
             );
           }
         } else if (snapshot.hasError) {
@@ -65,11 +77,12 @@ class _ImportContributorState extends State<ImportContributor> {
   }
 }
 
-buildContrList({
+Widget buildContrList({
   required List<Attendee> list,
   required Event event,
   required KardType kardType,
   required Kard kard,
+  bool isContactImport = false,
 }) {
   TextEditingController controller = TextEditingController();
   List<Attendee> selectList = [];
@@ -98,7 +111,9 @@ buildContrList({
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(
-              "Import from Contributors",
+              isContactImport
+                  ? "Import from Contacts"
+                  : "Import from Contributors",
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text("DES: ${kard.type}"),

@@ -457,14 +457,22 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             importFile();
           },
         ),
-        if (widget.kardType == KardType.invitation)
+        if (widget.kardType == KardType.invitation) ...[
           PopClickers(
             leading: Icon(Icons.monetization_on_sharp),
-            title: Text("Upload Contributor"),
+            title: Text("Import from Contributors"),
             onTap: () {
-              showSelectCard();
+              showSelectCard(isContactImport: false);
             },
           ),
+          PopClickers(
+            leading: Icon(Icons.contact_phone_rounded),
+            title: Text("Import from Contacts"),
+            onTap: () {
+              showSelectCard(isContactImport: true);
+            },
+          ),
+        ],
       ],
     );
   }
@@ -1423,7 +1431,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     );
   }
 
-  showSelectCard() {
+  showSelectCard({bool isContactImport = false}) {
     return showDialog(
       context: context,
       builder: (context) {
@@ -1452,7 +1460,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                         label: lcrds[idx].type,
                         onPressed: () {
                           Navigator.of(context).pop();
-                          showImportContributor(kard: lcrds[idx]);
+                          showImportContributor(
+                            kard: lcrds[idx],
+                            isContactImport: isContactImport,
+                          );
                         },
                       ),
                       if (idx < lcrds.length - 1) SizedBox(height: psm * 0.5),
@@ -1467,7 +1478,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     );
   }
 
-  showImportContributor({required Kard kard}) {
+  showImportContributor({required Kard kard, bool isContactImport = false}) {
     return showModalBottomSheet(
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -1483,7 +1494,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           height: MediaQuery.of(context).size.height * 0.9,
           child: modalBtmSheet(
             bdrdm: bmd,
-            child: ImportContributor(kard: kard, event: widget.edata),
+            child: ImportContributor(
+              kard: kard,
+              event: widget.edata,
+              isContactImport: isContactImport,
+            ),
           ),
         );
       },
