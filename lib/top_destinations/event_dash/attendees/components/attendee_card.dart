@@ -381,29 +381,30 @@ void _showDetailPopup({
                               color: Colors.green,
                               onTap: () => callNumber(attendee.phone),
                             ),
-                            _buildPopupAction(
-                              icon: Clarity.eye_show_line,
-                              label: "Card",
-                              color: Colors.blueAccent,
-                              onTap: () {
-                                var vcrd = attendee.cards[kardType.name];
-                                if (vcrd != null) {
-                                  AttributeCard attrCrd = AttributeCard.fromMap(
-                                    map: vcrd,
-                                  );
-                                  try {
-                                    launchUrl(Uri.parse(attrCrd.url ?? ""));
-                                  } catch (e) {
-                                    showToast(isGood: false, msg: "$e");
+                            if (kardType == KardType.invitation ||
+                                kardType == KardType.contribution)
+                              _buildPopupAction(
+                                icon: Clarity.eye_show_line,
+                                label: "Card",
+                                color: Colors.blueAccent,
+                                onTap: () {
+                                  var vcrd = attendee.cards[kardType.name];
+                                  if (vcrd != null) {
+                                    AttributeCard attrCrd =
+                                        AttributeCard.fromMap(map: vcrd);
+                                    try {
+                                      launchUrl(Uri.parse(attrCrd.url ?? ""));
+                                    } catch (e) {
+                                      showToast(isGood: false, msg: "$e");
+                                    }
+                                  } else {
+                                    showToast(
+                                      isGood: false,
+                                      msg: "Unable to View",
+                                    );
                                   }
-                                } else {
-                                  showToast(
-                                    isGood: false,
-                                    msg: "Unable to View",
-                                  );
-                                }
-                              },
-                            ),
+                                },
+                              ),
                             _buildPopupAction(
                               icon: Icons.edit,
                               label: "Edit",

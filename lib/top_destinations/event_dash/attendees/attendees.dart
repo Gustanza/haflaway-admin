@@ -316,30 +316,32 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       popItems: [
         PopClickers(
           leading: Icon(Icons.summarize),
-          title: Text("Quick Summary"),
+          title: Text("Summary"),
           onTap: showQuickStats,
         ),
-        PopClickers(
-          leading: Icon(Icons.mail),
-          title: Text("Send Card"),
-          onTap: () async {
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) {
-                  return InvitesIssuers(
-                    event: widget.edata,
-                    kardType: widget.kardType,
-                    campaignId:
-                        widget.kardType == KardType.invitation
-                            ? invCampId
-                            : contrCampId,
-                  );
-                },
-              ),
-            );
-            _loadAttendees();
-          },
-        ),
+        if (widget.kardType == KardType.invitation ||
+            widget.kardType == KardType.contribution)
+          PopClickers(
+            leading: Icon(Icons.mail),
+            title: Text("Send Card"),
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return InvitesIssuers(
+                      event: widget.edata,
+                      kardType: widget.kardType,
+                      campaignId:
+                          widget.kardType == KardType.invitation
+                              ? invCampId
+                              : contrCampId,
+                    );
+                  },
+                ),
+              );
+              _loadAttendees();
+            },
+          ),
         if (widget.kardType == KardType.invitation)
           PopClickers(
             leading: Icon(Icons.mail),
