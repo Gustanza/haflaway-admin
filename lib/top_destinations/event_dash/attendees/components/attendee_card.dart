@@ -451,7 +451,8 @@ void _showDetailPopup({
                         ),
 
                       // ── Michango display — for contributions ──
-                      if (kardType == KardType.contribution)
+                      if (kardType == KardType.contribution ||
+                          kardType == KardType.contact)
                         _buildPopupSection(
                           title: "Contribution Details",
                           child: Padding(

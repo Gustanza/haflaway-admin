@@ -56,6 +56,17 @@ buildTiles({
   required KardType kardType,
   required List<Attendee> attendees,
 }) {
+  // 1. Strict client-side filtering for accuracy
+  List<Attendee> filteredAttendees =
+      attendees.where((at) => at.cards[kardType.name] != null).toList();
+
+  // 2. Filter kards by purpose
+  List<Kard> filteredKards =
+      kards.where((k) => k.purpose == kardType.name).toList();
+
+  String typeLabel =
+      kardType == KardType.contact ? "Contact" : _capitalize(kardType.name);
+
   return ListView(
     shrinkWrap: true,
     padding: EdgeInsets.only(
@@ -70,86 +81,121 @@ buildTiles({
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: fsm + 4, fontWeight: FontWeight.bold),
       ),
-      SizedBox(height: psm * 0.5),
-      ...List.generate(kards.length, (idx) {
-        List<Attendee> perCrdList = [];
-        try {
-          perCrdList =
-              attendees.where((at) {
-                if (at.cards[kardType.name] == null) {
-                  return false;
-                }
-                AttributeCard attributeCard = AttributeCard.fromMap(
-                  map: at.cards[kardType.name],
-                );
-                return attributeCard.templateCardId == kards[idx].id;
-              }).toList();
-        } catch (e) {
-          debugPrint("Abject: $e");
-        }
-        var confirmedlist =
-            perCrdList.where((at) {
-              return at.attendanceStatus == "Confirmed";
-            }).length;
-        var declinedlist =
-            perCrdList.where((at) {
-              return at.attendanceStatus == "Declined";
-            }).length;
-        return ExpansionTile(
-          leading: Container(
-            padding: EdgeInsets.all(psm * 0.5),
-            decoration: BoxDecoration(
-              gradient: lqassgrad,
-              borderRadius: BorderRadius.circular(100),
-            ),
-            child: Text(
-              "${perCrdList.length}",
-              style: TextStyle(fontSize: fsm, fontWeight: FontWeight.bold),
-            ),
-          ),
-          title: Text("${kards[idx].type}"),
-          children: [
-            ListTile(
-              title: Text("Confirmed"),
-              trailing: Container(
-                padding: EdgeInsets.all(psm * 0.5),
-                decoration: BoxDecoration(
-                  gradient: lqassgrad,
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Text(
-                  "$confirmedlist",
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontSize: fsm,
-                    fontWeight: FontWeight.bold,
-                  ),
+      const SizedBox(height: psm * 0.5),
+
+      // 3. Financial Stats (for Contribution and Contact)
+      if (kardType == KardType.contribution || kardType == KardType.contact)
+        _buildFinancialStats(filteredAttendees),
+
+      // 4. Card Breakdown (for Contribution and Invitation)
+      if (kardType == KardType.contribution || kardType == KardType.invitation)
+        ...List.generate(filteredKards.length, (idx) {
+          List<Attendee> perCrdList = [];
+          try {
+            perCrdList =
+                filteredAttendees.where((at) {
+                  AttributeCard attributeCard = AttributeCard.fromMap(
+                    map: at.cards[kardType.name],
+                  );
+                  return attributeCard.templateCardId == filteredKards[idx].id;
+                }).toList();
+          } catch (e) {
+            debugPrint("Error filtering cards: $e");
+          }
+
+          var confirmed =
+              perCrdList
+                  .where((at) => at.attendanceStatus == "Confirmed")
+                  .length;
+          var declined =
+              perCrdList
+                  .where((at) => at.attendanceStatus == "Declined")
+                  .length;
+
+          return ExpansionTile(
+            leading: Container(
+              padding: const EdgeInsets.all(psm * 0.5),
+              decoration: BoxDecoration(
+                gradient: lqassgrad,
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Text(
+                "${perCrdList.length}",
+                style: const TextStyle(
+                  fontSize: fsm,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            ListTile(
-              title: Text("Declined"),
-              trailing: Container(
-                padding: EdgeInsets.all(psm * 0.5),
-                decoration: BoxDecoration(
-                  gradient: lqassgrad,
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Text(
-                  "$declinedlist",
-                  style: TextStyle(
-                    fontSize: fsm,
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      }),
-      SizedBox(height: psm * 0.5),
-      lqAssButton(label: "Total Count: ${attendees.length}", onPressed: () {}),
+            title: Text("${filteredKards[idx].type}"),
+            children: [
+              _buildStatTile("Confirmed", confirmed, Colors.green),
+              _buildStatTile("Declined", declined, Colors.red),
+            ],
+          );
+        }),
+
+      const SizedBox(height: psm * 0.5),
+      lqAssButton(
+        label: "Total ${typeLabel}s: ${filteredAttendees.length}",
+        onPressed: () {},
+      ),
     ],
   );
 }
+
+Widget _buildStatTile(String label, int count, Color color) {
+  return ListTile(
+    title: Text(label),
+    trailing: Container(
+      padding: const EdgeInsets.all(psm * 0.5),
+      decoration: BoxDecoration(
+        gradient: lqassgrad,
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(
+        "$count",
+        style: TextStyle(
+          color: color,
+          fontSize: fsm,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+  );
+}
+
+Widget _buildFinancialStats(List<Attendee> attendees) {
+  double totalPledged = 0;
+  double totalPaid = 0;
+  for (var at in attendees) {
+    totalPledged += at.pledgedAmount ?? 0;
+    totalPaid += at.paidAmount ?? 0;
+  }
+
+  return Column(
+    children: [
+      _buildFinancialTile("Total Pledged", "Tsh $totalPledged", Colors.white),
+      _buildFinancialTile("Total Paid", "Tsh $totalPaid", Colors.green),
+      _buildFinancialTile(
+        "Remaining",
+        "Tsh ${totalPledged - totalPaid}",
+        Colors.orange,
+      ),
+      const Divider(color: Colors.white10),
+    ],
+  );
+}
+
+Widget _buildFinancialTile(String label, String value, Color color) {
+  return ListTile(
+    title: Text(label),
+    trailing: Text(
+      value,
+      style: TextStyle(fontWeight: FontWeight.bold, color: color),
+    ),
+  );
+}
+
+String _capitalize(String s) =>
+    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);

@@ -1515,7 +1515,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   }
 
   showMatcher(Map<dynamic, dynamic> sels) {
-    if (lcrds.isEmpty) {
+    if (lcrds.isEmpty && widget.kardType != KardType.contact) {
       showToast(isGood: false, msg: "This action requires existing cards");
       return;
     }
@@ -1583,7 +1583,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       ),
                     ),
                     // Ahadi & Michango Stuff
-                    if (widget.kardType == KardType.contribution)
+                    if (widget.kardType == KardType.contribution ||
+                        widget.kardType == KardType.contact)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: psm),
                         child: Row(
@@ -1612,7 +1613,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                           ],
                         ),
                       ),
-                    if (widget.kardType == KardType.contribution)
+                    if (widget.kardType == KardType.contribution ||
+                        widget.kardType == KardType.contact)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: psm),
                         child: Row(
@@ -1641,22 +1643,23 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                           ],
                         ),
                       ),
-                    Padding(
-                      padding: const EdgeInsets.all(psm),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Card",
-                            style: TextStyle(
-                              fontSize: fsm + 2,
-                              fontWeight: FontWeight.w600,
+                    if (widget.kardType != KardType.contact)
+                      Padding(
+                        padding: const EdgeInsets.all(psm),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Card",
+                              style: TextStyle(
+                                fontSize: fsm + 2,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                          buildDrop(synCrdmap, impcard),
-                        ],
+                            buildDrop(synCrdmap, impcard),
+                          ],
+                        ),
                       ),
-                    ),
                     const SizedBox(height: psm),
                     lqAssButton(
                       label: "Continue",
@@ -1666,23 +1669,26 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                           Map<String, dynamic> mapp = {
                             'fullName': int.parse(impname.text),
                             'phone': int.parse(impphone.text),
-                            if (widget.kardType == KardType.contribution &&
+                            if ((widget.kardType == KardType.contribution ||
+                                    widget.kardType == KardType.contact) &&
                                 _mapAhadi)
                               'ahadi': int.parse(impahadi.text),
-                            if (widget.kardType == KardType.contribution &&
+                            if ((widget.kardType == KardType.contribution ||
+                                    widget.kardType == KardType.contact) &&
                                 _mapMchango)
                               'mchango': int.parse(impmchango.text),
                           };
-                          var carddata = lcrds.firstWhere((lcrd) {
-                            return lcrd.id == impcard.text;
-                          });
+                          var cardId =
+                              widget.kardType == KardType.contact
+                                  ? "contact"
+                                  : impcard.text;
                           await Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (context) {
                                 return ImpPreview(
                                   mapp: mapp,
                                   xcelBytes: xcelBytes!,
-                                  templateCardId: carddata.id,
+                                  templateCardId: cardId,
                                   event: widget.edata,
                                   kardType: widget.kardType,
                                 );
@@ -1725,12 +1731,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     } else if (impphone.text.isEmpty) {
       showToast(isGood: false, msg: "Select a column with values for phone");
       return false;
-    } else if (widget.kardType == KardType.contribution &&
+    } else if ((widget.kardType == KardType.contribution ||
+            widget.kardType == KardType.contact) &&
         _mapAhadi &&
         impahadi.text.isEmpty) {
       showToast(isGood: false, msg: "Select a column for pledges or opt out");
       return false;
-    } else if (widget.kardType == KardType.contribution &&
+    } else if ((widget.kardType == KardType.contribution ||
+            widget.kardType == KardType.contact) &&
         _mapMchango &&
         impmchango.text.isEmpty) {
       showToast(
@@ -1738,7 +1746,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         msg: "Select a column for contributions or opt out",
       );
       return false;
-    } else if (impcard.text.isEmpty) {
+    } else if (widget.kardType != KardType.contact && impcard.text.isEmpty) {
       showToast(isGood: false, msg: "Select a card to assign the attendees");
       return false;
     } else {
