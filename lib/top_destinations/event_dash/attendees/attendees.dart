@@ -362,6 +362,40 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             _loadAttendees();
           },
         ),
+
+        // PopClickers(
+        //   leading: Icon(Icons.sms),
+        //   title: Text("Rekebisha Burger"),
+        //   onTap: () async {
+        //     try {
+        //       firestore
+        //           .collection(ecol)
+        //           .doc(widget.edata.id)
+        //           .collection(atcol)
+        //           .where("cards.invitation.name", isEqualTo: "DOUBLE ")
+        //           .get()
+        //           .then((snapshot) {
+        //             print("Docuements: ${snapshot.docs.length}");
+        //             for (var doc in snapshot.docs) {
+        //               doc.reference.set({
+        //                 "checkinStatus": [
+        //                   {
+        //                     "attendee_name": "SLOT 01",
+        //                     "checkpoints": {"JHsilQlhDgHEpbnyBbfQ": false},
+        //                   },
+        //                   {
+        //                     "attendee_name": "SLOT 02",
+        //                     "checkpoints": {"JHsilQlhDgHEpbnyBbfQ": false},
+        //                   },
+        //                 ],
+        //               }, SetOptions(merge: true));
+        //             }
+        //           });
+        //     } catch (e) {
+        //       debugPrint("Shida: $e");
+        //     }
+        //   },
+        // ),
       ],
     );
   }
