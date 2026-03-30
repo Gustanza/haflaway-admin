@@ -22,7 +22,7 @@ quickStats({
             .collection(ecol)
             .doc(eventId)
             .collection(atcol)
-            .where('cards.invitation', isNotEqualTo: null)
+            .where('cards.${kardType.name}', isNotEqualTo: null)
             .get(),
     builder: (context, snapshot) {
       if (snapshot.hasData) {

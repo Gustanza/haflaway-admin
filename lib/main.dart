@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:haflaway/providers/package_provider.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/public_attendees.dart';
 import 'package:haflaway/top_destinations/splash_screen.dart';
 import 'package:haflaway/utils/gus_theme.dart';
+import 'package:haflaway/utils/urls.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
@@ -34,14 +36,20 @@ class HfApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // if (false) {
-    //   return MaterialApp.router(
-    //     routerConfig: router,
-    //     themeMode: ThemeMode.dark,
-    //     debugShowCheckedModeBanner: false,
-    //     theme: GusTheme.darkTheme,
-    //   );
-    // } else {
+    if (kDebugMode) {
+      try {
+        // FirebaseStorage storage = FirebaseStorage.instance;
+        FirebaseFirestore firestore = FirebaseFirestore.instance;
+        firestore.settings = const Settings(
+          host: "$lokol:8080",
+          sslEnabled: false,
+          persistenceEnabled: false,
+        );
+        // await storage.useStorageEmulator("$lokol", 9199);
+      } catch (e) {
+        debugPrint("Abject: $e");
+      }
+    }
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: 500),
@@ -53,6 +61,5 @@ class HfApp extends StatelessWidget {
         ),
       ),
     );
-    // }
   }
 }

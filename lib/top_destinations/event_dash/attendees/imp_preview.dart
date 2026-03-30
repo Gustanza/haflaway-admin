@@ -379,7 +379,7 @@ class _ImpPreviewState extends State<ImpPreview> {
                                                 ),
                                                 const SizedBox(width: 6),
                                                 Text(
-                                                  'Ahadi',
+                                                  'Pledge',
                                                   style: _T.f(
                                                     size: 11,
                                                     color: _T.lime,
@@ -430,7 +430,7 @@ class _ImpPreviewState extends State<ImpPreview> {
                                                 ),
                                                 const SizedBox(width: 6),
                                                 Text(
-                                                  'Mchango',
+                                                  'Contribution',
                                                   style: _T.f(
                                                     size: 11,
                                                     color: _T.grey1,

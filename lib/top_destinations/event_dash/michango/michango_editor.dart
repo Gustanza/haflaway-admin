@@ -47,9 +47,9 @@ class _MichangoEditorState extends State<MichangoEditor> {
             icon: Icons.edit,
             onTap: () {
               showMoneyInput(
-                title: "Rekodi Ahadi",
+                title: "Record Pledge",
                 controller: ahadiController,
-                label: "Kiasi cha Ahadi",
+                label: "Pledge Amount",
                 initialAmount: pledgedAmount,
                 onPressed: () {
                   bool condition = key.currentState?.validate() ?? false;
@@ -92,9 +92,9 @@ class _MichangoEditorState extends State<MichangoEditor> {
                     borderRadius: BorderRadius.circular(20),
                     onTap: () {
                       showMoneyInput(
-                        title: "Rekodi Mchango",
+                        title: "Record Contribution",
                         controller: mchangoController,
-                        label: "Kiasi cha Mchango",
+                        label: "Contribution Amount",
                         onPressed: () {
                           bool condition =
                               key.currentState?.validate() ?? false;
@@ -131,7 +131,7 @@ class _MichangoEditorState extends State<MichangoEditor> {
                           ),
                           const SizedBox(width: 16),
                           const Text(
-                            "Ongeza Mchango",
+                            "Add Contribution",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 18,
@@ -215,9 +215,9 @@ class _MichangoEditorState extends State<MichangoEditor> {
                   borderRadius: BorderRadius.circular(16),
                   onTap: () {
                     showMoneyInput(
-                      title: "Rekodi Mchango",
+                      title: "Record Contribution",
                       controller: mchangoController,
-                      label: "Kiasi cha Mchango",
+                      label: "Contribution Amount",
                       initialAmount: mchango.amount,
                       onPressed: () {
                         bool condition = key.currentState?.validate() ?? false;
@@ -298,9 +298,9 @@ class _MichangoEditorState extends State<MichangoEditor> {
                                 child: IconButton(
                                   onPressed: () {
                                     showMoneyInput(
-                                      title: "Rekodi Mchango",
+                                      title: "Record Contribution",
                                       controller: mchangoController,
-                                      label: "Kiasi cha Mchango",
+                                      label: "Contribution Amount",
                                       initialAmount: mchango.amount,
                                       onPressed: () {
                                         bool condition =
@@ -522,7 +522,7 @@ class _MichangoEditorState extends State<MichangoEditor> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "Unaelekea kufuta rekodi ya kiasi cha Tsh ${mchango.amount}, Thibitisha ili kufanikisha",
+                  "You are about to delete a contribution record of TZS ${mchango.amount}. Confirm to proceed.",
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 16,
@@ -622,8 +622,8 @@ class _MichangoEditorState extends State<MichangoEditor> {
   }
 
   buildAhadi() {
-    String ahadi = "Ahadi: Tsh";
-    String mchango = "Mchango: Tsh";
+    String ahadi = "Pledge: TZS";
+    String mchango = "Contribution: TZS";
     return Container(
       decoration: BoxDecoration(gradient: lqassgrad),
       child: SafeArea(

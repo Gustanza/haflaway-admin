@@ -182,6 +182,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           )
           .orderBy("cards.${widget.kardType.name}.templateCardId")
           .limit(pageSize);
+    } else if (widget.kardType == KardType.contact) {
+      return firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .orderBy("createdAt", descending: true)
+          .limit(pageSize);
     } else {
       return firestore
           .collection(ecol)
@@ -226,6 +233,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             isEqualTo: _selectedKardFilter,
           )
           .orderBy("cards.${widget.kardType.name}.templateCardId")
+          .startAfterDocument(lastDocument!)
+          .limit(pageSize);
+    } else if (widget.kardType == KardType.contact) {
+      return firestore
+          .collection(ecol)
+          .doc(widget.edata.id)
+          .collection(atcol)
+          .orderBy("createdAt", descending: true)
           .startAfterDocument(lastDocument!)
           .limit(pageSize);
     } else {
@@ -301,12 +316,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       popItems: [
         PopClickers(
           leading: Icon(Icons.summarize),
-          title: Text("Taarifa fupi"),
+          title: Text("Quick Summary"),
           onTap: showQuickStats,
         ),
         PopClickers(
           leading: Icon(Icons.mail),
-          title: Text("Tuma Kadi"),
+          title: Text("Send Card"),
           onTap: () async {
             await Navigator.of(context).push(
               MaterialPageRoute(
@@ -328,7 +343,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         if (widget.kardType == KardType.invitation)
           PopClickers(
             leading: Icon(Icons.mail),
-            title: Text("Tuma Reminder"),
+            title: Text("Send Reminder"),
             onTap: () async {
               await Navigator.of(context).push(
                 MaterialPageRoute(
@@ -346,7 +361,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           ),
         PopClickers(
           leading: Icon(Icons.sms),
-          title: Text("Tuma Bulk SMS"),
+          title: Text("Send Bulk SMS"),
           onTap: () async {
             await Navigator.of(context).push(
               MaterialPageRoute(
@@ -411,13 +426,17 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 ? "Add Invitee"
                 : widget.kardType == KardType.contribution
                 ? "Add Contributor"
+                : widget.kardType == KardType.contact
+                ? "Add Contact"
                 : "",
           ),
           onTap: () async {
             String title =
                 widget.kardType == KardType.invitation
                     ? "Invitation"
-                    : "Contributor";
+                    : widget.kardType == KardType.contribution
+                    ? "Contributor"
+                    : "Contact";
             await navNormal(
               context: context,
               widget: CreateAttendees(
@@ -643,7 +662,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               color: Colors.redAccent,
               onTap: delSelect,
             )
-          else
+          else if (widget.kardType != KardType.contact)
             Row(
               children: [
                 _buildFilterButton(),
@@ -661,7 +680,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   },
                 ),
               ],
-            ),
+            )
+          else
+            const SizedBox.shrink(),
         ],
       ),
     );
@@ -1135,7 +1156,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             Text(
               widget.kardType == KardType.invitation
                   ? "No Invitees yet"
-                  : "No Contributors yet",
+                  : widget.kardType == KardType.contribution
+                  ? "No Contributors yet"
+                  : "No Contacts yet",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -1250,7 +1273,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       child: Row(
         children: [
           Text(
-            "$count ${widget.kardType == KardType.invitation ? 'Invitees' : 'Contributors'}",
+            "${count} ${widget.kardType == KardType.invitation
+                ? 'Invitees'
+                : widget.kardType == KardType.contribution
+                ? 'Contributors'
+                : 'Contacts'}",
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -1571,7 +1598,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                   },
                                 ),
                                 const Text(
-                                  "Ahadi",
+                                  "Pledge",
                                   style: TextStyle(
                                     fontSize: fsm + 2,
                                     fontWeight: FontWeight.w600,
@@ -1600,7 +1627,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                   },
                                 ),
                                 const Text(
-                                  "Mchango",
+                                  "Contribution",
                                   style: TextStyle(
                                     fontSize: fsm + 2,
                                     fontWeight: FontWeight.w600,
@@ -1699,12 +1726,15 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     } else if (widget.kardType == KardType.contribution &&
         _mapAhadi &&
         impahadi.text.isEmpty) {
-      showToast(isGood: false, msg: "Select a column for ahadi or opt out");
+      showToast(isGood: false, msg: "Select a column for pledges or opt out");
       return false;
     } else if (widget.kardType == KardType.contribution &&
         _mapMchango &&
         impmchango.text.isEmpty) {
-      showToast(isGood: false, msg: "Select a column for mchango or opt out");
+      showToast(
+        isGood: false,
+        msg: "Select a column for contributions or opt out",
+      );
       return false;
     } else if (impcard.text.isEmpty) {
       showToast(isGood: false, msg: "Select a card to assign the attendees");

@@ -707,6 +707,27 @@ class _AdminPanelState extends State<AdminPanel> {
                     ),
               ),
               _toolCard(
+                icon: Icons.chat_bubble_outline_rounded,
+                count: '$evMsgTmpCount',
+                title: 'Bulk SMS',
+                subtitle: 'Send messages',
+                isActive: true,
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) {
+                        return Attendees(
+                          edata: event!,
+                          title: "Contacts",
+                          kardType: KardType.contact,
+                        );
+                      },
+                    ),
+                  );
+                  loadData();
+                },
+              ),
+              _toolCard(
                 icon: Icons.people_alt_outlined,
                 count: '$contsCount',
                 title: 'Contributions',
