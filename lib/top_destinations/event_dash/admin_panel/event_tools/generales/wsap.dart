@@ -376,12 +376,15 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                 ),
                 child: Row(
                   children: [
-                    buildDropDwn(shannnels, (value) {
-                      safeState(() {
-                        selChannel = value;
-                        _loadAttendees();
-                      });
-                    }),
+                    buildDropDwn(
+                      getSenderChannels(campaignId: widget.campaignId),
+                      (value) {
+                        safeState(() {
+                          selChannel = value;
+                          _loadAttendees();
+                        });
+                      },
+                    ),
                     const SizedBox(width: spaceTiles),
                     buildDropDwn(shtates, (value) {
                       selStatus = value;
