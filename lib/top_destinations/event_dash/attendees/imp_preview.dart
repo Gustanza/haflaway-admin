@@ -144,11 +144,13 @@ class _ImpPreviewState extends State<ImpPreview> {
           phone: phoneItself,
           messages: {},
           pledgedAmount:
-              widget.kardType == KardType.contribution
+              (widget.kardType == KardType.contribution ||
+                      widget.kardType == KardType.contact)
                   ? double.tryParse("${ahadicell?.value}") ?? 0.0
                   : null,
           paidAmount:
-              widget.kardType == KardType.contribution
+              (widget.kardType == KardType.contribution ||
+                      widget.kardType == KardType.contact)
                   ? double.tryParse("${mchangocell?.value}") ?? 0.0
                   : null,
           fullName: "${namecell?.value}".toUpperCase(),
@@ -182,29 +184,32 @@ class _ImpPreviewState extends State<ImpPreview> {
             children: [
               _topBar(),
               Expanded(
-                child: FutureBuilder(
-                  future:
-                      firestore
-                          .collection(ecol)
-                          .doc(widget.event.id)
-                          .collection(cardcol)
-                          .doc(widget.templateCardId)
-                          .get(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      var source = (snapshot.data as dynamic).data();
-                      if (source != null) {
-                        return bady();
-                      } else {
-                        return buildErr();
-                      }
-                    } else if (snapshot.hasError) {
-                      return buildErr();
-                    } else {
-                      return buildLoader();
-                    }
-                  },
-                ),
+                child:
+                    widget.templateCardId == "contact"
+                        ? bady()
+                        : FutureBuilder(
+                          future:
+                              firestore
+                                  .collection(ecol)
+                                  .doc(widget.event.id)
+                                  .collection(cardcol)
+                                  .doc(widget.templateCardId)
+                                  .get(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              var source = (snapshot.data as dynamic).data();
+                              if (source != null) {
+                                return bady();
+                              } else {
+                                return buildErr();
+                              }
+                            } else if (snapshot.hasError) {
+                              return buildErr();
+                            } else {
+                              return buildLoader();
+                            }
+                          },
+                        ),
               ),
             ],
           ),
@@ -350,8 +355,8 @@ class _ImpPreviewState extends State<ImpPreview> {
                                   attendee.phone,
                                   style: _T.f(size: 12, color: _T.grey1),
                                 ),
-                                if (widget.kardType ==
-                                    KardType.contribution) ...[
+                                if (widget.kardType == KardType.contribution ||
+                                    widget.kardType == KardType.contact) ...[
                                   const SizedBox(height: 12),
                                   Column(
                                     crossAxisAlignment:
@@ -379,7 +384,7 @@ class _ImpPreviewState extends State<ImpPreview> {
                                                 ),
                                                 const SizedBox(width: 6),
                                                 Text(
-                                                  'Ahadi',
+                                                  'Pledge',
                                                   style: _T.f(
                                                     size: 11,
                                                     color: _T.lime,
@@ -430,7 +435,7 @@ class _ImpPreviewState extends State<ImpPreview> {
                                                 ),
                                                 const SizedBox(width: 6),
                                                 Text(
-                                                  'Mchango',
+                                                  'Contribution',
                                                   style: _T.f(
                                                     size: 11,
                                                     color: _T.grey1,

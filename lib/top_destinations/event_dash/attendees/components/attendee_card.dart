@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
@@ -64,9 +65,9 @@ Widget buildAttendeeCard({
         child: Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.zero,
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(
@@ -74,27 +75,17 @@ Widget buildAttendeeCard({
                   vertical: 14,
                 ),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors:
-                        hasKey
-                            ? [
-                              Colors.redAccent.withValues(alpha: 0.25),
-                              Colors.redAccent.withValues(alpha: 0.15),
-                            ]
-                            : [
-                              Colors.white.withValues(alpha: 0.08),
-                              Colors.white.withValues(alpha: 0.03),
-                            ],
-                  ),
-                  borderRadius: BorderRadius.circular(24),
+                  color:
+                      hasKey
+                          ? const Color(0xFF1E2800)
+                          : const Color(0xFF141414),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color:
                         hasKey
-                            ? Colors.redAccent.withValues(alpha: 0.5)
-                            : Colors.white.withValues(alpha: 0.15),
-                    width: 1.2,
+                            ? const Color(0xFFC9A84C).withValues(alpha: 0.45)
+                            : const Color(0xFF1F1F1F), // Very subtle border
+                    width: 1,
                   ),
                 ),
                 child: Row(
@@ -159,7 +150,7 @@ Widget buildAttendeeCard({
                         children: [
                           Text(
                             fullname,
-                            style: const TextStyle(
+                            style: GoogleFonts.inter(
                               fontWeight: FontWeight.w600,
                               fontSize: 16,
                               color: Colors.white,
@@ -171,7 +162,7 @@ Widget buildAttendeeCard({
                           const SizedBox(height: 3),
                           Text(
                             attendee.phone,
-                            style: TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 14,
                               color: Colors.white.withValues(alpha: 0.5),
                               fontStyle: FontStyle.italic,
@@ -277,7 +268,7 @@ void _showDetailPopup({
               maxHeight: MediaQuery.of(context).size.height * 0.72,
             ),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1810).withValues(alpha: 0.6),
+              color: const Color(0xFF0A0A0A),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(28),
               ),
@@ -386,36 +377,37 @@ void _showDetailPopup({
                           children: [
                             _buildPopupAction(
                               icon: Icons.call,
-                              label: "Piga",
+                              label: "Call",
                               color: Colors.green,
                               onTap: () => callNumber(attendee.phone),
                             ),
-                            _buildPopupAction(
-                              icon: Clarity.eye_show_line,
-                              label: "Kadi",
-                              color: Colors.blueAccent,
-                              onTap: () {
-                                var vcrd = attendee.cards[kardType.name];
-                                if (vcrd != null) {
-                                  AttributeCard attrCrd = AttributeCard.fromMap(
-                                    map: vcrd,
-                                  );
-                                  try {
-                                    launchUrl(Uri.parse(attrCrd.url ?? ""));
-                                  } catch (e) {
-                                    showToast(isGood: false, msg: "$e");
+                            if (kardType == KardType.invitation ||
+                                kardType == KardType.contribution)
+                              _buildPopupAction(
+                                icon: Clarity.eye_show_line,
+                                label: "Card",
+                                color: Colors.blueAccent,
+                                onTap: () {
+                                  var vcrd = attendee.cards[kardType.name];
+                                  if (vcrd != null) {
+                                    AttributeCard attrCrd =
+                                        AttributeCard.fromMap(map: vcrd);
+                                    try {
+                                      launchUrl(Uri.parse(attrCrd.url ?? ""));
+                                    } catch (e) {
+                                      showToast(isGood: false, msg: "$e");
+                                    }
+                                  } else {
+                                    showToast(
+                                      isGood: false,
+                                      msg: "Unable to View",
+                                    );
                                   }
-                                } else {
-                                  showToast(
-                                    isGood: false,
-                                    msg: "Unable to View",
-                                  );
-                                }
-                              },
-                            ),
+                                },
+                              ),
                             _buildPopupAction(
                               icon: Icons.edit,
-                              label: "Hariri",
+                              label: "Edit",
                               color: Colors.orangeAccent,
                               onTap: () {
                                 Navigator.of(ctx).pop();
@@ -430,7 +422,7 @@ void _showDetailPopup({
 
                       // ── Delivery status section ──
                       _buildPopupSection(
-                        title: "Hali ya Ujumbe",
+                        title: "Message Status",
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: _buildDeliveryStatusIndicators(
@@ -446,7 +438,7 @@ void _showDetailPopup({
                       // ── Attendance controls — for invitations ──
                       if (kardType == KardType.invitation)
                         _buildPopupSection(
-                          title: "Hali ya Mahudhurio",
+                          title: "Attendance Status",
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: _buildAttendanceControls(attendee, eventId, (
@@ -459,9 +451,10 @@ void _showDetailPopup({
                         ),
 
                       // ── Michango display — for contributions ──
-                      if (kardType == KardType.contribution)
+                      if (kardType == KardType.contribution ||
+                          kardType == KardType.contact)
                         _buildPopupSection(
-                          title: "Taarifa za Mchango",
+                          title: "Contribution Details",
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: buildMichangoDisplay(
@@ -564,14 +557,14 @@ Widget buildMichangoDisplay(context, attendee, eventId, onStatusChange) {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Ahadi: Tsh ${attendee.pledgedAmount}",
+              "Pledged: Tsh ${attendee.pledgedAmount}",
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontStyle: FontStyle.italic,
               ),
             ),
             Text(
-              "Mchango: Tsh ${attendee.paidAmount}",
+              "Paid: Tsh ${attendee.paidAmount}",
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontStyle: FontStyle.italic,

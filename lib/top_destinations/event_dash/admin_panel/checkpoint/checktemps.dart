@@ -200,6 +200,7 @@ class PinPutty extends StatelessWidget {
                       Pinput(
                         length: 4,
                         controller: controller,
+                        keyboardType: TextInputType.text,
                         defaultPinTheme: PinTheme(
                           height: kToolbarHeight,
                           width: kToolbarHeight,

@@ -78,6 +78,7 @@ class _AdminPanelState extends State<AdminPanel> {
   int contsCount = 0;
   int adminsCount = 0;
   int scannersCount = 0;
+  int contactsCount = 0;
   int cardTempsNo = 0;
   int evMsgTmpCount = 0;
   List<CheckPoint> checkpoints = [];
@@ -150,7 +151,15 @@ class _AdminPanelState extends State<AdminPanel> {
                 ).cards.containsKey(KardType.contribution.name),
               )
               .length;
-
+      contactsCount =
+          attsSnapshot.docs
+              .where(
+                (t) => Attendee.fromMap(
+                  t.id,
+                  t.data(),
+                ).cards.containsKey(KardType.contact.name),
+              )
+              .length;
       checkpoints =
           checkPnsSnapshot.docs.map<CheckPoint>((el) {
             return CheckPoint.fromMap(el.id, el.data());
@@ -594,7 +603,7 @@ class _AdminPanelState extends State<AdminPanel> {
       children: [
         _sectionHeader(
           'SCAN CHECKPOINTS',
-          action: 'View all',
+          action: 'Add new',
           onAction: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -681,30 +690,25 @@ class _AdminPanelState extends State<AdminPanel> {
             padding: EdgeInsets.only(top: psm),
             children: [
               _toolCard(
-                icon: Icons.desktop_windows_outlined,
-                count: '$cardTempsNo',
-                title: 'Card Templates',
-                subtitle: 'Design invitations',
+                icon: Icons.people_outline,
+                count: '$contactsCount',
+                title: 'Contacts',
+                subtitle: 'Send messages',
                 isActive: true,
-                onTap:
-                    () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => Cards(eId: widget.eventO.id ?? ''),
-                      ),
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) {
+                        return Attendees(
+                          edata: event!,
+                          title: "Contacts",
+                          kardType: KardType.contact,
+                        );
+                      },
                     ),
-              ),
-              _toolCard(
-                icon: Icons.chat_bubble_outline_rounded,
-                count: '$evMsgTmpCount',
-                title: 'SMS Templates',
-                subtitle: 'Broadcast messages',
-                isActive: true,
-                onTap:
-                    () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => InvEditor(eId: widget.eventO.id ?? ''),
-                      ),
-                    ),
+                  );
+                  loadData();
+                },
               ),
               _toolCard(
                 icon: Icons.people_alt_outlined,
@@ -731,6 +735,33 @@ class _AdminPanelState extends State<AdminPanel> {
                 },
               ),
               _toolCard(
+                icon: Icons.desktop_windows_outlined,
+                count: '$cardTempsNo',
+                title: 'Card Templates',
+                subtitle: 'Design invitations',
+                isActive: true,
+                onTap:
+                    () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => Cards(eId: widget.eventO.id ?? ''),
+                      ),
+                    ),
+              ),
+              _toolCard(
+                icon: Icons.chat_bubble_outline_rounded,
+                count: '$evMsgTmpCount',
+                title: 'SMS Templates',
+                subtitle: 'Broadcast messages',
+                isActive: true,
+                onTap:
+                    () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => InvEditor(eId: widget.eventO.id ?? ''),
+                      ),
+                    ),
+              ),
+
+              /* _toolCard(
                 icon: Icons.storefront_outlined,
                 count: '—',
                 title: 'Vendors',
@@ -761,7 +792,8 @@ class _AdminPanelState extends State<AdminPanel> {
                 subtitle: 'Track expenses',
                 isActive: false,
                 onTap: () => showToast(isGood: true, msg: 'Coming soon!'),
-              ),
+              ),      
+              */
             ],
           ),
         ),

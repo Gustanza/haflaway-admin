@@ -150,20 +150,17 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                     const SizedBox(height: psm),
                     buildPhone(mobileCont: phncont),
                     const SizedBox(height: psm * 0.5),
-                    bldDrdDwn(
-                      lbl: "Card Type",
-                      entries: scrdsMp.entries,
-                      controller: crdCont,
-                      onSelected: (val) {
-                        safeState(() {
-                          // var dt = dataList?.firstWhere((d) {
-                          //   return d.id == val;
-                          // });
-                          templateCardId = val ?? "_";
-                          // data = CardConfig.fromMap(dt.id, dt.data());
-                        });
-                      },
-                    ),
+                    if (widget.kardType != KardType.contact)
+                      bldDrdDwn(
+                        lbl: "Card Type",
+                        entries: scrdsMp.entries,
+                        controller: crdCont,
+                        onSelected: (val) {
+                          safeState(() {
+                            templateCardId = val ?? "_";
+                          });
+                        },
+                      ),
                     const SizedBox(height: psm * 2),
                     buildPrimaryButton(
                       onTap: () {
@@ -209,10 +206,14 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   submitForm({attendeeId}) async {
     var isValid = fkey.currentState?.validate() ?? false;
     if (isValid && validatePhone()) {
-      if (templateCardId == "_") {
+      String finalTemplateId =
+          widget.kardType == KardType.contact ? "contact" : templateCardId;
+
+      if (widget.kardType != KardType.contact && finalTemplateId == "_") {
         showToast(isGood: false, msg: "Select Card Type");
         return;
       }
+
       safeState(() {
         isWritting = true;
       });
@@ -234,7 +235,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         var payload = {
           "eventId": widget.event.id,
           "attendees": [atdt.toMap()],
-          "templateCardId": templateCardId,
+          "templateCardId": finalTemplateId,
           "usepng": widget.event.usepng,
           "kardType": widget.kardType.name,
         };

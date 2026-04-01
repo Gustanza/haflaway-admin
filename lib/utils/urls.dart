@@ -29,7 +29,7 @@ var crtAtCloudUrl = "https://createattendees-frbu33fema-uc.a.run.app";
 var getAttsUrl = 'https://getattendees-frbu33fema-uc.a.run.app';
 
 /* local */
-const lokol = '192.168.1.7';
+const lokol = '192.168.1.21';
 /* local */
 const basicHeaders = {
   'Content-Type': 'application/json',

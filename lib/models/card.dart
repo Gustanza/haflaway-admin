@@ -54,7 +54,7 @@ const ccount = 'count';
 const ctimestamp = 'createdOn';
 /* fields */
 
-enum KardType { invitation, contribution, save_the_date }
+enum KardType { invitation, contribution, save_the_date, contact }
 
 class Kard {
   String id;
