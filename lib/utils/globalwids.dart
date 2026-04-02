@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
@@ -6,6 +7,7 @@ import 'package:haflaway/models/event.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/models/card.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/strings.dart';
 import 'package:lottie/lottie.dart';
@@ -13,19 +15,18 @@ import 'package:shimmer/shimmer.dart';
 import 'dimensions.dart';
 import 'refs.dart';
 
-showProgress({context}) {
+showProgress({context, String message = "Loading..."}) {
   return showDialog(
     context: context,
+    barrierDismissible: false,
     builder: (context) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
-      );
+      return Center(child: GusLoader(message: message));
     },
   );
 }
 
-buildLoader() {
-  return const Center(child: CupertinoActivityIndicator(radius: brsm));
+buildLoader({String message = "Loading..."}) {
+  return Center(child: GusLoader(message: message));
 }
 
 buildErr() {
@@ -383,6 +384,58 @@ class _MarqueeTextState extends State<MarqueeText>
         scrollDirection: Axis.horizontal,
         controller: _scrollController,
         child: Text(widget.text, style: widget.style),
+      ),
+    );
+  }
+}
+
+class GusLoader extends StatelessWidget {
+  final String message;
+  const GusLoader({super.key, this.message = "Loading..."});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 28),
+        constraints: const BoxConstraints(minWidth: 200),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: CircularProgressIndicator(
+                    color: Color(0xFFC9A84C), // Gold
+                    strokeWidth: 3,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -67,6 +67,7 @@ class Event {
   String? id;
   bool? usepng;
   String? title;
+  String? titleLower;
   String? authorId;
   List? adminsIds;
   List? usersIds;
@@ -90,6 +91,7 @@ class Event {
   Event({
     this.id,
     this.title,
+    this.titleLower,
     this.authorId,
     this.adminsIds,
     this.usersIds,
@@ -115,6 +117,7 @@ class Event {
   Map<String, dynamic> toMap() => {
     if (id != null) 'id': id,
     if (title != null) 'title': title,
+    if (titleLower != null) 'titleLower': titleLower,
     if (authorId != null) 'authorId': authorId,
     if (adminsIds != null) 'adminsIds': adminsIds,
     if (usersIds != null) 'usersIds': usersIds,
@@ -145,6 +148,7 @@ class Event {
     return Event(
       id: id,
       title: map['title'] ?? '',
+      titleLower: map['titleLower'] ?? '',
       authorId: map['authorId'] ?? '',
       adminsIds: map['adminsIds'] ?? [],
       usersIds: map['usersIds'] ?? [],

@@ -38,6 +38,9 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
   QueryDocumentSnapshot<Map<String, dynamic>>? lastEvent;
   String currentFilter = "Upcoming";
   final List<String> filters = ['Upcoming', "Today", 'This Week', 'Past'];
+  bool isSearching = false;
+  TextEditingController searchController = TextEditingController();
+  List<Event> searchResults = [];
 
   @override
   void initState() {
@@ -300,17 +303,28 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                       await loadEvents();
                     },
                     child:
-                        events.isEmpty && isLoading
+                        events.isEmpty && isLoading && !isSearching
                             ? buildLoader()
-                            : events.isEmpty && !isLoading
+                            : (isSearching ? searchResults : events).isEmpty &&
+                                !isLoading
                             ? BuildNoDt(
-                              string: "No Events Found",
+                              string:
+                                  isSearching
+                                      ? "No Results Found"
+                                      : "No Events Found",
                               isRefreshed: () async {
-                                await loadEvents();
+                                if (isSearching) {
+                                  performSearch(searchController.text);
+                                } else {
+                                  await loadEvents();
+                                }
                               },
                             )
                             : ListView.builder(
-                              itemCount: events.length + 1,
+                              itemCount:
+                                  (isSearching ? searchResults : events)
+                                      .length +
+                                  (isSearching ? 0 : 1),
                               controller: scrollController,
                               padding: const EdgeInsets.only(
                                 left: psm,
@@ -319,18 +333,24 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                                 bottom: 100,
                               ),
                               itemBuilder: (context, index) {
-                                if (index == events.length && isLoading) {
+                                var activeList =
+                                    isSearching ? searchResults : events;
+                                if (index == activeList.length &&
+                                    isLoading &&
+                                    !isSearching) {
                                   return Padding(
                                     padding: const EdgeInsets.all(psm),
                                     child: Center(
                                       child: CupertinoActivityIndicator(),
                                     ),
                                   );
-                                } else if (index == events.length &&
+                                } else if (index == activeList.length &&
                                     !isLoading) {
                                   return const SizedBox.shrink();
+                                } else if (index >= activeList.length) {
+                                  return const SizedBox.shrink();
                                 }
-                                var evlvl = events[index].categoryLevel;
+                                var evlvl = activeList[index].categoryLevel;
 
                                 return GestureDetector(
                                   onTap: () async {
@@ -340,7 +360,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                                           builder: (context) {
                                             return AdminPanel(
                                               isAdmin: true,
-                                              eventO: events[index],
+                                              eventO: activeList[index],
                                             );
                                           },
                                         ),
@@ -352,7 +372,9 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                                     margin: const EdgeInsets.only(
                                       bottom: spaceTiles,
                                     ),
-                                    child: EventTile(eventData: events[index]),
+                                    child: EventTile(
+                                      eventData: activeList[index],
+                                    ),
                                   ),
                                 );
                               },
@@ -374,152 +396,208 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       child: Row(
         children: [
           // Filter Popup Menu as the clickable title
-          PopupMenuButton<String>(
-            offset: const Offset(0, 40),
-            color: const Color(0xFF141414), // _T.card
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            onSelected: (String value) {
-              safeState(() {
-                currentFilter = value;
-                events = [];
-                loadEvents();
-              });
-            },
-            itemBuilder: (BuildContext context) {
-              return filters.map((String choice) {
-                return PopupMenuItem<String>(
-                  value: choice,
-                  child: Text(
-                    choice,
+          if (!isSearching)
+            PopupMenuButton<String>(
+              offset: const Offset(0, 40),
+              color: const Color(0xFF141414), // _T.card
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              onSelected: (String value) {
+                safeState(() {
+                  currentFilter = value;
+                  events = [];
+                  loadEvents();
+                });
+              },
+              itemBuilder: (BuildContext context) {
+                return filters.map((String choice) {
+                  return PopupMenuItem<String>(
+                    value: choice,
+                    child: Text(
+                      choice,
+                      style: GoogleFonts.inter(
+                        color:
+                            currentFilter == choice
+                                ? const Color(0xFFC9A84C)
+                                : Colors.white,
+                        fontWeight:
+                            currentFilter == choice
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                      ),
+                    ),
+                  );
+                }).toList();
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    currentFilter,
                     style: GoogleFonts.inter(
-                      color:
-                          currentFilter == choice
-                              ? const Color(0xFFC9A84C)
-                              : Colors.white,
-                      fontWeight:
-                          currentFilter == choice
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                );
-              }).toList();
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  currentFilter,
-                  style: GoogleFonts.inter(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Color(0xFFC9A84C), // _T.lime
+                    size: 24,
                   ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Color(0xFFC9A84C), // _T.lime
-                  size: 24,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const Spacer(),
+          if (isSearching)
+            Expanded(
+              child: CupertinoSearchTextField(
+                controller: searchController,
+                style: const TextStyle(color: Colors.white),
+                onChanged: (v) {
+                  performSearch(v);
+                },
+              ),
+            ),
+          if (!isSearching) const Spacer(),
           // Actions
           Row(
             children: [
-              _appleHeaderAction(
-                icon: Icons.add,
-                onTap: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) {
-                        return const CreateEvent();
-                      },
+              if (!isSearching)
+                _appleHeaderAction(
+                  icon: Icons.search,
+                  onTap: () {
+                    safeState(() {
+                      isSearching = true;
+                    });
+                  },
+                ),
+              if (isSearching)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: TextButton(
+                    onPressed: () {
+                      safeState(() {
+                        isSearching = false;
+                        searchController.clear();
+                        searchResults = [];
+                      });
+                    },
+                    child: Text(
+                      "Cancel",
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFFC9A84C),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  );
-                  loadEvents();
-                },
-              ),
-              const SizedBox(width: 12),
-              _appleHeaderAction(
-                icon: Icons.refresh,
-                onTap: () async {
-                  await loadEvents();
-                  showToast(isGood: true, msg: "Events Refreshed");
-                },
-              ),
+                  ),
+                ),
+              if (!isSearching) ...[
+                const SizedBox(width: 12),
+                _appleHeaderAction(
+                  icon: Icons.add,
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return const CreateEvent();
+                        },
+                      ),
+                    );
+                    loadEvents();
+                  },
+                ),
+              ],
               const SizedBox(width: 12),
               // "More" menu to replace Drawer
-              PopupMenuButton<int>(
-                offset: const Offset(0, 40),
-                color: const Color(0xFF141414),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                icon: const Icon(
-                  Icons.more_horiz_rounded,
-                  color: Colors.white70,
-                  size: 26,
-                ),
-                onSelected: (int value) {
-                  if (value == 1) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const Mipangilio(),
-                      ),
-                    );
-                  } else if (value == 2) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const AppUsersScreen(),
-                      ),
-                    );
-                  }
-                },
-                itemBuilder:
-                    (context) => [
-                      PopupMenuItem(
-                        value: 1,
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.settings_outlined,
-                              color: Color(0xFFC9A84C),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              "Settings",
-                              style: GoogleFonts.inter(color: Colors.white),
-                            ),
-                          ],
+              if (!isSearching)
+                PopupMenuButton<int>(
+                  offset: const Offset(0, 40),
+                  color: const Color(0xFF141414),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  icon: const Icon(
+                    Icons.more_horiz_rounded,
+                    color: Colors.white70,
+                    size: 26,
+                  ),
+                  onSelected: (int value) {
+                    if (value == 0) {
+                      loadEvents();
+                      showToast(isGood: true, msg: "Events Refreshed");
+                    } else if (value == 1) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const Mipangilio(),
                         ),
-                      ),
-                      if (prov.isSuperAdmin)
+                      );
+                    } else if (value == 2) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const AppUsersScreen(),
+                        ),
+                      );
+                    }
+                  },
+                  itemBuilder:
+                      (context) => [
                         PopupMenuItem(
-                          value: 2,
+                          value: 0,
                           child: Row(
                             children: [
                               const Icon(
-                                Icons.people_outline_rounded,
+                                Icons.refresh,
                                 color: Color(0xFFC9A84C),
                                 size: 20,
                               ),
                               const SizedBox(width: 12),
                               Text(
-                                "Users",
+                                "Refresh",
                                 style: GoogleFonts.inter(color: Colors.white),
                               ),
                             ],
                           ),
                         ),
-                    ],
-              ),
+                        PopupMenuItem(
+                          value: 1,
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.settings_outlined,
+                                color: Color(0xFFC9A84C),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                "Settings",
+                                style: GoogleFonts.inter(color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (prov.isSuperAdmin)
+                          PopupMenuItem(
+                            value: 2,
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.people_outline_rounded,
+                                  color: Color(0xFFC9A84C),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  "Users",
+                                  style: GoogleFonts.inter(color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                ),
             ],
           ),
         ],
@@ -557,6 +635,43 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
         .catchError((e) {
           showToast(isGood: false, msg: "${e}");
         });
+  }
+
+  performSearch(String query) async {
+    if (query.isEmpty) {
+      safeState(() {
+        searchResults = [];
+      });
+      return;
+    }
+    safeState(() {
+      isLoading = true;
+    });
+    try {
+      var prov = context.read<PackageProvider>();
+      Query<Map<String, dynamic>> queryRef = firestore.collection(ecol);
+
+      if (!prov.isSuperAdmin) {
+        queryRef = queryRef.where("adminsIds", arrayContains: uid);
+      }
+
+      String searchKey = query.toLowerCase();
+
+      queryRef = queryRef
+          .where('titleLower', isGreaterThanOrEqualTo: searchKey)
+          .where('titleLower', isLessThanOrEqualTo: searchKey + '\uf8ff')
+          .limit(20);
+
+      QuerySnapshot<Map<String, dynamic>> res = await queryRef.get();
+      searchResults =
+          res.docs.map<Event>((e) => Event.fromMap(e.id, e.data())).toList();
+    } catch (e) {
+      debugPrint("search_error: $e");
+      showToast(isGood: false, msg: "Search failed: $e");
+    }
+    safeState(() {
+      isLoading = false;
+    });
   }
 }
 
