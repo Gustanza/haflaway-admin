@@ -59,13 +59,6 @@ class _CardsState extends State<Cards> {
           } catch (e) {
             showToast(isGood: false, msg: "$e");
           }
-          // Navigator.of(context).push(
-          //   MaterialPageRoute(
-          //     builder: (context) {
-          //       return CreateCard(eId: widget.eId);
-          //     },
-          //   ),
-          // );
         },
       ),
       body: Container(
@@ -170,23 +163,17 @@ class _CardsState extends State<Cards> {
               onPressed: () async {
                 try {
                   showProgress(context: context);
-                  var ctref = firestore.collection(cardcol).doc(kard.id);
-                  var snapshot = await ctref.get();
-                  if (snapshot.exists) {
-                    WriteBatch batch = firestore.batch();
-                    var cref = firestore
-                        .collection(ecol)
-                        .doc(widget.eId)
-                        .collection(cardcol)
-                        .doc(kard.id);
-                    var doc = snapshot.data();
-                    var crl = doc![tempccurl];
-                    batch.delete(ctref);
-                    batch.delete(cref);
-                    batch.commit();
-                    var cstref = storage.refFromURL(crl);
-                    await cstref.delete();
-                  }
+
+                  var cref = firestore
+                      .collection(ecol)
+                      .doc(widget.eId)
+                      .collection(cardcol)
+                      .doc(kard.id);
+
+                  await cref.delete();
+                  // var cstref = storage.refFromURL(kard.);
+                  // await cstref.delete();
+
                   popper();
                   popper();
                   showToast(msg: "Success", isGood: true);

@@ -10,3 +10,11 @@ const contrCampId = "haflaway-contribution-campaign";
 const svdtCampId = "haflaway-save-the-date-campaign";
 // const invRemCampId = "haflaway-reminder-campaign";
 const gratCampaignId = "haflaway-gratitude-campaign";
+
+const defCampaignsList = [
+  invCampId,
+  invRemCampId,
+  contrCampId,
+  svdtCampId,
+  gratCampaignId,
+];

@@ -36,20 +36,20 @@ class HfApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (kDebugMode) {
-      try {
-        // FirebaseStorage storage = FirebaseStorage.instance;
-        FirebaseFirestore firestore = FirebaseFirestore.instance;
-        firestore.settings = const Settings(
-          host: "$lokol:8080",
-          sslEnabled: false,
-          persistenceEnabled: false,
-        );
-        // await storage.useStorageEmulator("$lokol", 9199);
-      } catch (e) {
-        debugPrint("Abject: $e");
-      }
-    }
+    // if (kDebugMode) {
+    //   try {
+    //     // FirebaseStorage storage = FirebaseStorage.instance;
+    //     FirebaseFirestore firestore = FirebaseFirestore.instance;
+    //     firestore.settings = const Settings(
+    //       host: "$lokol:8080",
+    //       sslEnabled: false,
+    //       persistenceEnabled: false,
+    //     );
+    //     // await storage.useStorageEmulator("$lokol", 9199);
+    //   } catch (e) {
+    //     debugPrint("Abject: $e");
+    //   }
+    // }
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: 500),
