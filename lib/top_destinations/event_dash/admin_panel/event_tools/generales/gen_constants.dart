@@ -2,14 +2,14 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reu
 
 var shannnels = {
   // "all": "Channel Zote",
-  "whatsapp": "Channel ya WhatsApp",
   "sms": "Channel ya SMS",
+  "whatsapp": "Channel ya WhatsApp",
 };
 
 getSenderChannels({campaignId}) {
   for (var defCampaign in defCampaignsList) {
     if (defCampaign == campaignId) {
-      return {"whatsapp": "Channel ya WhatsApp", "sms": "Channel ya SMS"};
+      return shannnels;
     }
   }
   return {"sms": "Channel ya SMS"};

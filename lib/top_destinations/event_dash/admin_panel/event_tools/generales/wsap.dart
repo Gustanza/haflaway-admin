@@ -265,7 +265,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           mainAxisSize: MainAxisSize.min,
           // mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            if (selChannel == shannnels.keys.last)
+            if (selChannel == shannnels.keys.first)
               FloatingActionButton(
                 // mini: true,
                 heroTag: "mini",
@@ -284,7 +284,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                 },
               ),
             // const SizedBox(width: spaceTiles * 0.5),
-            if (selChannel == shannnels.keys.first)
+            if (selChannel == shannnels.keys.last)
               FloatingActionButton(
                 heroTag: "major",
                 backgroundColor: Theme.of(context).scaffoldBackgroundColor,
