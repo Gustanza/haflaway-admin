@@ -740,12 +740,14 @@ class _AdminPanelState extends State<AdminPanel> {
                 title: 'Card Templates',
                 subtitle: 'Design invitations',
                 isActive: true,
-                onTap:
-                    () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => Cards(eId: widget.eventO.id ?? ''),
-                      ),
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => Cards(eId: widget.eventO.id ?? ''),
                     ),
+                  );
+                  loadData();
+                },
               ),
               _toolCard(
                 icon: Icons.chat_bubble_outline_rounded,
@@ -753,14 +755,15 @@ class _AdminPanelState extends State<AdminPanel> {
                 title: 'SMS Templates',
                 subtitle: 'Broadcast messages',
                 isActive: true,
-                onTap:
-                    () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => InvEditor(eId: widget.eventO.id ?? ''),
-                      ),
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => InvEditor(eId: widget.eventO.id ?? ''),
                     ),
+                  );
+                  loadData();
+                },
               ),
-
               /* _toolCard(
                 icon: Icons.storefront_outlined,
                 count: '—',
