@@ -22,9 +22,9 @@ const sendWspSvDt =
 const sendSMSrl = "https://sendsmsaction-frbu33fema-uc.a.run.app";
 // const sendSMSrl = "http://$lokol:5001/haflaway-f14aa/us-central1/sendSMSAction";
 
-// var crtAtCloudUrl = "https://createattendees-frbu33fema-uc.a.run.app";
-var crtAtCloudUrl =
-    "http://$lokol:5001/haflaway-f14aa/us-central1/createAttendees";
+var crtAtCloudUrl = "https://createattendees-frbu33fema-uc.a.run.app";
+// var crtAtCloudUrl =
+//     "http://$lokol:5001/haflaway-f14aa/us-central1/createAttendees";
 
 var getAttsUrl = 'https://getattendees-frbu33fema-uc.a.run.app';
 

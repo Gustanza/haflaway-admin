@@ -15,7 +15,6 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reu
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/sms/custom_camps/ccampsmain.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/importcontr.dart';
-import 'package:haflaway/top_destinations/event_dash/attendees/components/searchdel.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/stats.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/crtattendees.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -28,6 +27,7 @@ import 'package:haflaway/models/card.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/errorstrs.dart';
 import 'package:haflaway/utils/globalfns.dart';
+import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:icons_plus/icons_plus.dart';
@@ -74,6 +74,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   bool hasMore = true;
   DocumentSnapshot? lastDocument;
   ScrollController scrollController = ScrollController();
+
+  bool isSearching = false;
+  TextEditingController searchController = TextEditingController();
+  List<Attendee> searchResults = [];
 
   @override
   void initState() {
@@ -304,6 +308,54 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     }
   }
 
+  performSearch(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        searchResults = [];
+      });
+      return;
+    }
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      String searchKey = query.toLowerCase();
+
+      // Ensure we filter by current kardType and prefix search on name
+      QuerySnapshot<Map<String, dynamic>> res =
+          await firestore
+              .collection(ecol)
+              .doc(widget.edata.id)
+              .collection(atcol)
+              .where('fullNameLower', isGreaterThanOrEqualTo: searchKey)
+              .where('fullNameLower', isLessThanOrEqualTo: searchKey + '\uf8ff')
+              .limit(100) // Increased limit to ensure enough filtered results
+              .get();
+
+      setState(() {
+        searchResults =
+            res.docs
+                .where((doc) {
+                  try {
+                    var krd = doc.data()['cards'][widget.kardType.name];
+                    return krd != null;
+                  } catch (e) {
+                    return false;
+                  }
+                })
+                .map<Attendee>((doc) => Attendee.fromMap(doc.id, doc.data()))
+                .take(20) // Only take top 20 after filtering
+                .toList();
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("search_error: $e");
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -504,13 +556,18 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   bottom: false,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [_topBar(inSelectMode), _titleBlock()],
+                    children: [
+                      _topBar(inSelectMode),
+                      if (!isSearching) _titleBlock(),
+                    ],
                   ),
                 ),
               ),
 
               // ── Hero Card for Contributions ──
-              if (widget.kardType == KardType.contribution && atList.isNotEmpty)
+              if (widget.kardType == KardType.contribution &&
+                  atList.isNotEmpty &&
+                  !isSearching)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -533,94 +590,114 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 ),
 
               // ── Content ──
-              if (atList.isEmpty && isLoading)
+              if ((isSearching ? searchResults : atList).isEmpty && isLoading)
                 const SliverFillRemaining(
                   child: Center(
                     child: CupertinoActivityIndicator(color: Color(0xFFC9A84C)),
                   ),
                 )
-              else if (atList.isEmpty && !isLoading)
+              else if ((isSearching ? searchResults : atList).isEmpty &&
+                  !isLoading)
                 SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _buildEmptyState(),
+                  hasScrollBody: true,
+                  child: BuildNoDt(
+                    string: isSearching ? "No Results Found" : "no data",
+                    isRefreshed: () async {
+                      if (isSearching) {
+                        performSearch(searchController.text);
+                      } else {
+                        await _loadAttendees();
+                      }
+                    },
+                  ),
                 )
               else
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      // Pagination loader or end-of-list indicator
-                      if (index == atList.length) {
-                        return _buildListFooter();
-                      }
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        var activeList = isSearching ? searchResults : atList;
 
-                      final attendee = atList[index];
-                      final hasKey = selectList.any((t) => t.id == attendee.id);
-                      final campaignId =
-                          widget.kardType == KardType.invitation
-                              ? invCampId
-                              : contrCampId;
+                        // Pagination loader or end-of-list indicator
+                        if (index == activeList.length) {
+                          return isSearching
+                              ? const SizedBox(height: 100)
+                              : _buildListFooter();
+                        }
 
-                      return TweenAnimationBuilder<double>(
-                        key: ValueKey('anim_${attendee.id}'),
-                        tween: Tween(begin: 0.0, end: 1.0),
-                        duration: Duration(
-                          milliseconds: 350 + (index.clamp(0, 10) * 50),
-                        ),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, value, child) {
-                          return Opacity(
-                            opacity: value,
-                            child: Transform.translate(
-                              offset: Offset(0, 16 * (1 - value)),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: buildAttendeeCard(
-                          hasKey: hasKey,
-                          attendee: attendee,
-                          kardType: widget.kardType,
-                          eventId: widget.edata.id ?? "_",
-                          campaignId: campaignId,
-                          onEdit: () async {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => CreateAttendees(
-                                      event: widget.edata,
-                                      kardType: widget.kardType,
-                                      attendee: attendee,
-                                    ),
+                        final attendee = activeList[index];
+                        final hasKey = selectList.any(
+                          (t) => t.id == attendee.id,
+                        );
+                        final campaignId =
+                            widget.kardType == KardType.invitation
+                                ? invCampId
+                                : contrCampId;
+
+                        return TweenAnimationBuilder<double>(
+                          key: ValueKey('anim_${attendee.id}'),
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: Duration(
+                            milliseconds: 350 + (index.clamp(0, 10) * 50),
+                          ),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return Opacity(
+                              opacity: value,
+                              child: Transform.translate(
+                                offset: Offset(0, 16 * (1 - value)),
+                                child: child,
                               ),
                             );
-                            _loadAttendees();
                           },
-                          onSelected: () {
-                            if (hasKey) {
-                              selectList.removeWhere(
-                                (t) => t.id == attendee.id,
+                          child: buildAttendeeCard(
+                            hasKey: hasKey,
+                            attendee: attendee,
+                            kardType: widget.kardType,
+                            eventId: widget.edata.id ?? "_",
+                            campaignId: campaignId,
+                            onEdit: () async {
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => CreateAttendees(
+                                        event: widget.edata,
+                                        kardType: widget.kardType,
+                                        attendee: attendee,
+                                      ),
+                                ),
                               );
-                            } else {
-                              selectList.add(attendee);
-                            }
-                            safeState(() {});
-                          },
-                          onStatusChange: (status) {
-                            if (widget.kardType == KardType.contribution) {
-                              return _loadAttendees();
-                            }
-                            int idx = atList.indexWhere(
-                              (element) => element.id == attendee.id,
-                            );
-                            if (idx != -1) {
-                              atList[idx].attendanceStatus = status;
-                            }
-                            safeState(() {});
-                          },
-                        ),
-                      );
-                    }, childCount: atList.length + 1),
+                              _loadAttendees();
+                            },
+                            onSelected: () {
+                              if (hasKey) {
+                                selectList.removeWhere(
+                                  (t) => t.id == attendee.id,
+                                );
+                              } else {
+                                selectList.add(attendee);
+                              }
+                              safeState(() {});
+                            },
+                            onStatusChange: (status) {
+                              if (widget.kardType == KardType.contribution) {
+                                return _loadAttendees();
+                              }
+                              int idx = activeList.indexWhere(
+                                (element) => element.id == attendee.id,
+                              );
+                              if (idx != -1) {
+                                activeList[idx].attendanceStatus = status;
+                              }
+                              safeState(() {});
+                            },
+                          ),
+                        );
+                      },
+                      childCount:
+                          (isSearching ? searchResults : atList).length + 1,
+                    ),
                   ),
                 ),
 
@@ -642,29 +719,40 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: Color(0xFFC9A84C),
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Back',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
+          if (!isSearching)
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Color(0xFFC9A84C),
+                    size: 16,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  Text(
+                    'Back',
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const Spacer(),
+          if (isSearching)
+            Expanded(
+              child: CupertinoSearchTextField(
+                controller: searchController,
+                style: const TextStyle(color: Colors.white),
+                onChanged: (v) {
+                  performSearch(v);
+                },
+              ),
+            ),
+          if (!isSearching) const Spacer(),
           if (inSelectMode)
             _glassActionChip(
               icon: Clarity.trash_solid,
@@ -675,20 +763,37 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           else if (widget.kardType != KardType.contact)
             Row(
               children: [
-                _buildFilterButton(),
-                const SizedBox(width: 8),
-                _floatingButton(
-                  icon: Icons.search,
-                  onTap: () {
-                    showSearch(
-                      context: context,
-                      delegate: DhaSearchDelegate(
-                        edata: widget.edata,
-                        kardType: widget.kardType,
+                if (!isSearching) ...[
+                  _buildFilterButton(),
+                  const SizedBox(width: 8),
+                  _floatingButton(
+                    icon: Icons.search,
+                    onTap: () {
+                      setState(() {
+                        isSearching = true;
+                      });
+                    },
+                  ),
+                ] else
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: TextButton(
+                      onPressed: () {
+                        setState(() {
+                          isSearching = false;
+                          searchController.clear();
+                          searchResults = [];
+                        });
+                      },
+                      child: Text(
+                        "Cancel",
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFC9A84C),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  ),
               ],
             )
           else
@@ -1122,108 +1227,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
-        duration: const Duration(milliseconds: 600),
-        curve: Curves.easeOutCubic,
-        builder: (context, value, child) {
-          return Opacity(
-            opacity: value,
-            child: Transform.translate(
-              offset: Offset(0, 30 * (1 - value)),
-              child: child,
-            ),
-          );
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  width: 1,
-                ),
-              ),
-              child: Icon(
-                Icons.people_outline_rounded,
-                size: 36,
-                color: Colors.white.withValues(alpha: 0.35),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              widget.kardType == KardType.invitation
-                  ? "No Invitees yet"
-                  : widget.kardType == KardType.contribution
-                  ? "No Contributors yet"
-                  : "No Contacts yet",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.7),
-                letterSpacing: 0.3,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Tap + to add new ones",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withValues(alpha: 0.4),
-              ),
-            ),
-            const SizedBox(height: 24),
-            GestureDetector(
-              onTap: () async {
-                await _loadAttendees();
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    width: 0.5,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.refresh,
-                      color: Colors.white.withValues(alpha: 0.6),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Try again",
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

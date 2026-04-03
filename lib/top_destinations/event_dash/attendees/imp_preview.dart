@@ -154,6 +154,7 @@ class _ImpPreviewState extends State<ImpPreview> {
                   ? double.tryParse("${mchangocell?.value}") ?? 0.0
                   : null,
           fullName: "${namecell?.value}".toUpperCase(),
+          fullNameLower: "${namecell?.value}".toLowerCase(),
         );
         attendees.add(attendee);
       }
