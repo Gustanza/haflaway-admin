@@ -172,48 +172,80 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: () async {
-                      if (prov.isSuperAdmin)
-                        await showPublish(eventId: widget.eventData.id ?? "_");
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.green.withOpacity(0.3),
-                          width: 0.5,
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () async {
+                          if (prov.isSuperAdmin) {
+                            await showPublish(
+                              eventId: widget.eventData.id ?? "_",
+                            );
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.green.withOpacity(0.3),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: Colors.green,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'STATUS: ${widget.eventData.status?.toUpperCase()}',
+                                style: const TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Colors.green,
+                      if (prov.isSuperAdmin) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () async {
+                            await showDeleteConfirm(
+                              eventId: widget.eventData.id ?? "_",
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: destructiveColor.withOpacity(0.2),
                               shape: BoxShape.circle,
+                              border: Border.all(
+                                color: destructiveColor.withOpacity(0.3),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Icon(
+                              CupertinoIcons.delete,
+                              color: destructiveColor,
+                              size: 16,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'STATUS: ${widget.eventData.status?.toUpperCase()}',
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -221,6 +253,65 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
           ],
         ),
       ),
+    );
+  }
+
+  showDeleteConfirm({eventId}) {
+    TextEditingController confirmCon = TextEditingController();
+    return showCupertinoDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return CupertinoAlertDialog(
+              title: const Text("Delete Event"),
+              content: Column(
+                children: [
+                  const Text(
+                    "This action is IRREVERSIBLE and will delete all event data. Type \"delete permanently\" to confirm.",
+                  ),
+                  const SizedBox(height: 12),
+                  CupertinoTextField(
+                    controller: confirmCon,
+                    placeholder: "delete permanently",
+                    style: const TextStyle(color: Colors.white),
+                    onChanged: (v) {
+                      setDialogState(() {});
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                CupertinoDialogAction(
+                  isDefaultAction: true,
+                  child: const Text("Cancel"),
+                  onPressed: () => popper(),
+                ),
+                CupertinoDialogAction(
+                  isDestructiveAction: true,
+                  onPressed:
+                      confirmCon.text == "delete permanently"
+                          ? () {
+                            FirebaseFirestore.instance
+                                .collection(ecol)
+                                .doc(eventId)
+                                .delete()
+                                .then((e) {
+                                  showToast(isGood: true, msg: "Event Deleted");
+                                })
+                                .catchError((e) {
+                                  showToast(isGood: false, msg: "$e");
+                                });
+                            popper();
+                          }
+                          : null,
+                  child: const Text("Delete"),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

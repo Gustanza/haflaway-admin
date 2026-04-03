@@ -129,6 +129,7 @@ Widget gsFloatingButton({required IconData icon, required VoidCallback onTap}) {
 Widget appBarActionButton({
   required IconData icon,
   required VoidCallback onTap,
+  Color color = Colors.white,
 }) {
   return GestureDetector(
     onTap: onTap,
@@ -140,14 +141,11 @@ Widget appBarActionButton({
           width: 35,
           height: 35,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
+            color: color.withOpacity(0.15),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-              width: 0.5,
-            ),
+            border: Border.all(color: color.withOpacity(0.2), width: 0.5),
           ),
-          child: Icon(icon, color: Colors.white, size: 20),
+          child: Icon(icon, color: color, size: 20),
         ),
       ),
     ),

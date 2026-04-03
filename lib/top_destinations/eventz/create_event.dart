@@ -1,27 +1,24 @@
-import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:haflaway/components/appbar.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:haflaway/components/sheets.dart';
-import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/urls.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/services/plan_service.dart';
-import 'package:haflaway/utils/colors.dart';
-import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/strings.dart';
-import 'package:haflaway/utils/styles.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
-import 'plans.dart';
 
 class CreateEvent extends StatefulWidget {
   final Event? event;
@@ -33,6 +30,7 @@ class CreateEvent extends StatefulWidget {
 
 class _CreateEventState extends State<CreateEvent> {
   XFile? picha;
+  Uint8List? pichaBytes;
   EventPlan? plan;
   String? eventPlanId;
   DateTime? evstdt;
@@ -87,316 +85,398 @@ class _CreateEventState extends State<CreateEvent> {
 
   @override
   Widget build(BuildContext context) {
-    Event? event = widget.event;
-    return Scaffold(
-      backgroundColor: scaback,
-      appBar: appBar(
-        title: event == null ? 'Create Event' : 'Edit Event',
-        leading: appBarActionButton(
-          onTap: () {
-            Navigator.of(context).pop();
-          },
-          icon: Icons.arrow_back,
-        ),
-        actions: Row(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: _T.bg,
+        body: Stack(
           children: [
-            appBarActionButton(
-              onTap: () {
-                saver();
-              },
-              icon: Icons.save,
+            // Ambient Orbs
+            const Positioned(
+              top: -100,
+              right: -100,
+              child: _GusOrb(size: 300, color: _T.lime, opacity: 0.08),
+            ),
+            const Positioned(
+              bottom: -50,
+              left: -100,
+              child: _GusOrb(size: 250, color: _T.lime, opacity: 0.05),
+            ),
+
+            SafeArea(
+              child: Column(
+                children: [
+                  _topBar(),
+                  Expanded(
+                    child:
+                        !isLoading
+                            ? Form(
+                              key: globalKey,
+                              child: CustomScrollView(
+                                physics: const BouncingScrollPhysics(),
+                                slivers: [
+                                  SliverPadding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 20,
+                                    ),
+                                    sliver: SliverList(
+                                      delegate: SliverChildListDelegate([
+                                        _sectionThumbnail(),
+                                        const SizedBox(height: 24),
+                                        _sectionBasicInfo(),
+                                        const SizedBox(height: 24),
+                                        _sectionDateTime(),
+                                        const SizedBox(height: 24),
+                                        _sectionAdditionalInfo(),
+                                        const SizedBox(
+                                          height: 40,
+                                        ), // Bottom padding
+                                      ]),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                            : Center(
+                              child: CupertinoActivityIndicator(color: _T.lime),
+                            ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
-      body:
-          !isLoading
-              ? Form(
-                key: globalKey,
-                child: Container(
-                  decoration: BoxDecoration(gradient: scagrad),
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.only(
-                          left: psm,
-                          right: psm,
-                          top: spaceTiles,
-                          bottom: psm,
-                        ),
-                        sliver: SliverList(
-                          delegate: SliverChildListDelegate([
-                            const Text(
-                              'Ongeza Kijipicha',
-                              style: TextStyle(
-                                fontSize: fsm,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            Stack(
-                              children: [
-                                Container(
-                                  height: 200,
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    gradient: lqassgrad,
-                                    border: Border.all(
-                                      color: lqassbdrColor,
-                                      width: bdrWidthGen,
-                                    ),
-                                    borderRadius: BorderRadius.circular(bmd),
-                                    image:
-                                        picha != null
-                                            ? DecorationImage(
-                                              image: FileImage(
-                                                File(picha!.path),
-                                              ),
-                                              fit: BoxFit.cover,
-                                            )
-                                            : event != null
-                                            ? DecorationImage(
-                                              image: CachedNetworkImageProvider(
-                                                event.eventThumbnail ?? "",
-                                              ),
-                                              fit: BoxFit.cover,
-                                            )
-                                            : null,
-                                  ),
-                                ),
-                                Positioned(
-                                  left: psm,
-                                  bottom: psm,
-                                  child: IconButton.outlined(
-                                    onPressed: () async {
-                                      picha = await ImagePicker().pickImage(
-                                        source: ImageSource.gallery,
-                                      );
-                                      if (picha != null) {
-                                        safeState(() {});
-                                      }
-                                    },
-                                    icon: const Icon(Icons.image),
-                                  ),
-                                ),
-                                if (picha != null)
-                                  Positioned(
-                                    right: psm,
-                                    bottom: psm,
-                                    child: IconButton.outlined(
-                                      onPressed: () {
-                                        safeState(() {
-                                          picha = null;
-                                        });
-                                      },
-                                      icon: Icon(Icons.delete),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            const Text(
-                              'Jina la Shughuli',
-                              style: TextStyle(
-                                fontSize: fsm,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            buildField(lbl: eptitle, cont: fEventTitleCon),
-                            const SizedBox(height: spaceTiles),
-                            const Text(
-                              'Add event category',
-                              style: TextStyle(
-                                fontSize: fsm,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            buildField(
-                              isReadOnly: true,
-                              showCursor: false,
-                              cont: fEventCatCon,
-                              lbl: epcategory,
-                              isTapped: () {
-                                showSelectCats();
-                              },
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            const Text(
-                              'Add event description',
-                              style: TextStyle(
-                                fontSize: fsm,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            buildField(lbl: epdescription, cont: fEventDescCon),
-                            const SizedBox(height: spaceTiles),
-                            const Text(
-                              'Add event location',
-                              style: TextStyle(
-                                fontSize: fsm,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            buildField(
-                              lbl: eplocation,
-                              cont: fEventLocationCon,
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            const Text(
-                              'Select event plan',
-                              style: TextStyle(
-                                fontSize: fsm,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            DropdownMenu(
-                              initialSelection: eventPlanId,
-                              width: double.maxFinite,
+    );
+  }
 
-                              inputDecorationTheme: InputDecorationTheme(
-                                filled: true,
-                                enabledBorder: inputBorder,
-                                border: inputBorder,
-                                focusedBorder: inputBorder,
-                                disabledBorder: inputBorder,
-                                fillColor: lqassgradBaseColor,
-                              ),
-                              onSelected: (value) {
-                                safeState(() {
-                                  eventPlanId = value ?? "";
-                                });
-                              },
-                              dropdownMenuEntries: List.generate(
-                                eventPlans.length,
-                                (idx) {
-                                  EventPlan evPln = eventPlans[idx];
-                                  return DropdownMenuEntry(
-                                    leadingIcon: Icon(Clarity.crown_line),
-                                    value: evPln.id,
-                                    label: "${evPln.name}",
-                                  );
-                                },
-                              ),
-                            ),
-                            // buildField(
-                            //   isReadOnly: true,
-                            //   showCursor: false,
-                            //   cont: fEventBillCon,
-                            //   lbl: epbilolan,
-                            //   isTapped: () async {
-                            //     plan = await Navigator.push(
-                            //       context,
-                            //       MaterialPageRoute(
-                            //         builder: (context) => const BillScreen(),
-                            //       ),
-                            //     );
-                            //     if (plan != null) {
-                            //       setState(() {
-                            //         fEventBillCon.text = plan!.name;
-                            //       });
-                            //     }
-                            //   },
-                            // ),
-                            const SizedBox(height: spaceTiles),
-                            const Text(
-                              'Phone number',
-                              style: TextStyle(
-                                fontSize: fsm,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            buildPhone(mobileCont: phncont),
-                            const Text(
-                              'Start date & time',
-                              style: TextStyle(
-                                fontSize: fsm,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            buildField(
-                              isReadOnly: true,
-                              showCursor: false,
-                              cont: stdtcont,
-                              lbl: "Event start date",
-                              isTapped: () async {
-                                try {
-                                  evstdt = await dtPicker(context: context);
-                                  if (evstdt != null) {
-                                    setState(() {
-                                      stdtcont.text = dformtr.format(evstdt!);
-                                    });
-                                  }
-                                } catch (e) {
-                                  showToast(isGood: false, msg: "$e");
-                                }
-                              },
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            const Text(
-                              'End date & time',
-                              style: TextStyle(
-                                fontSize: fsm,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: spaceTiles),
-                            buildField(
-                              isReadOnly: true,
-                              showCursor: false,
-                              cont: enddtcont,
-                              lbl: "Event end date",
-                              isTapped: () async {
-                                try {
-                                  evenddt = await dtPicker(context: context);
-                                  if (evenddt != null) {
-                                    setState(() {
-                                      enddtcont.text = dformtr.format(evenddt!);
-                                    });
-                                  }
-                                } catch (e) {
-                                  showToast(isGood: false, msg: "$e");
-                                }
-                              },
-                            ),
-                          ]),
+  // ── Section: Thumbnail ──────────────────────────────────────────────────
+  Widget _sectionThumbnail() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _inputLabel('EVENT THUMBNAIL'),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: () async {
+            picha = await ImagePicker().pickImage(source: ImageSource.gallery);
+            if (picha != null) {
+              pichaBytes = await picha!.readAsBytes();
+              safeState(() {});
+            }
+          },
+          child: Container(
+            height: 180,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: _T.card,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _T.white.withOpacity(0.05)),
+              image:
+                  pichaBytes != null
+                      ? DecorationImage(
+                        image: MemoryImage(pichaBytes!),
+                        fit: BoxFit.cover,
+                      )
+                      : widget.event != null
+                      ? DecorationImage(
+                        image: CachedNetworkImageProvider(
+                          widget.event!.eventThumbnail ?? defThumb,
                         ),
-                      ),
-                    ],
-                  ),
+                        fit: BoxFit.cover,
+                      )
+                      : null,
+            ),
+            child:
+                pichaBytes == null && widget.event?.eventThumbnail == null
+                    ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.add_photo_alternate_outlined,
+                          color: _T.lime,
+                          size: 32,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Upload Thumbnail',
+                          style: _T.f(size: 13, color: _T.grey1),
+                        ),
+                      ],
+                    )
+                    : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Section: Basic Info ──────────────────────────────────────────────────
+  Widget _sectionBasicInfo() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _T.card,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _inputLabel('BASIC INFORMATION'),
+          const SizedBox(height: 16),
+          _buildPremiumField(
+            controller: fEventTitleCon,
+            label: 'Event Title',
+            hint: 'e.g. Gatsby Night',
+            validator: (v) => fvalidator(label: eptitle, value: v),
+          ),
+          const SizedBox(height: 20),
+          _buildPremiumField(
+            controller: fEventCatCon,
+            label: 'Category',
+            hint: 'Select category',
+            readOnly: true,
+            onTap: showSelectCats,
+            suffix: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: _T.lime,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildPremiumField(
+            controller: fEventDescCon,
+            label: 'Description',
+            hint: 'Tell us more about the event...',
+            maxLines: 4,
+            validator: (v) => fvalidator(label: epdescription, value: v),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Section: Date & Time ──────────────────────────────────────────────────
+  Widget _sectionDateTime() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _T.card,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _inputLabel('DATE & TIME'),
+          const SizedBox(height: 16),
+          _buildPremiumField(
+            controller: stdtcont,
+            label: 'Start Date',
+            hint: 'Select start date',
+            readOnly: true,
+            onTap: () async {
+              evstdt = await dtPicker(context: context);
+              if (evstdt != null) {
+                safeState(() {
+                  stdtcont.text = dformtr.format(evstdt!);
+                });
+              }
+            },
+            suffix: const Icon(
+              Icons.calendar_today_rounded,
+              color: _T.lime,
+              size: 18,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildPremiumField(
+            controller: enddtcont,
+            label: 'End Date',
+            hint: 'Select end date',
+            readOnly: true,
+            onTap: () async {
+              evenddt = await dtPicker(context: context);
+              if (evenddt != null) {
+                safeState(() {
+                  enddtcont.text = dformtr.format(evenddt!);
+                });
+              }
+            },
+            suffix: const Icon(
+              Icons.calendar_today_rounded,
+              color: _T.lime,
+              size: 18,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Section: Additional Info ──────────────────────────────────────────────
+  Widget _sectionAdditionalInfo() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _T.card,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _inputLabel('ADDITIONAL DETAILS'),
+          const SizedBox(height: 16),
+          _buildPremiumField(
+            controller: fEventLocationCon,
+            label: 'Location',
+            hint: 'e.g. Mlimani City Hall',
+            validator: (v) => fvalidator(label: eplocation, value: v),
+          ),
+          const SizedBox(height: 20),
+          _inputLabel('SUPPORT NUMBER'),
+          const SizedBox(height: 12),
+          buildPhone(mobileCont: phncont),
+          const SizedBox(height: 20),
+          _inputLabel('EVENT PLAN'),
+          const SizedBox(height: 12),
+          DropdownMenu(
+            initialSelection: eventPlanId,
+            width: MediaQuery.of(context).size.width - 64,
+            textStyle: _T.f(color: _T.white),
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: _T.bg,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+              ),
+            ),
+            onSelected: (value) {
+              safeState(() {
+                eventPlanId = value ?? "";
+              });
+            },
+            dropdownMenuEntries: List.generate(eventPlans.length, (idx) {
+              EventPlan evPln = eventPlans[idx];
+              return DropdownMenuEntry(
+                leadingIcon: const Icon(
+                  Icons.star_outline_rounded,
+                  color: _T.lime,
                 ),
-              )
-              : buildLoader(),
+                value: evPln.id,
+                label: "${evPln.name}",
+                style: MenuItemButton.styleFrom(foregroundColor: _T.white),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Premium UI Helpers ────────────────────────────────────────────────────
+
+  Widget _inputLabel(String label) {
+    return Text(
+      label,
+      style: _T.f(
+        size: 10,
+        weight: FontWeight.w700,
+        color: _T.grey2,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+
+  Widget _buildPremiumField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    int maxLines = 1,
+    Widget? suffix,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: _T.f(size: 13, weight: FontWeight.w500, color: _T.grey1),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          readOnly: readOnly,
+          onTap: onTap,
+          maxLines: maxLines,
+          validator: validator,
+          textCapitalization: TextCapitalization.sentences,
+          style: _T.f(size: 15, color: _T.white),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: _T.f(size: 15, color: _T.grey3),
+            filled: true,
+            fillColor: _T.bg,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+            suffixIcon: suffix,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: _T.lime, width: 1.5),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   buildPhone({mobileCont}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IntlPhoneField(
-          controller: mobileCont,
-          decoration: InputDecoration(
-            hintText: 'Phone Number',
-            filled: true,
-            fillColor: lqassgradBaseColor,
-            border: inputBorder,
-            focusedBorder: inputBorder,
-            enabledBorder: inputBorder,
-            disabledBorder: inputBorder,
-          ),
-          initialCountryCode: 'TZ',
-          onChanged: (phone) {
-            phnnumber = phone.completeNumber.replaceAll('+', '');
-          },
+    return IntlPhoneField(
+      controller: mobileCont,
+      style: _T.f(size: 15, color: _T.white),
+      dropdownTextStyle: _T.f(size: 15, color: _T.white),
+      decoration: InputDecoration(
+        hintText: 'Phone Number',
+        hintStyle: _T.f(size: 15, color: _T.grey3),
+        filled: true,
+        fillColor: _T.bg,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
         ),
-      ],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _T.lime, width: 1.5),
+        ),
+      ),
+      initialCountryCode: 'TZ',
+      onChanged: (phone) {
+        phnnumber = phone.completeNumber.replaceAll('+', '');
+      },
     );
   }
 
@@ -404,18 +484,9 @@ class _CreateEventState extends State<CreateEvent> {
     return showModalBottomSheet(
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadiusGeometry.only(
-          topLeft: Radius.circular(bmd),
-          topRight: Radius.circular(bmd),
-        ),
-      ),
       context: context,
       builder: (context) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.9,
-          child: modalBtmSheet(bdrdm: bmd, child: buildSheetBody()),
-        );
+        return modalBtmSheet(bdrdm: 32, child: buildSheetBody());
       },
     );
   }
@@ -471,43 +542,213 @@ class _CreateEventState extends State<CreateEvent> {
     });
   }
 
+  IconData _getCatIcon(String name) {
+    name = name.toLowerCase();
+    if (name.contains('wedding')) return Icons.favorite_rounded;
+    if (name.contains('birthday')) return Icons.cake_rounded;
+    if (name.contains('corporate') || name.contains('meeting'))
+      return Icons.work_rounded;
+    if (name.contains('party') || name.contains('celebration'))
+      return Icons.celebration_rounded;
+    if (name.contains('concert') || name.contains('music'))
+      return Icons.music_note_rounded;
+    if (name.contains('sports')) return Icons.sports_basketball_rounded;
+    if (name.contains('dinner')) return Icons.restaurant_rounded;
+    return Icons.star_rounded;
+  }
+
   buildSheetBody() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(psm),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(height: psm),
-          Text(
-            "Select Category",
-            style: TextStyle(fontSize: fsm + 6, fontWeight: FontWeight.bold),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Premium Grabber
+        Center(
+          child: Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 12),
+            width: 36,
+            height: 5,
+            decoration: BoxDecoration(
+              color: _T.grey2.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-          SizedBox(height: psm * 1.5),
-          Divider(color: lqassbdrColor, height: 0),
-          SizedBox(height: psm),
-          ...List.generate(catsList.length, (index) {
-            bool isSelected = fEventCatId == catsList[index].id;
-            return CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              checkboxScaleFactor: .75,
-              checkboxShape: CircleBorder(),
-              selected: isSelected,
-              activeColor: primaryColor,
-              value: isSelected,
-              onChanged: (_) {
-                setState(() {
-                  fEventCatId = catsList[index].id;
-                  fEventCatLevel = catsList[index].level;
-                  fEventCatCon.text = catsList[index].name;
-                });
-                popper();
-              },
-              title: Text(
-                catsList[index].name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Choose Category",
+                style: _T.f(size: 24, weight: FontWeight.w800, color: _T.white),
               ),
-            );
-          }),
+              IconButton(
+                onPressed: popper,
+                icon: Icon(Icons.close_rounded, color: _T.grey1, size: 24),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Divider(color: _T.grey2.withOpacity(0.3), height: 1),
+        ),
+        const SizedBox(height: 16),
+
+        Flexible(
+          child: ListView.builder(
+            shrinkWrap: true,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            itemCount: catsList.length,
+            itemBuilder: (context, index) {
+              final cat = catsList[index];
+              final isSelected = fEventCatId == cat.id;
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: InkWell(
+                  onTap: () {
+                    safeState(() {
+                      fEventCatId = cat.id;
+                      fEventCatLevel = cat.level;
+                      fEventCatCon.text = cat.name;
+                    });
+                    popper();
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color:
+                          isSelected
+                              ? _T.lime.withOpacity(0.15)
+                              : _T.white.withOpacity(0.04),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color:
+                            isSelected ? _T.lime : _T.white.withOpacity(0.08),
+                        width: isSelected ? 2 : 1,
+                      ),
+                      boxShadow:
+                          isSelected
+                              ? [
+                                BoxShadow(
+                                  color: _T.lime.withOpacity(0.1),
+                                  blurRadius: 20,
+                                  spreadRadius: -4,
+                                ),
+                              ]
+                              : [],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color:
+                                isSelected
+                                    ? _T.lime
+                                    : _T.grey2.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            _getCatIcon(cat.name),
+                            color: isSelected ? Colors.black : _T.white,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                cat.name,
+                                style: _T.f(
+                                  size: 17,
+                                  weight:
+                                      isSelected
+                                          ? FontWeight.w800
+                                          : FontWeight.w600,
+                                  color: isSelected ? _T.lime : _T.white,
+                                ),
+                              ),
+                              if (isSelected)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    "Selected",
+                                    style: _T.f(
+                                      size: 11,
+                                      color: _T.lime.withOpacity(0.8),
+                                      weight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: _T.lime,
+                            size: 24,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 32),
+      ],
+    );
+  }
+
+  // ── Top Bar ──────────────────────────────────────────────────────────────────
+  Widget _topBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: _T.lime,
+                  size: 16,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  widget.event == null ? 'Create Event' : 'Edit Event',
+                  style: _T.f(
+                    size: 15,
+                    weight: FontWeight.w500,
+                    color: _T.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => saver(),
+            child: Text(
+              'Save',
+              style: _T.f(size: 15, weight: FontWeight.w600, color: _T.lime),
+            ),
+          ),
         ],
       ),
     );
@@ -527,7 +768,7 @@ class _CreateEventState extends State<CreateEvent> {
               "${FirebaseAuth.instance.currentUser?.uid}?=${DateTime.now().toString()}?=${picha!.name}";
           final storageRef = FirebaseStorage.instance.ref();
           final eventImagesRef = storageRef.child("Event-Thumbnails/$imageId");
-          var p0 = await eventImagesRef.putFile(File(picha!.path));
+          var p0 = await eventImagesRef.putData(pichaBytes!);
           dwnURL = await p0.ref.getDownloadURL();
         } else if (eventt != null) {
           dwnURL = eventt.eventThumbnail ?? defThumb;
@@ -559,6 +800,7 @@ class _CreateEventState extends State<CreateEvent> {
         Event event = Event(
           id: evRef.id,
           title: fEventTitleCon.text.trim(),
+          titleLower: fEventTitleCon.text.trim().toLowerCase(),
           authorId: eventt == null ? uid! : null,
           adminsIds: eventt == null ? [uid!] : null,
           usersIds: eventt == null ? [] : null,
@@ -651,5 +893,59 @@ class _CreateEventState extends State<CreateEvent> {
         runnbale();
       });
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Design Tokens (Apple / Obsidian Hybrid)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _T {
+  static const bg = Color(0xFF0A0A0A);
+  static const card = Color(0xFF141414);
+  static const lime = Color(0xFFC9A84C);
+  static const white = Color(0xFFFFFFFF);
+  static const grey1 = Color(0xFFAAAAAA);
+  static const grey2 = Color(0xFF555555);
+  static const grey3 = Color(0xFF333333);
+
+  static TextStyle f({
+    double size = 14,
+    FontWeight weight = FontWeight.w400,
+    Color color = white,
+    double letterSpacing = 0,
+    double? height,
+  }) => GoogleFonts.inter(
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
+}
+
+class _GusOrb extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double opacity;
+
+  const _GusOrb({required this.size, required this.color, this.opacity = 0.05});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withOpacity(opacity),
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          child: const SizedBox.shrink(),
+        ),
+      ),
+    );
   }
 }

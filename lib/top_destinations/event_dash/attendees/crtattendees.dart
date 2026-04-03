@@ -231,6 +231,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
           attendanceStatus: atnotconfstate,
           phone: phnnumber.replaceAll('+', ''),
           fullName: ncont.text.trim().toUpperCase(),
+          fullNameLower: ncont.text.trim().toLowerCase(),
         );
         var payload = {
           "eventId": widget.event.id,

@@ -40,6 +40,7 @@ class Attendee {
   DateTime createdAt;
   String email;
   String fullName;
+  String fullNameLower;
   String? attendanceStatus;
   String phone;
   Map messages;
@@ -57,6 +58,7 @@ class Attendee {
     required this.createdAt,
     required this.email,
     required this.fullName,
+    required this.fullNameLower,
     required this.phone,
     this.attendanceStatus,
     this.messageIndexes,
@@ -70,6 +72,7 @@ class Attendee {
     "phone": phone,
     "email": email,
     "fullName": fullName,
+    "fullNameLower": fullName.toLowerCase(),
     "messages": messages,
     "idComment": idComment,
     if (messageIndexes != null) "messageIndexes": messageIndexes,
@@ -101,6 +104,8 @@ class Attendee {
               : DateTime.now(),
       email: map['email'] ?? "",
       fullName: map['fullName'] ?? "",
+      fullNameLower:
+          map['fullNameLower'] ?? (map['fullName'] ?? "").toLowerCase(),
       phone: map['phone'] ?? "",
       messages: map['messages'] ?? {},
       messageIndexes: mIndexes,
