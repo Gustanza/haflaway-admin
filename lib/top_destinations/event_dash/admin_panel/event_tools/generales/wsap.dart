@@ -1,17 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:haflaway/components/Ccafold.dart';
-import 'package:haflaway/components/appbar.dart';
+import 'package:flutter/services.dart';
 import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
-import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/send_previewer.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/send_search_deleg.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/crtattendees.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/constants.dart';
@@ -23,6 +19,7 @@ import 'package:haflaway/top_destinations/event_dash/attendees/components/attend
 import 'package:haflaway/utils/styles.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart';
 
 class InvitesIssuers extends StatefulWidget {
   final Event event;
@@ -49,6 +46,13 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   List<Attendee> attendeeList = [];
   String selStatus = shtates.keys.first;
   String selChannel = shannnels.keys.first;
+  TextEditingController channelCon = TextEditingController();
+  TextEditingController statusCon = TextEditingController();
+
+  bool isSearching = false;
+  TextEditingController searchController = TextEditingController();
+  List<Attendee> searchResults = [];
+
   QueryDocumentSnapshot<Map<String, dynamic>>? lastDocument;
   ScrollController _scrollController = ScrollController();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -56,8 +60,17 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   @override
   void initState() {
     super.initState();
+    channelCon.text = shannnels[selChannel] ?? "";
+    statusCon.text = shtates[selStatus] ?? "";
     _loadAttendees();
     _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   _scrollListener() {
@@ -159,9 +172,57 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     }
   }
 
+  performSearch(String query) async {
+    if (query.isEmpty) {
+      safeState(() {
+        searchResults = [];
+      });
+      return;
+    }
+    safeState(() {
+      isLoading = true;
+    });
+    try {
+      String searchKey = query.toLowerCase();
+
+      // Ensure we filter by current kardType and prefix search on name
+      QuerySnapshot<Map<String, dynamic>> res =
+          await firestore
+              .collection(ecol)
+              .doc(widget.event.id)
+              .collection(atcol)
+              .where('fullNameLower', isGreaterThanOrEqualTo: searchKey)
+              .where('fullNameLower', isLessThanOrEqualTo: searchKey + '\uf8ff')
+              .limit(100)
+              .get();
+
+      safeState(() {
+        searchResults =
+            res.docs
+                .where((doc) {
+                  try {
+                    // Adhere to kardType
+                    var krd = doc.data()['cards'][widget.kardType.name];
+                    return krd != null;
+                  } catch (e) {
+                    return false;
+                  }
+                })
+                .map<Attendee>((doc) => Attendee.fromMap(doc.id, doc.data()))
+                .take(20)
+                .toList();
+        isLoading = false;
+      });
+    } catch (e) {
+      safeState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   pushToSend({String? prefix, bool? isWhatsApp}) async {
     if (selectList.isEmpty)
-      return showToast(isGood: false, msg: "Chagua Walengwa");
+      return showToast(isGood: false, msg: "Select Recipients");
     int replen =
         selectList.where((selItem) {
           var pattern = "${prefix}_${widget.campaignId}";
@@ -175,10 +236,10 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         }).length;
     if (replen > 0) {
       _showNotifier(
-        title: "Ujumbe Muhimu",
+        title: "Important Message",
         subtitle:
-            "Inaonyesha jumla ya waalikwa $replen washatumiwa ujumbe wa aina hii, Je unahitaji kurudia kutuma tena?",
-        actionStr1: "Rudia Kutuma",
+            "Total of $replen attendees have already been sent this type of message. Do you want to resend?",
+        actionStr1: "Resend",
         onTap1: () async {
           popper();
           bool? didDispatch = await Navigator.of(context).push(
@@ -199,7 +260,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
             stallAndRefresh();
           }
         },
-        actionStr2: "Sitisha",
+        actionStr2: "Cancel",
         onTap2: () {
           popper();
         },
@@ -254,174 +315,125 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: scaback,
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Container(
-        // color: Colors.red,
-        margin: const EdgeInsets.only(bottom: psm),
-        padding: EdgeInsets.symmetric(horizontal: psm),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          // mainAxisAlignment: MainAxisAlignment.spaceAround,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: _T.bg,
+        body: Stack(
           children: [
-            if (selChannel == shannnels.keys.first)
-              FloatingActionButton(
-                // mini: true,
-                heroTag: "mini",
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-                  side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
-                ),
-                foregroundColor: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(psm * 0.5),
-                  child: Brand(Brands.messages),
-                ),
-                onPressed: () async {
-                  pushToSend(isWhatsApp: false, prefix: "sms");
-                },
-              ),
-            // const SizedBox(width: spaceTiles * 0.5),
-            if (selChannel == shannnels.keys.last)
-              FloatingActionButton(
-                heroTag: "major",
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadiusGeometry.circular(bmd * 10),
-                  side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
-                ),
-                foregroundColor: Colors.white,
-                child: Brand(Brands.whatsapp),
-                onPressed: () async {
-                  pushToSend(isWhatsApp: true, prefix: "whatsapp");
-                },
-              ),
-          ],
-        ),
-      ),
-      appBar: appBar(
-        title:
-            selectList.isEmpty
-                ? "Ratibu Mialiko"
-                : "Chaguzi: ${selectList.length}",
-        leading: buildActionButton(
-          icon: selectList.isEmpty ? Icons.arrow_back : Icons.close,
-          onTap: () {
-            if (selectList.isEmpty) {
-              popper();
-            } else {
-              safeState(() {
-                selectList.clear();
-              });
-            }
-          },
-        ),
-        actions: Row(
-          children: [
-            if (selectList.isEmpty)
-              IconButton(
-                onPressed: () {
-                  _loadAttendees();
-                  showToast(isGood: true, msg: "Inahuisha Data");
-                },
-                icon: Icon(Icons.refresh),
-              ),
-            if (selectList.isEmpty)
-              IconButton(
-                onPressed: () {
-                  showSearch(
-                    context: context,
-                    delegate: SendSearchDelegate(
-                      event: widget.event,
-                      kardType: widget.kardType,
-                      campaignId: widget.campaignId,
+            // Ambient Orbs
+            const Positioned(
+              top: -100,
+              right: -100,
+              child: _GusOrb(size: 300, color: _T.lime, opacity: 0.08),
+            ),
+            const Positioned(
+              bottom: -50,
+              left: -100,
+              child: _GusOrb(size: 250, color: _T.lime, opacity: 0.05),
+            ),
+
+            SafeArea(
+              child: Column(
+                children: [
+                  _topBar(),
+                  if (!isSearching) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          _buildPremiumField(
+                            controller: channelCon,
+                            label: 'CHANNEL',
+                            hint: 'Select Channel',
+                            onTap: showSelectChannel,
+                          ),
+                          const SizedBox(width: 12),
+                          _buildPremiumField(
+                            controller: statusCon,
+                            label: 'STATUS',
+                            hint: 'Select Status',
+                            onTap: showSelectStatus,
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                },
-                icon: Icon(Icons.search),
-              ),
-            if (selectList.isNotEmpty)
-              TextButton(
-                onPressed: () {
-                  if (selectList.length < attendeeList.length) {
-                    selectList = List.from(attendeeList);
-                  } else {
-                    selectList = [];
-                  }
-                  safeState(() {});
-                },
-                child: Text(
-                  selectList.length < attendeeList.length
-                      ? "Chagua Zote"
-                      : "Ondoa Zote",
-                ),
-              ),
-          ],
-        ),
-      ),
-      body: Ccafold(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await _loadAttendees();
-          },
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: spaceTiles,
-                  right: spaceTiles,
-                  top: spaceTiles,
-                ),
-                child: Row(
-                  children: [
-                    buildDropDwn(
-                      getSenderChannels(campaignId: widget.campaignId),
-                      (value) {
-                        safeState(() {
-                          selChannel = value;
-                          _loadAttendees();
-                        });
-                      },
-                    ),
-                    const SizedBox(width: spaceTiles),
-                    buildDropDwn(shtates, (value) {
-                      selStatus = value;
-                      _loadAttendees();
-                    }),
                   ],
-                ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        if (isSearching) {
+                          performSearch(searchController.text);
+                        } else {
+                          await _loadAttendees();
+                        }
+                      },
+                      color: _T.lime,
+                      backgroundColor: _T.card,
+                      child: Column(
+                        children: [
+                          if ((isSearching ? searchResults : attendeeList)
+                                  .isEmpty &&
+                              isLoading)
+                            Expanded(
+                              child: Center(
+                                child: CupertinoActivityIndicator(
+                                  color: _T.lime,
+                                ),
+                              ),
+                            )
+                          else if ((isSearching ? searchResults : attendeeList)
+                                  .isEmpty &&
+                              !isLoading)
+                            Expanded(
+                              child: BuildNoDt(
+                                string:
+                                    isSearching
+                                        ? "No Results Found"
+                                        : "No Data",
+                                isRefreshed: () async {
+                                  if (isSearching) {
+                                    performSearch(searchController.text);
+                                  } else {
+                                    await _loadAttendees();
+                                  }
+                                },
+                              ),
+                            )
+                          else
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: buildInvitationsList(
+                                  attendeesList:
+                                      isSearching
+                                          ? searchResults
+                                          : attendeeList,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              if (attendeeList.isEmpty && isLoading)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(spaceTiles),
-                    child: buildLoader(),
-                  ),
-                ),
-              if (attendeeList.isEmpty && !isLoading)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(spaceTiles),
-                    child: buildEmptyState(),
-                  ),
-                ),
-              if (attendeeList.isNotEmpty)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(spaceTiles),
-                    child: buildMialiko(attendeesList: attendeeList),
-                  ),
-                ),
-            ],
-          ),
+            ),
+
+            // Selection Action Bar
+            _buildSelectionActionBar(),
+          ],
         ),
       ),
     );
   }
 
-  buildMialiko({required List<Attendee> attendeesList}) {
+  buildInvitationsList({required List<Attendee> attendeesList}) {
     return ListView.builder(
       itemCount: attendeesList.length + 1,
       controller: _scrollController,
@@ -437,7 +449,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               padding: EdgeInsets.all(16.0),
               child: Center(
                 child: Text(
-                  "Hakuna Data",
+                  "No Data",
                   style: TextStyle(
                     color: Colors.grey,
                     fontStyle: FontStyle.italic,
@@ -446,7 +458,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               ),
             );
           } else {
-            return const SizedBox(height: 20);
+            return SizedBox(height: selectList.isNotEmpty ? 120 : 20);
           }
         }
         Attendee attendee = attendeesList[indx];
@@ -498,26 +510,295 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     );
   }
 
-  buildDropDwn(Map shanns, Function(dynamic) onSelected) {
-    return Expanded(
-      child: ClipRRect(
-        borderRadius: BorderRadiusGeometry.circular(bsm),
-        child: DropdownMenu(
-          width: double.maxFinite,
-          showTrailingIcon: true,
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: lqassgradBaseColor,
-            border: InputBorder.none,
-          ),
-          initialSelection: shanns.entries.first.key,
-          onSelected: onSelected,
-          dropdownMenuEntries:
-              shanns.entries.map<DropdownMenuEntry>((e) {
-                return DropdownMenuEntry(value: e.key, label: e.value);
-              }).toList(),
-        ),
+  Widget _topBar() {
+    bool isSel = selectList.isNotEmpty;
+    // bool isSearching = isSearching; // uses state
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Row(
+        children: [
+          if (!isSearching)
+            GestureDetector(
+              onTap: () {
+                if (isSel) {
+                  safeState(() => selectList.clear());
+                } else {
+                  popper();
+                }
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isSel
+                        ? Icons.close_rounded
+                        : Icons.arrow_back_ios_new_rounded,
+                    color: _T.lime,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isSel
+                        ? "Selections: ${selectList.length}"
+                        : "Manage Invitations",
+                    style: _T.f(size: 15, weight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          if (isSearching)
+            Expanded(
+              child: CupertinoSearchTextField(
+                controller: searchController,
+                style: _T.f(size: 14, color: _T.white),
+                placeholderStyle: _T.f(size: 14, color: _T.grey1),
+                onChanged: (v) {
+                  performSearch(v);
+                },
+              ),
+            ),
+          if (!isSearching) const Spacer(),
+          if (isSel)
+            GestureDetector(
+              onTap: () {
+                if (selectList.length < attendeeList.length) {
+                  selectList = List.from(attendeeList);
+                } else {
+                  selectList.clear();
+                }
+                safeState(() {});
+              },
+              child: Text(
+                selectList.length < attendeeList.length
+                    ? "Select All"
+                    : "Remove All",
+                style: _T.f(size: 14, color: _T.lime, weight: FontWeight.w600),
+              ),
+            )
+          else ...[
+            if (!isSearching) ...[
+              IconButton(
+                onPressed: () {
+                  _loadAttendees();
+                  showToast(isGood: true, msg: "Refreshing...");
+                },
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                  color: _T.lime,
+                  size: 22,
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  safeState(() {
+                    isSearching = true;
+                  });
+                },
+                icon: const Icon(
+                  Icons.search_rounded,
+                  color: _T.lime,
+                  size: 22,
+                ),
+              ),
+            ] else
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: TextButton(
+                  onPressed: () {
+                    safeState(() {
+                      isSearching = false;
+                      searchController.clear();
+                      searchResults = [];
+                    });
+                  },
+                  child: Text(
+                    "Cancel",
+                    style: _T.f(
+                      color: _T.lime,
+                      weight: FontWeight.w600,
+                      size: 14,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ],
       ),
+    );
+  }
+
+  Widget _buildPremiumField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: _T.f(size: 10, weight: FontWeight.w700, color: _T.grey2),
+          ),
+          const SizedBox(height: 6),
+          GestureDetector(
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _T.white.withOpacity(0.05)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      controller.text.isEmpty ? hint : controller.text,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _T.f(
+                        size: 13,
+                        color: controller.text.isEmpty ? _T.grey3 : _T.white,
+                      ),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: _T.lime,
+                    size: 18,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  showSelectChannel() {
+    Map channels = getSenderChannels(campaignId: widget.campaignId);
+    return showModalBottomSheet(
+      backgroundColor: Colors.transparent,
+      context: context,
+      builder: (context) {
+        return modalBtmSheet(
+          bdrdm: 28,
+          child: _buildSelectionSheet(
+            title: "Select Channel",
+            items: channels,
+            currentValue: selChannel,
+            onSelected: (val) {
+              safeState(() {
+                selChannel = val;
+                channelCon.text = channels[val] ?? "";
+                _loadAttendees();
+              });
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  showSelectStatus() {
+    return showModalBottomSheet(
+      backgroundColor: Colors.transparent,
+      context: context,
+      builder: (context) {
+        return modalBtmSheet(
+          bdrdm: 28,
+          child: _buildSelectionSheet(
+            title: "Select Status",
+            items: shtates,
+            currentValue: selStatus,
+            onSelected: (val) {
+              safeState(() {
+                selStatus = val;
+                statusCon.text = shtates[val] ?? "";
+                _loadAttendees();
+              });
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSelectionSheet({
+    required String title,
+    required Map items,
+    required String currentValue,
+    required Function(String) onSelected,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Center(
+          child: Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 20),
+            width: 36,
+            height: 5,
+            decoration: BoxDecoration(
+              color: _T.grey2.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+        _T.f(size: 20, weight: FontWeight.w800).toText(title),
+        const SizedBox(height: 16),
+        Flexible(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(20),
+            children:
+                items.entries.map<Widget>((e) {
+                  bool isSel = currentValue == e.key;
+                  return GestureDetector(
+                    onTap: () {
+                      onSelected(e.key);
+                      popper();
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color:
+                            isSel
+                                ? _T.lime.withOpacity(0.1)
+                                : _T.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSel ? _T.lime : _T.white.withOpacity(0.05),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _T
+                              .f(
+                                size: 16,
+                                color: isSel ? _T.lime : _T.white,
+                                weight:
+                                    isSel ? FontWeight.w700 : FontWeight.w500,
+                              )
+                              .toText(e.value),
+                          if (isSel)
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              color: _T.lime,
+                              size: 20,
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+          ),
+        ),
+      ],
     );
   }
 
@@ -588,6 +869,92 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
 
   popper() {
     Navigator.of(context).pop();
+  }
+
+  Widget _buildSelectionActionBar() {
+    bool isSel = selectList.isNotEmpty;
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutBack,
+      bottom: isSel ? 20 : -100,
+      left: 12, // Reduced margin
+      right: 12, // Reduced margin
+      child: glassDialog(
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ), // Reduced internal horizontal padding
+          child: Row(
+            children: [
+              Expanded(
+                // Use Expanded for the left side to let it be flexible
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "${selectList.length} Selected",
+                      style: _T.f(size: 14, weight: FontWeight.w700),
+                    ),
+                    Text(
+                      "Ready to dispatch",
+                      maxLines: 1, // Ensure it doesn't wrap
+                      overflow: TextOverflow.ellipsis,
+                      style: _T.f(size: 11, color: _T.grey2),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8), // Minimal spacing
+              if (selChannel == "sms")
+                _buildActionButton(
+                  icon: Icons.sms_rounded,
+                  label: "Send SMS",
+                  onTap: () => pushToSend(prefix: "sms", isWhatsApp: false),
+                  color: Colors.blue,
+                ),
+              if (selChannel == "whatsapp")
+                _buildActionButton(
+                  icon: Bootstrap.whatsapp,
+                  label: "Send WhatsApp",
+                  onTap: () => pushToSend(prefix: "whatsapp", isWhatsApp: true),
+                  color: Colors.green,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: _T.f(size: 13, weight: FontWeight.w600, color: color),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -782,7 +1149,7 @@ class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
 
               // Title
               Text(
-                _isComplete ? "Data Imefreshwa!" : "Inahifadhi Data...",
+                _isComplete ? "Data Refreshed!" : "Saving Data...",
                 style: TextStyle(
                   fontSize: fsm + 4,
                   fontWeight: FontWeight.bold,
@@ -828,7 +1195,7 @@ class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
                 ),
                 SizedBox(height: psm * 0.5),
                 Text(
-                  "Subiri sekunde $_countdown...",
+                  "Wait for $_countdown seconds...",
                   style: TextStyle(
                     fontSize: fsm - 1,
                     color: mWhite,
@@ -837,13 +1204,73 @@ class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
                 ),
               ] else ...[
                 Text(
-                  "Data mpya imepakuliwa kwa ufanisi",
+                  "New data downloaded successfully",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: fsm, color: mWhite),
                 ),
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Design Tokens (Apple / Obsidian Hybrid)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _T {
+  static const bg = Color(0xFF0A0A0A);
+  static const card = Color(0xFF141414);
+  static const lime = Color(0xFFC9A84C);
+  static const white = Color(0xFFFFFFFF);
+  static const grey1 = Color(0xFFAAAAAA);
+  static const grey2 = Color(0xFF555555);
+  static const grey3 = Color(0xFF333333);
+
+  static TextStyle f({
+    double size = 14,
+    FontWeight weight = FontWeight.w400,
+    Color color = white,
+    double letterSpacing = 0,
+    double? height,
+  }) {
+    return GoogleFonts.inter(
+      fontSize: size,
+      fontWeight: weight,
+      color: color,
+      letterSpacing: letterSpacing,
+      height: height,
+    );
+  }
+}
+
+extension _TText on TextStyle {
+  Widget toText(String data) => Text(data, style: this);
+}
+
+class _GusOrb extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double opacity;
+
+  const _GusOrb({required this.size, required this.color, this.opacity = 0.05});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withOpacity(opacity),
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          child: const SizedBox.shrink(),
         ),
       ),
     );

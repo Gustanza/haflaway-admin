@@ -481,13 +481,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                   try {
                     dynamic response;
                     if (widget.isWhatsApp && groupValue != null) {
-                      var _url =
-                          widget.campaignId == contrCampId
-                              ? sendWspContr
-                              : widget.campaignId == invCampId ||
-                                  widget.campaignId == invRemCampId
-                              ? sendWspInv
-                              : sendWspSvDt;
+                      var _url = sendWspInv;
                       response = await client.post(
                         Uri.parse(_url),
                         body: jsonEncode({
