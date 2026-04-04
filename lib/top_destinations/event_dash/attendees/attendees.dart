@@ -536,179 +536,198 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: const Color(0xFF0A0A0A),
+        backgroundColor: _T.bg,
         floatingActionButton: _buildFloatingActions(),
-        body: RefreshIndicator(
-          onRefresh: () async {
-            await _loadAttendees();
-          },
-          color: const Color(0xFFC9A84C),
-          backgroundColor: const Color(0xFF141414),
-          child: CustomScrollView(
-            controller: scrollController,
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
+        body: Stack(
+          children: [
+            // Ambient Orbs
+            const Positioned(
+              top: -100,
+              right: -100,
+              child: _GusOrb(size: 300, color: _T.lime, opacity: 0.08),
             ),
-            slivers: [
-              // ── Header Section ──
-              SliverToBoxAdapter(
-                child: SafeArea(
-                  bottom: false,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _topBar(inSelectMode),
-                      if (!isSearching) _titleBlock(),
-                    ],
-                  ),
-                ),
-              ),
+            const Positioned(
+              bottom: -50,
+              left: -100,
+              child: _GusOrb(size: 250, color: _T.lime, opacity: 0.05),
+            ),
 
-              // ── Hero Card for Contributions ──
-              if (widget.kardType == KardType.contribution &&
-                  atList.isNotEmpty &&
-                  !isSearching)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Builder(
-                      builder: (context) {
-                        final double pct =
-                            widget.edata.totalPledge! > 0
-                                ? widget.edata.totalPayment! /
-                                    widget.edata.totalPledge!
-                                : 0.0;
-                        return _HeroCard(
-                          totalPledged: widget.edata.totalPledge!,
-                          totalPaid: widget.edata.totalPayment!,
-                          pct: pct,
-                          progressAnim: AlwaysStoppedAnimation(pct),
-                        );
-                      },
+            RefreshIndicator(
+              onRefresh: () async {
+                await _loadAttendees();
+              },
+              color: _T.lime,
+              backgroundColor: _T.card,
+              child: CustomScrollView(
+                controller: scrollController,
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                slivers: [
+                  // ── Header Section ──
+                  SliverToBoxAdapter(
+                    child: SafeArea(
+                      bottom: false,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _topBar(inSelectMode),
+                          if (!isSearching) _titleBlock(),
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-              // ── Content ──
-              if ((isSearching ? searchResults : atList).isEmpty && isLoading)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: CupertinoActivityIndicator(color: Color(0xFFC9A84C)),
-                  ),
-                )
-              else if ((isSearching ? searchResults : atList).isEmpty &&
-                  !isLoading)
-                SliverFillRemaining(
-                  hasScrollBody: true,
-                  child: BuildNoDt(
-                    string: isSearching ? "No Results Found" : "no data",
-                    isRefreshed: () async {
-                      if (isSearching) {
-                        performSearch(searchController.text);
-                      } else {
-                        await _loadAttendees();
-                      }
-                    },
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        var activeList = isSearching ? searchResults : atList;
+                  // ── Hero Card for Contributions ──
+                  if (widget.kardType == KardType.contribution &&
+                      atList.isNotEmpty &&
+                      !isSearching)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Builder(
+                          builder: (context) {
+                            final double pct =
+                                widget.edata.totalPledge! > 0
+                                    ? widget.edata.totalPayment! /
+                                        widget.edata.totalPledge!
+                                    : 0.0;
+                            return _HeroCard(
+                              totalPledged: widget.edata.totalPledge!,
+                              totalPaid: widget.edata.totalPayment!,
+                              pct: pct,
+                              progressAnim: AlwaysStoppedAnimation(pct),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
 
-                        // Pagination loader or end-of-list indicator
-                        if (index == activeList.length) {
-                          return isSearching
-                              ? const SizedBox(height: 100)
-                              : _buildListFooter();
-                        }
+                  // ── Content ──
+                  if ((isSearching ? searchResults : atList).isEmpty &&
+                      isLoading)
+                    const SliverFillRemaining(
+                      child: Center(
+                        child: CupertinoActivityIndicator(color: _T.lime),
+                      ),
+                    )
+                  else if ((isSearching ? searchResults : atList).isEmpty &&
+                      !isLoading)
+                    SliverFillRemaining(
+                      hasScrollBody: true,
+                      child: BuildNoDt(
+                        string: isSearching ? "No Results Found" : "no data",
+                        isRefreshed: () async {
+                          if (isSearching) {
+                            performSearch(searchController.text);
+                          } else {
+                            await _loadAttendees();
+                          }
+                        },
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            var activeList =
+                                isSearching ? searchResults : atList;
 
-                        final attendee = activeList[index];
-                        final hasKey = selectList.any(
-                          (t) => t.id == attendee.id,
-                        );
-                        final campaignId =
-                            widget.kardType == KardType.invitation
-                                ? invCampId
-                                : contrCampId;
+                            // Pagination loader or end-of-list indicator
+                            if (index == activeList.length) {
+                              return isSearching
+                                  ? const SizedBox(height: 100)
+                                  : _buildListFooter();
+                            }
 
-                        return TweenAnimationBuilder<double>(
-                          key: ValueKey('anim_${attendee.id}'),
-                          tween: Tween(begin: 0.0, end: 1.0),
-                          duration: Duration(
-                            milliseconds: 350 + (index.clamp(0, 10) * 50),
-                          ),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, value, child) {
-                            return Opacity(
-                              opacity: value,
-                              child: Transform.translate(
-                                offset: Offset(0, 16 * (1 - value)),
-                                child: child,
+                            final attendee = activeList[index];
+                            final hasKey = selectList.any(
+                              (t) => t.id == attendee.id,
+                            );
+                            final campaignId =
+                                widget.kardType == KardType.invitation
+                                    ? invCampId
+                                    : contrCampId;
+
+                            return TweenAnimationBuilder<double>(
+                              key: ValueKey('anim_${attendee.id}'),
+                              tween: Tween(begin: 0.0, end: 1.0),
+                              duration: Duration(
+                                milliseconds: 350 + (index.clamp(0, 10) * 50),
+                              ),
+                              curve: Curves.easeOutCubic,
+                              builder: (context, value, child) {
+                                return Opacity(
+                                  opacity: value,
+                                  child: Transform.translate(
+                                    offset: Offset(0, 16 * (1 - value)),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: buildAttendeeCard(
+                                hasKey: hasKey,
+                                attendee: attendee,
+                                kardType: widget.kardType,
+                                eventId: widget.edata.id ?? "_",
+                                campaignId: campaignId,
+                                onEdit: () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => CreateAttendees(
+                                            event: widget.edata,
+                                            kardType: widget.kardType,
+                                            attendee: attendee,
+                                          ),
+                                    ),
+                                  );
+                                  _loadAttendees();
+                                },
+                                onSelected: () {
+                                  if (hasKey) {
+                                    selectList.removeWhere(
+                                      (t) => t.id == attendee.id,
+                                    );
+                                  } else {
+                                    selectList.add(attendee);
+                                  }
+                                  safeState(() {});
+                                },
+                                onStatusChange: (status) {
+                                  if (widget.kardType ==
+                                      KardType.contribution) {
+                                    return _loadAttendees();
+                                  }
+                                  int idx = activeList.indexWhere(
+                                    (element) => element.id == attendee.id,
+                                  );
+                                  if (idx != -1) {
+                                    activeList[idx].attendanceStatus = status;
+                                  }
+                                  safeState(() {});
+                                },
                               ),
                             );
                           },
-                          child: buildAttendeeCard(
-                            hasKey: hasKey,
-                            attendee: attendee,
-                            kardType: widget.kardType,
-                            eventId: widget.edata.id ?? "_",
-                            campaignId: campaignId,
-                            onEdit: () async {
-                              await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => CreateAttendees(
-                                        event: widget.edata,
-                                        kardType: widget.kardType,
-                                        attendee: attendee,
-                                      ),
-                                ),
-                              );
-                              _loadAttendees();
-                            },
-                            onSelected: () {
-                              if (hasKey) {
-                                selectList.removeWhere(
-                                  (t) => t.id == attendee.id,
-                                );
-                              } else {
-                                selectList.add(attendee);
-                              }
-                              safeState(() {});
-                            },
-                            onStatusChange: (status) {
-                              if (widget.kardType == KardType.contribution) {
-                                return _loadAttendees();
-                              }
-                              int idx = activeList.indexWhere(
-                                (element) => element.id == attendee.id,
-                              );
-                              if (idx != -1) {
-                                activeList[idx].attendanceStatus = status;
-                              }
-                              safeState(() {});
-                            },
-                          ),
-                        );
-                      },
-                      childCount:
-                          (isSearching ? searchResults : atList).length + 1,
+                          childCount:
+                              (isSearching ? searchResults : atList).length + 1,
+                        ),
+                      ),
+                    ),
+
+                  // ── Bottom Padding ──
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: MediaQuery.of(context).padding.bottom + 100,
                     ),
                   ),
-                ),
-
-              // ── Bottom Padding ──
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: MediaQuery.of(context).padding.bottom + 100,
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -727,7 +746,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 children: [
                   const Icon(
                     Icons.arrow_back_ios_new_rounded,
-                    color: Color(0xFFC9A84C),
+                    color: _T.lime,
                     size: 16,
                   ),
                   const SizedBox(width: 4),
@@ -788,7 +807,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       child: Text(
                         "Cancel",
                         style: GoogleFonts.inter(
-                          color: const Color(0xFFC9A84C),
+                          color: _T.lime,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -829,9 +848,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     if (isLoading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(
-          child: CupertinoActivityIndicator(color: Color(0xFFC9A84C)),
-        ),
+        child: Center(child: CupertinoActivityIndicator(color: _T.lime)),
       );
     } else if (!hasMore && atList.isNotEmpty) {
       return Padding(
@@ -1264,12 +1281,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.4),
+              color: Colors.black.withOpacity(0.4),
               borderRadius: BorderRadius.circular(size / 2),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.15),
-                width: 0.5,
-              ),
+              border: Border.all(color: _T.lime.withOpacity(0.2), width: 0.5),
             ),
             child: child,
           ),
@@ -1291,10 +1305,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 : widget.kardType == KardType.contribution
                 ? 'Contributors'
                 : 'Contacts'}",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.5),
+            style: _T.f(
+              size: 14,
+              weight: FontWeight.w500,
+              color: Colors.white.withOpacity(0.5),
               letterSpacing: 0.3,
             ),
           ),
@@ -1420,14 +1434,33 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   }
 
   showQuickStats() {
-    return showDialog(
+    return showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
-        return glassDialog(
-          child: quickStats(
-            eventId: widget.edata.id ?? "",
-            kardType: widget.kardType,
-            kards: lcrds,
+        return modalBtmSheet(
+          bdrdm: 20,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Pull handle
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              quickStats(
+                eventId: widget.edata.id ?? "",
+                kardType: widget.kardType,
+                kards: lcrds,
+              ),
+              const SizedBox(height: 20),
+            ],
           ),
         );
       },
@@ -1435,26 +1468,33 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   }
 
   showSelectCard({bool isContactImport = false}) {
-    return showDialog(
+    return showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
-        return glassDialog(
+        return modalBtmSheet(
+          bdrdm: 20,
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: psm,
-              vertical: psm * 2,
-            ),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  "Designate Card",
-                  style: TextStyle(
-                    fontSize: fsm + 4,
-                    fontWeight: FontWeight.bold,
+                // Pull handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                SizedBox(height: psm),
+                Text(
+                  "Designate Card",
+                  style: _T.f(size: 18, weight: FontWeight.w700),
+                ),
+                const SizedBox(height: 20),
                 ...List.generate(lcrds.length, (idx) {
                   return Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1469,7 +1509,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                           );
                         },
                       ),
-                      if (idx < lcrds.length - 1) SizedBox(height: psm * 0.5),
+                      if (idx < lcrds.length - 1) const SizedBox(height: 10),
                     ],
                   );
                 }),
@@ -1804,7 +1844,7 @@ class _HeroCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 24, top: 12),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
+        color: _T.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF1F1F1F), width: 0.5),
       ),
@@ -1816,30 +1856,26 @@ class _HeroCard extends StatelessWidget {
             children: [
               Text(
                 'CONTRIBUTIONS',
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF555555),
+                style: _T.f(
+                  size: 10,
+                  weight: FontWeight.w700,
+                  color: _T.grey2,
                   letterSpacing: 1.2,
                 ),
               ),
               Text(
                 '${(pct * 100).round()}%',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFFC9A84C),
-                ),
+                style: _T.f(size: 15, weight: FontWeight.w700, color: _T.lime),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             formatMoney(totalPaid, currency: "TZS"),
-            style: GoogleFonts.inter(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
+            style: _T.f(
+              size: 24,
+              weight: FontWeight.w800,
+              color: _T.white,
               letterSpacing: -1.0,
               height: 1.0,
             ),
@@ -1866,6 +1902,60 @@ class _HeroCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Design Tokens (Apple / Obsidian Hybrid)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _T {
+  static const bg = Color(0xFF0A0A0A);
+  static const card = Color(0xFF141414);
+  static const lime = Color(0xFFC9A84C);
+  static const white = Color(0xFFFFFFFF);
+  static const grey2 = Color(0xFF555555);
+
+  static TextStyle f({
+    double size = 14,
+    FontWeight weight = FontWeight.w400,
+    Color color = white,
+    double letterSpacing = 0,
+    double? height,
+  }) {
+    return GoogleFonts.inter(
+      fontSize: size,
+      fontWeight: weight,
+      color: color,
+      letterSpacing: letterSpacing,
+      height: height,
+    );
+  }
+}
+
+class _GusOrb extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double opacity;
+
+  const _GusOrb({required this.size, required this.color, this.opacity = 0.05});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withOpacity(opacity),
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          child: const SizedBox.shrink(),
+        ),
       ),
     );
   }

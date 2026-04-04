@@ -876,15 +876,12 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeOutBack,
-      bottom: isSel ? 20 : -100,
-      left: 12, // Reduced margin
-      right: 12, // Reduced margin
+      bottom: isSel ? 20 : -140,
+      left: 16,
+      right: 16,
       child: glassDialog(
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 12,
-          ), // Reduced internal horizontal padding
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               Expanded(
