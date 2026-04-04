@@ -2,18 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:haflaway/components/Ccafold.dart';
-import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
-import 'package:haflaway/components/templates.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/send_previewer.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/send_search_deleg.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/crtattendees.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/constants.dart';
@@ -25,6 +19,7 @@ import 'package:haflaway/top_destinations/event_dash/attendees/components/attend
 import 'package:haflaway/utils/styles.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart';
 
 class InvitesIssuers extends StatefulWidget {
   final Event event;
@@ -53,6 +48,11 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   String selChannel = shannnels.keys.first;
   TextEditingController channelCon = TextEditingController();
   TextEditingController statusCon = TextEditingController();
+
+  bool isSearching = false;
+  TextEditingController searchController = TextEditingController();
+  List<Attendee> searchResults = [];
+
   QueryDocumentSnapshot<Map<String, dynamic>>? lastDocument;
   ScrollController _scrollController = ScrollController();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -64,6 +64,13 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     statusCon.text = shtates[selStatus] ?? "";
     _loadAttendees();
     _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   _scrollListener() {
@@ -165,9 +172,57 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     }
   }
 
+  performSearch(String query) async {
+    if (query.isEmpty) {
+      safeState(() {
+        searchResults = [];
+      });
+      return;
+    }
+    safeState(() {
+      isLoading = true;
+    });
+    try {
+      String searchKey = query.toLowerCase();
+
+      // Ensure we filter by current kardType and prefix search on name
+      QuerySnapshot<Map<String, dynamic>> res =
+          await firestore
+              .collection(ecol)
+              .doc(widget.event.id)
+              .collection(atcol)
+              .where('fullNameLower', isGreaterThanOrEqualTo: searchKey)
+              .where('fullNameLower', isLessThanOrEqualTo: searchKey + '\uf8ff')
+              .limit(100)
+              .get();
+
+      safeState(() {
+        searchResults =
+            res.docs
+                .where((doc) {
+                  try {
+                    // Adhere to kardType
+                    var krd = doc.data()['cards'][widget.kardType.name];
+                    return krd != null;
+                  } catch (e) {
+                    return false;
+                  }
+                })
+                .map<Attendee>((doc) => Attendee.fromMap(doc.id, doc.data()))
+                .take(20)
+                .toList();
+        isLoading = false;
+      });
+    } catch (e) {
+      safeState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   pushToSend({String? prefix, bool? isWhatsApp}) async {
     if (selectList.isEmpty)
-      return showToast(isGood: false, msg: "Chagua Walengwa");
+      return showToast(isGood: false, msg: "Select Recipients");
     int replen =
         selectList.where((selItem) {
           var pattern = "${prefix}_${widget.campaignId}";
@@ -181,10 +236,10 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         }).length;
     if (replen > 0) {
       _showNotifier(
-        title: "Ujumbe Muhimu",
+        title: "Important Message",
         subtitle:
-            "Inaonyesha jumla ya waalikwa $replen washatumiwa ujumbe wa aina hii, Je unahitaji kurudia kutuma tena?",
-        actionStr1: "Rudia Kutuma",
+            "Total of $replen attendees have already been sent this type of message. Do you want to resend?",
+        actionStr1: "Resend",
         onTap1: () async {
           popper();
           bool? didDispatch = await Navigator.of(context).push(
@@ -205,7 +260,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
             stallAndRefresh();
           }
         },
-        actionStr2: "Sitisha",
+        actionStr2: "Cancel",
         onTap2: () {
           popper();
         },
@@ -282,39 +337,47 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               child: Column(
                 children: [
                   _topBar(),
+                  if (!isSearching) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          _buildPremiumField(
+                            controller: channelCon,
+                            label: 'CHANNEL',
+                            hint: 'Select Channel',
+                            onTap: showSelectChannel,
+                          ),
+                          const SizedBox(width: 12),
+                          _buildPremiumField(
+                            controller: statusCon,
+                            label: 'STATUS',
+                            hint: 'Select Status',
+                            onTap: showSelectStatus,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   Expanded(
                     child: RefreshIndicator(
                       onRefresh: () async {
-                        await _loadAttendees();
+                        if (isSearching) {
+                          performSearch(searchController.text);
+                        } else {
+                          await _loadAttendees();
+                        }
                       },
                       color: _T.lime,
                       backgroundColor: _T.card,
                       child: Column(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            child: Row(
-                              children: [
-                                _buildPremiumField(
-                                  controller: channelCon,
-                                  label: 'CHANNEL',
-                                  hint: 'Select Channel',
-                                  onTap: showSelectChannel,
-                                ),
-                                const SizedBox(width: 12),
-                                _buildPremiumField(
-                                  controller: statusCon,
-                                  label: 'STATUS',
-                                  hint: 'Select Status',
-                                  onTap: showSelectStatus,
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (attendeeList.isEmpty && isLoading)
+                          if ((isSearching ? searchResults : attendeeList)
+                                  .isEmpty &&
+                              isLoading)
                             Expanded(
                               child: Center(
                                 child: CupertinoActivityIndicator(
@@ -322,16 +385,35 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                                 ),
                               ),
                             )
-                          else if (attendeeList.isEmpty && !isLoading)
-                            Expanded(child: buildEmptyState())
+                          else if ((isSearching ? searchResults : attendeeList)
+                                  .isEmpty &&
+                              !isLoading)
+                            Expanded(
+                              child: BuildNoDt(
+                                string:
+                                    isSearching
+                                        ? "No Results Found"
+                                        : "No Data",
+                                isRefreshed: () async {
+                                  if (isSearching) {
+                                    performSearch(searchController.text);
+                                  } else {
+                                    await _loadAttendees();
+                                  }
+                                },
+                              ),
+                            )
                           else
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                 ),
-                                child: buildMialiko(
-                                  attendeesList: attendeeList,
+                                child: buildInvitationsList(
+                                  attendeesList:
+                                      isSearching
+                                          ? searchResults
+                                          : attendeeList,
                                 ),
                               ),
                             ),
@@ -342,13 +424,16 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                 ],
               ),
             ),
+
+            // Selection Action Bar
+            _buildSelectionActionBar(),
           ],
         ),
       ),
     );
   }
 
-  buildMialiko({required List<Attendee> attendeesList}) {
+  buildInvitationsList({required List<Attendee> attendeesList}) {
     return ListView.builder(
       itemCount: attendeesList.length + 1,
       controller: _scrollController,
@@ -364,7 +449,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               padding: EdgeInsets.all(16.0),
               child: Center(
                 child: Text(
-                  "Hakuna Data",
+                  "No Data",
                   style: TextStyle(
                     color: Colors.grey,
                     fontStyle: FontStyle.italic,
@@ -373,7 +458,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               ),
             );
           } else {
-            return const SizedBox(height: 20);
+            return SizedBox(height: selectList.isNotEmpty ? 120 : 20);
           }
         }
         Attendee attendee = attendeesList[indx];
@@ -427,37 +512,52 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
 
   Widget _topBar() {
     bool isSel = selectList.isNotEmpty;
+    // bool isSearching = isSearching; // uses state
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () {
-              if (isSel) {
-                safeState(() => selectList.clear());
-              } else {
-                popper();
-              }
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isSel
-                      ? Icons.close_rounded
-                      : Icons.arrow_back_ios_new_rounded,
-                  color: _T.lime,
-                  size: 16,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  isSel ? "Selections: ${selectList.length}" : "Ratibu Mialiko",
-                  style: _T.f(size: 15, weight: FontWeight.w600),
-                ),
-              ],
+          if (!isSearching)
+            GestureDetector(
+              onTap: () {
+                if (isSel) {
+                  safeState(() => selectList.clear());
+                } else {
+                  popper();
+                }
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isSel
+                        ? Icons.close_rounded
+                        : Icons.arrow_back_ios_new_rounded,
+                    color: _T.lime,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isSel
+                        ? "Selections: ${selectList.length}"
+                        : "Manage Invitations",
+                    style: _T.f(size: 15, weight: FontWeight.w600),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const Spacer(),
+          if (isSearching)
+            Expanded(
+              child: CupertinoSearchTextField(
+                controller: searchController,
+                style: _T.f(size: 14, color: _T.white),
+                placeholderStyle: _T.f(size: 14, color: _T.grey1),
+                onChanged: (v) {
+                  performSearch(v);
+                },
+              ),
+            ),
+          if (!isSearching) const Spacer(),
           if (isSel)
             GestureDetector(
               onTap: () {
@@ -476,26 +576,51 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               ),
             )
           else ...[
-            IconButton(
-              onPressed: () {
-                _loadAttendees();
-                showToast(isGood: true, msg: "Refreshing...");
-              },
-              icon: const Icon(Icons.refresh_rounded, color: _T.lime, size: 22),
-            ),
-            IconButton(
-              onPressed: () {
-                showSearch(
-                  context: context,
-                  delegate: SendSearchDelegate(
-                    event: widget.event,
-                    kardType: widget.kardType,
-                    campaignId: widget.campaignId,
+            if (!isSearching) ...[
+              IconButton(
+                onPressed: () {
+                  _loadAttendees();
+                  showToast(isGood: true, msg: "Refreshing...");
+                },
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                  color: _T.lime,
+                  size: 22,
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  safeState(() {
+                    isSearching = true;
+                  });
+                },
+                icon: const Icon(
+                  Icons.search_rounded,
+                  color: _T.lime,
+                  size: 22,
+                ),
+              ),
+            ] else
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: TextButton(
+                  onPressed: () {
+                    safeState(() {
+                      isSearching = false;
+                      searchController.clear();
+                      searchResults = [];
+                    });
+                  },
+                  child: Text(
+                    "Cancel",
+                    style: _T.f(
+                      color: _T.lime,
+                      weight: FontWeight.w600,
+                      size: 14,
+                    ),
                   ),
-                );
-              },
-              icon: const Icon(Icons.search_rounded, color: _T.lime, size: 22),
-            ),
+                ),
+              ),
           ],
         ],
       ),
@@ -745,6 +870,92 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   popper() {
     Navigator.of(context).pop();
   }
+
+  Widget _buildSelectionActionBar() {
+    bool isSel = selectList.isNotEmpty;
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutBack,
+      bottom: isSel ? 20 : -100,
+      left: 12, // Reduced margin
+      right: 12, // Reduced margin
+      child: glassDialog(
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ), // Reduced internal horizontal padding
+          child: Row(
+            children: [
+              Expanded(
+                // Use Expanded for the left side to let it be flexible
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "${selectList.length} Selected",
+                      style: _T.f(size: 14, weight: FontWeight.w700),
+                    ),
+                    Text(
+                      "Ready to dispatch",
+                      maxLines: 1, // Ensure it doesn't wrap
+                      overflow: TextOverflow.ellipsis,
+                      style: _T.f(size: 11, color: _T.grey2),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8), // Minimal spacing
+              if (selChannel == "sms")
+                _buildActionButton(
+                  icon: Icons.sms_rounded,
+                  label: "Send SMS",
+                  onTap: () => pushToSend(prefix: "sms", isWhatsApp: false),
+                  color: Colors.blue,
+                ),
+              if (selChannel == "whatsapp")
+                _buildActionButton(
+                  icon: Bootstrap.whatsapp,
+                  label: "Send WhatsApp",
+                  onTap: () => pushToSend(prefix: "whatsapp", isWhatsApp: true),
+                  color: Colors.green,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: _T.f(size: 13, weight: FontWeight.w600, color: color),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // Beautiful animated refresh loading dialog
@@ -938,7 +1149,7 @@ class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
 
               // Title
               Text(
-                _isComplete ? "Data Imefreshwa!" : "Inahifadhi Data...",
+                _isComplete ? "Data Refreshed!" : "Saving Data...",
                 style: TextStyle(
                   fontSize: fsm + 4,
                   fontWeight: FontWeight.bold,
@@ -984,7 +1195,7 @@ class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
                 ),
                 SizedBox(height: psm * 0.5),
                 Text(
-                  "Subiri sekunde $_countdown...",
+                  "Wait for $_countdown seconds...",
                   style: TextStyle(
                     fontSize: fsm - 1,
                     color: mWhite,
@@ -993,7 +1204,7 @@ class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
                 ),
               ] else ...[
                 Text(
-                  "Data mpya imepakuliwa kwa ufanisi",
+                  "New data downloaded successfully",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: fsm, color: mWhite),
                 ),

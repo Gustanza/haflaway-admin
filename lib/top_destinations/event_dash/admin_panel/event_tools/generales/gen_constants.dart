@@ -1,10 +1,6 @@
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 
-var shannnels = {
-  // "all": "Channel Zote",
-  "sms": "Channel ya SMS",
-  "whatsapp": "Channel ya WhatsApp",
-};
+var shannnels = {"sms": "SMS Channel", "whatsapp": "WhatsApp Channel"};
 
 getSenderChannels({campaignId}) {
   for (var defCampaign in defCampaignsList) {
@@ -12,15 +8,15 @@ getSenderChannels({campaignId}) {
       return shannnels;
     }
   }
-  return {"sms": "Channel ya SMS"};
+  return {"sms": "SMS Channel"};
 }
 
 var shtates = {
-  "unsent": "Hazijatumwa (Unsent)",
-  "sent": "Zilizotumwa (Sent)",
-  "delivered": "Zilizofika (Delivered)",
-  "read": "Zilizosomwa (Read)",
-  "pending": "Zilizo Pending (Pending)",
-  "undelivered": "Hazikupokelewa (Undelivered)",
-  "failed": "Zilizofeli (Failed)",
+  "unsent": "Unsent",
+  "sent": "Sent",
+  "delivered": "Delivered",
+  "read": "Read",
+  "pending": "Pending",
+  "undelivered": "Undelivered",
+  "failed": "Failed",
 };
