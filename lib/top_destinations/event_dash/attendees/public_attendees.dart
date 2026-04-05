@@ -8,8 +8,9 @@ import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/components/sheets.dart';
 // import 'package:haflaway/top_destinations/event_dash/attendees/components/searchdel.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/stats.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/public_search_del.dart';
 import 'package:haflaway/utils/attstates.dart';
 import 'package:haflaway/utils/constants.dart';
@@ -48,6 +49,7 @@ class _PubAttendeesState extends State<PubAttendees>
   List<Attendee> atList = [];
   List<Attendee> filteredList = [];
   List<Attendee> selectList = [];
+  Event? event;
   TextEditingController impname = TextEditingController();
   TextEditingController impphone = TextEditingController();
   TextEditingController impcard = TextEditingController();
@@ -69,6 +71,7 @@ class _PubAttendeesState extends State<PubAttendees>
   @override
   void initState() {
     super.initState();
+    getEvent();
     getCards();
     // Add scroll listener for pagination
     scrollController.addListener(_scrollListener);
@@ -1210,6 +1213,19 @@ class _PubAttendeesState extends State<PubAttendees>
     }
   }
 
+  getEvent() async {
+    try {
+      var doc = await firestore.collection(ecol).doc(widget.eventId).get();
+      if (doc.exists) {
+        safeState(() {
+          event = Event.fromMap(doc.id, doc.data()!);
+        });
+      }
+    } catch (e) {
+      debugPrint("shida ya event: $e");
+    }
+  }
+
   getCards() async {
     try {
       var res =
@@ -1234,11 +1250,15 @@ class _PubAttendeesState extends State<PubAttendees>
       context: context,
       builder: (context) {
         return glassDialog(
-          child: quickStats(
-            eventId: widget.eventId,
-            kardType: widget.kardType,
-            kards: lcrds,
-          ),
+          child:
+              event == null
+                  ? const Center(child: CupertinoActivityIndicator())
+                  : quickStats(
+                    eventId: widget.eventId,
+                    event: event!,
+                    kardType: widget.kardType,
+                    kards: lcrds,
+                  ),
         );
       },
     );

@@ -13,6 +13,7 @@ import 'package:haflaway/utils/styles.dart';
 quickStats({
   required List<Kard> kards,
   required String eventId,
+  required Event event,
   required KardType kardType,
 }) {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -27,9 +28,6 @@ quickStats({
     builder: (context, snapshot) {
       if (snapshot.hasData) {
         var source = (snapshot.data as dynamic).docs;
-        if (source.isEmpty) {
-          return buildEmptyState();
-        }
         List<Attendee> attendees =
             source.map<Attendee>((at) {
               return Attendee.fromMap(at.id, at.data());
@@ -38,10 +36,20 @@ quickStats({
           kards: kards,
           attendees: attendees,
           kardType: kardType,
+          event: event,
         );
       } else if (snapshot.hasError) {
         return buildErrorView();
       } else {
+        if (snapshot.connectionState == ConnectionState.done &&
+            !snapshot.hasData) {
+          return buildTiles(
+            kards: kards,
+            attendees: [],
+            kardType: kardType,
+            event: event,
+          );
+        }
         return ListTile(
           title: Text("Loading..."),
           trailing: CupertinoActivityIndicator(),
@@ -55,6 +63,7 @@ buildTiles({
   required List<Kard> kards,
   required KardType kardType,
   required List<Attendee> attendees,
+  required Event event,
 }) {
   // 1. Strict client-side filtering for accuracy
   List<Attendee> filteredAttendees =
@@ -85,7 +94,7 @@ buildTiles({
 
       // 3. Financial Stats (for Contribution and Contact)
       if (kardType == KardType.contribution || kardType == KardType.contact)
-        _buildFinancialStats(filteredAttendees),
+        _buildFinancialStats(event),
 
       // 4. Card Breakdown (for Contribution and Invitation)
       if (kardType == KardType.contribution || kardType == KardType.invitation)
@@ -165,13 +174,9 @@ Widget _buildStatTile(String label, int count, Color color) {
   );
 }
 
-Widget _buildFinancialStats(List<Attendee> attendees) {
-  double totalPledged = 0;
-  double totalPaid = 0;
-  for (var at in attendees) {
-    totalPledged += at.pledgedAmount ?? 0;
-    totalPaid += at.paidAmount ?? 0;
-  }
+Widget _buildFinancialStats(Event event) {
+  double totalPledged = event.totalPledge ?? 0;
+  double totalPaid = event.totalPayment ?? 0;
 
   return Column(
     children: [

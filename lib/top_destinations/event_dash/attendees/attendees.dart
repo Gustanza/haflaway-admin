@@ -110,8 +110,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     if (isLoading) return;
     setState(() {
       isLoading = true;
+      hasMore = true; // Reset hasMore on full reload
+      pageSize = atsPageSize; // Always use standard page size for initial load
     });
-    pageSize = atList.isEmpty ? atsPageSize : atList.length;
     try {
       Query<Map<String, dynamic>> query = nQwrBuilder();
       var snapshot = await query.get();
@@ -1456,6 +1457,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               ),
               quickStats(
                 eventId: widget.edata.id ?? "",
+                event: widget.edata,
                 kardType: widget.kardType,
                 kards: lcrds,
               ),
