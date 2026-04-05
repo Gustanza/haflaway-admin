@@ -310,6 +310,7 @@ class _BuildResultsListState extends State<BuildResultsList> {
                         kardType: widget.kardType,
                         eventId: widget.event.id ?? "_",
                         campaignId: widget.campaignId,
+                        allLabels: widget.event.labels ?? [],
                         onEdit: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute(

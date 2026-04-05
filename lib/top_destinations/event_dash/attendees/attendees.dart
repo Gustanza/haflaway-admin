@@ -17,6 +17,7 @@ import 'package:haflaway/top_destinations/event_dash/attendees/components/attend
 import 'package:haflaway/top_destinations/event_dash/attendees/components/importcontr.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/stats.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/crtattendees.dart';
+import 'package:haflaway/top_destinations/event_dash/attendees/components/label_manager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:haflaway/utils/attstates.dart';
@@ -26,6 +27,7 @@ import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/errorstrs.dart';
+import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/helpers.dart';
@@ -79,6 +81,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   TextEditingController searchController = TextEditingController();
   List<Attendee> searchResults = [];
 
+  String? _labelFilterId; // Added for label filtering
+
   @override
   void initState() {
     super.initState();
@@ -120,9 +124,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         setState(() {
           hasMore = false;
           isLoading = false;
+          atList = []; // CRITICAL: Clear the list if no results found
         });
-        if (_selectedKardFilter != null || _attendanceFilter != "All")
-          showToast(isGood: true, msg: "NO ITEMS FOUND");
+        if (_selectedKardFilter != null ||
+            _attendanceFilter != "All" ||
+            _labelFilterId != null) {
+          showToast(isGood: true, msg: "No guests found matching filters");
+        }
         return;
       }
       lastDocument = snapshot.docs.last;
@@ -155,108 +163,70 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   }
 
   nQwrBuilder() {
-    if (_selectedKardFilter != null && _attendanceFilter != "All") {
-      return firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .where(
-            "cards.${widget.kardType.name}.templateCardId",
-            isEqualTo: _selectedKardFilter,
-          )
-          .where("attendanceStatus", isEqualTo: _attendanceFilter)
-          .orderBy("cards.${widget.kardType.name}.templateCardId")
-          .orderBy("attendanceStatus")
-          .limit(pageSize);
-    } else if (_selectedKardFilter == null && _attendanceFilter != "All") {
-      return firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .where("attendanceStatus", isEqualTo: _attendanceFilter)
-          .orderBy("attendanceStatus")
-          .limit(pageSize);
-    } else if (_selectedKardFilter != null && _attendanceFilter == "All") {
-      return firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .where(
-            "cards.${widget.kardType.name}.templateCardId",
-            isEqualTo: _selectedKardFilter,
-          )
-          .orderBy("cards.${widget.kardType.name}.templateCardId")
-          .limit(pageSize);
-    } else if (widget.kardType == KardType.contact) {
-      return firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .orderBy("createdAt", descending: true)
-          .limit(pageSize);
-    } else {
-      return firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .orderBy("createdAt", descending: true)
-          .limit(pageSize);
+    Query q = firestore.collection(ecol).doc(widget.edata.id).collection(atcol);
+
+    if (_selectedKardFilter != null) {
+      q = q.where(
+        "cards.${widget.kardType.name}.templateCardId",
+        isEqualTo: _selectedKardFilter,
+      );
     }
+
+    if (_attendanceFilter != "All") {
+      q = q.where("attendanceStatus", isEqualTo: _attendanceFilter);
+    }
+
+    if (_labelFilterId != null) {
+      q = q.where("labelIds", arrayContains: _labelFilterId);
+    }
+
+    // Add ordering based on filters
+    if (_selectedKardFilter != null) {
+      q = q.orderBy("cards.${widget.kardType.name}.templateCardId");
+    }
+    if (_attendanceFilter != "All") {
+      q = q.orderBy("attendanceStatus");
+    }
+
+    // Default order if no specific ordering was added
+    if (_selectedKardFilter == null && _attendanceFilter == "All") {
+      q = q.orderBy("createdAt", descending: true);
+    }
+
+    return q.limit(pageSize);
   }
 
   mQwrBuilder() {
-    if (_selectedKardFilter != null && _attendanceFilter != "All") {
-      return firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .where(
-            "cards.${widget.kardType.name}.templateCardId",
-            isEqualTo: _selectedKardFilter,
-          )
-          .where("attendanceStatus", isEqualTo: _attendanceFilter)
-          .orderBy("cards.${widget.kardType.name}.templateCardId")
-          .orderBy("attendanceStatus")
-          .startAfterDocument(lastDocument!)
-          .limit(pageSize);
-    } else if (_selectedKardFilter == null && _attendanceFilter != "All") {
-      return firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .where("attendanceStatus", isEqualTo: _attendanceFilter)
-          .orderBy("attendanceStatus")
-          .startAfterDocument(lastDocument!)
-          .limit(pageSize);
-    } else if (_selectedKardFilter != null && _attendanceFilter == "All") {
-      return firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .where(
-            "cards.${widget.kardType.name}.templateCardId",
-            isEqualTo: _selectedKardFilter,
-          )
-          .orderBy("cards.${widget.kardType.name}.templateCardId")
-          .startAfterDocument(lastDocument!)
-          .limit(pageSize);
-    } else if (widget.kardType == KardType.contact) {
-      return firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .orderBy("createdAt", descending: true)
-          .startAfterDocument(lastDocument!)
-          .limit(pageSize);
-    } else {
-      return firestore
-          .collection(ecol)
-          .doc(widget.edata.id)
-          .collection(atcol)
-          .orderBy("createdAt", descending: true)
-          .startAfterDocument(lastDocument!)
-          .limit(pageSize);
+    Query q = firestore.collection(ecol).doc(widget.edata.id).collection(atcol);
+
+    if (_selectedKardFilter != null) {
+      q = q.where(
+        "cards.${widget.kardType.name}.templateCardId",
+        isEqualTo: _selectedKardFilter,
+      );
     }
+
+    if (_attendanceFilter != "All") {
+      q = q.where("attendanceStatus", isEqualTo: _attendanceFilter);
+    }
+
+    if (_labelFilterId != null) {
+      q = q.where("labelIds", arrayContains: _labelFilterId);
+    }
+
+    // Add ordering
+    if (_selectedKardFilter != null) {
+      q = q.orderBy("cards.${widget.kardType.name}.templateCardId");
+    }
+    if (_attendanceFilter != "All") {
+      q = q.orderBy("attendanceStatus");
+    }
+
+    if (_selectedKardFilter == null && _attendanceFilter == "All") {
+      q = q.orderBy("createdAt", descending: true);
+    }
+
+    return q.startAfterDocument(lastDocument!).limit(pageSize);
   }
 
   // Load more attendees when scrolling to bottom
@@ -371,6 +341,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           leading: Icon(Icons.summarize),
           title: Text("Summary"),
           onTap: showQuickStats,
+        ),
+        PopClickers(
+          leading: Icon(Icons.list_alt_rounded),
+          title: Text("Manage Lists"),
+          onTap: () => showLabelManager(context, widget.edata),
         ),
         if (widget.kardType == KardType.invitation ||
             widget.kardType == KardType.contribution)
@@ -674,6 +649,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                 kardType: widget.kardType,
                                 eventId: widget.edata.id ?? "_",
                                 campaignId: campaignId,
+                                allLabels: widget.edata.labels ?? [],
                                 onEdit: () async {
                                   await Navigator.of(context).push(
                                     MaterialPageRoute(
@@ -882,6 +858,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     int activeFiltersCount = 0;
     if (_selectedKardFilter != null) activeFiltersCount++;
     if (_attendanceFilter != "All") activeFiltersCount++;
+    if (_labelFilterId != null) activeFiltersCount++;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -959,46 +936,54 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   ),
                   // Header
                   Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: psm,
-                      vertical: psm * 0.5,
-                    ),
+                    padding: const EdgeInsets.fromLTRB(24, 16, 16, 16),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.tune,
-                          color: Colors.white.withValues(alpha: 0.9),
+                        const Icon(
+                          Icons.tune_rounded,
+                          color: Teme.lime,
                           size: 24,
                         ),
-                        SizedBox(width: psm * 0.5),
+                        const SizedBox(width: 12),
                         Text(
-                          "Filters",
-                          style: TextStyle(
-                            fontSize: fsm + 4,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                          "Filter Guests",
+                          style: Teme.f(size: 20, weight: FontWeight.bold),
                         ),
-                        Spacer(),
+                        const Spacer(),
                         if (_selectedKardFilter != null ||
-                            _attendanceFilter != "All")
-                          TextButton(
+                            _attendanceFilter != "All" ||
+                            _labelFilterId != null)
+                          TextButton.icon(
                             onPressed: () {
                               setState(() {
                                 _selectedKardFilter = null;
                                 _attendanceFilter = "All";
+                                _labelFilterId = null;
                               });
                               Navigator.pop(context);
                               _loadAttendees();
                             },
-                            child: Text(
-                              "Clear All",
-                              style: TextStyle(
+                            icon: const Icon(
+                              Icons.refresh_rounded,
+                              size: 18,
+                              color: Colors.redAccent,
+                            ),
+                            label: Text(
+                              "Clear",
+                              style: Teme.f(
                                 color: Colors.redAccent,
-                                fontWeight: FontWeight.w600,
+                                weight: FontWeight.w600,
                               ),
                             ),
                           ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(
+                            Icons.close_rounded,
+                            color: Teme.grey1,
+                            size: 24,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1055,7 +1040,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                 ],
                               ),
                             ),
-                            SizedBox(height: psm * 1.5),
                           ],
                           // Attendance Status Filter Section
                           _buildFilterSection(
@@ -1083,12 +1067,55 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                       .toList(),
                             ),
                           ),
+
+                          // Labels Filter Section
+                          if (widget.edata.labels != null &&
+                              widget.edata.labels!.isNotEmpty) ...[
+                            _buildFilterSection(
+                              title: "Lists",
+                              icon: Icons.label_outline_rounded,
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _buildFilterChip(
+                                    label: "All Lists",
+                                    isSelected: _labelFilterId == null,
+                                    onTap: () {
+                                      setState(() {
+                                        _labelFilterId = null;
+                                      });
+                                      Navigator.pop(context);
+                                      _loadAttendees();
+                                    },
+                                  ),
+                                  ...widget.edata.labels!.map(
+                                    (label) => _buildFilterChip(
+                                      label: label.name,
+                                      color: Color(label.colorValue),
+                                      isSelected: _labelFilterId == label.id,
+                                      onTap: () {
+                                        setState(() {
+                                          _labelFilterId =
+                                              _labelFilterId == label.id
+                                                  ? null
+                                                  : label.id;
+                                        });
+                                        Navigator.pop(context);
+                                        _loadAttendees();
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
                   ),
                   SizedBox(
-                    height: MediaQuery.of(context).padding.bottom + psm * 0.5,
+                    height: MediaQuery.of(context).padding.bottom + psm * 0.25,
                   ),
                 ],
               ),
@@ -1103,75 +1130,93 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     required IconData icon,
     required Widget child,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 18, color: Colors.white.withValues(alpha: 0.8)),
-            SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: fsm + 2,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: psm * 0.75),
-        child,
-      ],
-    );
-  }
-
-  // Build elegant filter chip for bottom sheet
-  Widget _buildFilterChip({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: AnimatedContainer(
-          duration: Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color:
-                isSelected
-                    ? Colors.white.withValues(alpha: 0.25)
-                    : Colors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color:
-                  isSelected
-                      ? Colors.white.withValues(alpha: 0.5)
-                      : Colors.white.withValues(alpha: 0.2),
-              width: isSelected ? 1.5 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              if (isSelected) ...[
-                Icon(Icons.check_circle, size: 16, color: Colors.white),
-                SizedBox(width: 6),
-              ],
+              Icon(icon, size: 18, color: Teme.lime.withOpacity(0.9)),
+              const SizedBox(width: 10),
               Text(
-                label,
-                style: TextStyle(
-                  fontSize: fsm,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: Colors.white.withValues(alpha: isSelected ? 1.0 : 0.8),
+                title,
+                style: Teme.f(
+                  size: 14,
+                  weight: FontWeight.w700,
+                  color: Teme.lime.withOpacity(0.9),
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color:
+              isSelected
+                  ? (color?.withOpacity(0.15) ?? Teme.lime.withOpacity(0.15))
+                  : Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color:
+                isSelected
+                    ? (color ?? Teme.lime)
+                    : Colors.white.withOpacity(0.1),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (color != null) ...[
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              label,
+              style: Teme.f(
+                size: 12,
+                weight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? Teme.white : Teme.grey1,
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.check_circle_rounded,
+                size: 14,
+                color: Teme.white,
+              ),
+            ],
+          ],
         ),
       ),
     );
@@ -1255,6 +1300,16 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildFrostedFAB(child: getMiniBuild(), isMini: true),
+        if (selectList.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _buildFrostedFAB(
+            child: IconButton(
+              icon: const Icon(Icons.label_outline_rounded, color: _T.lime),
+              onPressed: showBulkLabeling,
+            ),
+            isMini: true,
+          ),
+        ],
         const SizedBox(height: 12),
         _buildFrostedFAB(child: getMainBuild(), isMini: false),
       ],
@@ -1295,7 +1350,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
 
   Widget _buildListHeader(int count) {
     bool hasActiveFilters =
-        _selectedKardFilter != null || _attendanceFilter != "All";
+        _selectedKardFilter != null ||
+        _attendanceFilter != "All" ||
+        _labelFilterId != null;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -1372,6 +1429,181 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       debugPrint("Error loading cards: $e");
     }
     safeState(() {});
+  }
+
+  showBulkLabeling() {
+    if (widget.edata.labels == null || widget.edata.labels!.isEmpty) {
+      showToast(
+        isGood: false,
+        msg: "No lists created yet. Create one from the menu.",
+      );
+      return;
+    }
+
+    // Determine initial states for each label
+    Map<String, bool?> labelStates = {};
+    for (var label in widget.edata.labels!) {
+      bool allHave = true;
+      bool noneHave = true;
+      for (var attendee in selectList) {
+        bool hasLabel = attendee.labelIds?.contains(label.id) ?? false;
+        if (hasLabel) {
+          noneHave = false;
+        } else {
+          allHave = false;
+        }
+      }
+      if (allHave) {
+        labelStates[label.id] = true;
+      } else if (noneHave) {
+        labelStates[label.id] = false;
+      } else {
+        labelStates[label.id] = null; // Mixed state
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return modalBtmSheet(
+              bdrdm: 28,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Guest Lists",
+                          style: _T.f(size: 20, weight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close, color: _T.grey2),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Manage lists for ${selectList.length} selected guest(s):",
+                      style: _T.f(color: _T.grey2),
+                    ),
+                    const SizedBox(height: 16),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.4,
+                      ),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: widget.edata.labels!.length,
+                        itemBuilder: (context, index) {
+                          final label = widget.edata.labels![index];
+                          final state = labelStates[label.id];
+                          return CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: state,
+                            tristate: true,
+                            title: Text(label.name, style: _T.f()),
+                            secondary: CircleAvatar(
+                              backgroundColor: Color(label.colorValue),
+                              radius: 6,
+                            ),
+                            activeColor: _T.lime,
+                            checkboxShape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            onChanged: (val) {
+                              setModalState(() {
+                                // Toggle logic: false or null -> true; true -> false
+                                if (state == true) {
+                                  labelStates[label.id] = false;
+                                } else {
+                                  labelStates[label.id] = true;
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    buildPrimaryButton(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _applyBulkLabelsBatch(labelStates);
+                      },
+                      label: "Apply Changes",
+                      iconData: Icons.check_circle_outline,
+                    ),
+                    SizedBox(height: MediaQuery.of(context).padding.bottom),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _applyBulkLabelsBatch(Map<String, bool?> labelStates) async {
+    showToast(isGood: true, msg: "Updating guest lists...");
+
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+
+      for (var attendee in selectList) {
+        final ref = FirebaseFirestore.instance
+            .collection('events')
+            .doc(widget.edata.id)
+            .collection('attendees')
+            .doc(attendee.id);
+
+        for (var entry in labelStates.entries) {
+          if (entry.value == true) {
+            // Ensure added to all
+            batch.update(ref, {
+              'labelIds': FieldValue.arrayUnion([entry.key]),
+            });
+          } else if (entry.value == false) {
+            // Ensure removed from all
+            batch.update(ref, {
+              'labelIds': FieldValue.arrayRemove([entry.key]),
+            });
+          }
+          // If null, do nothing (keep individual states)
+        }
+      }
+
+      await batch.commit();
+
+      setState(() {
+        for (var attendee in selectList) {
+          attendee.labelIds ??= [];
+          for (var entry in labelStates.entries) {
+            if (entry.value == true) {
+              if (!attendee.labelIds!.contains(entry.key)) {
+                attendee.labelIds!.add(entry.key);
+              }
+            } else if (entry.value == false) {
+              attendee.labelIds!.remove(entry.key);
+            }
+          }
+        }
+        selectList.clear();
+      });
+
+      showToast(isGood: true, msg: "Updated successfully");
+    } catch (e) {
+      showToast(isGood: false, msg: "Failed to update: $e");
+    }
   }
 
   delSelect() async {

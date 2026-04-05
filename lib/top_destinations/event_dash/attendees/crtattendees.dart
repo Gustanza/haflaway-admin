@@ -46,6 +46,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
   String templateCardId = "_";
   Map<String, String> scrdsMp = {};
   late List<Map<String, dynamic>> chekstatuses;
+  List<String> chkLabels = []; // Added for label selection
   TextEditingController ncont = TextEditingController();
   TextEditingController phncont = TextEditingController();
   TextEditingController crdCont = TextEditingController();
@@ -90,6 +91,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
             break;
           }
         }
+        chkLabels = List<String>.from(attendee.labelIds ?? []);
       }
       safeState(() {
         isLoading = false;
@@ -161,6 +163,66 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                           });
                         },
                       ),
+                    if (widget.event.labels != null &&
+                        widget.event.labels!.isNotEmpty) ...[
+                      const SizedBox(height: psm),
+                      Text("Lists", style: normal()),
+                      const SizedBox(height: psm * 0.5),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children:
+                            widget.event.labels!.map((label) {
+                              final isSelected = chkLabels.contains(label.id);
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    if (isSelected) {
+                                      chkLabels.remove(label.id);
+                                    } else {
+                                      chkLabels.add(label.id);
+                                    }
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isSelected
+                                            ? Color(
+                                              label.colorValue,
+                                            ).withOpacity(0.2)
+                                            : Colors.white.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color:
+                                          isSelected
+                                              ? Color(label.colorValue)
+                                              : Colors.white.withOpacity(0.1),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    label.name,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color:
+                                          isSelected
+                                              ? Color(label.colorValue)
+                                              : Colors.white.withOpacity(0.6),
+                                      fontWeight:
+                                          isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                      ),
+                    ],
                     const SizedBox(height: psm * 2),
                     buildPrimaryButton(
                       onTap: () {
@@ -232,6 +294,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
           phone: phnnumber.replaceAll('+', ''),
           fullName: ncont.text.trim().toUpperCase(),
           fullNameLower: ncont.text.trim().toLowerCase(),
+          labelIds: chkLabels,
         );
         var payload = {
           "eventId": widget.event.id,

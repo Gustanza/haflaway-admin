@@ -10,10 +10,10 @@ const scaback = const Color(0xFF1a1a2e);
 const primaryWhite = Colors.white;
 Color mWhite = Colors.white.withValues(alpha: 0.75);
 
-LinearGradient primaryGrad = LinearGradient(
+LinearGradient primaryGrad = const LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
-  colors: [primaryColor.withOpacity(1.0), secondaryColor.withOpacity(0.85)],
+  colors: [Color(0xFFC9A84C), Color(0xFF8B732D)], // Premium Gold/Bronze
 );
 
 const scagrad = LinearGradient(

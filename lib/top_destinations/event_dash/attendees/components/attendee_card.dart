@@ -28,6 +28,7 @@ Widget buildAttendeeCard({
   required bool hasKey,
   required String campaignId,
   required String eventId,
+  required List<AttendeeLabel> allLabels, // Added
   required Function() onSelected,
   required Function(String) onStatusChange,
 }) {
@@ -171,6 +172,53 @@ Widget buildAttendeeCard({
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          if (attendee.labelIds != null &&
+                              attendee.labelIds!.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children:
+                                  attendee.labelIds!.map((labelId) {
+                                    final label = allLabels.firstWhere(
+                                      (l) => l.id == labelId,
+                                      orElse:
+                                          () => AttendeeLabel(
+                                            id: '',
+                                            name: '?',
+                                            colorValue: 0xFF555555,
+                                          ),
+                                    );
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Color(
+                                          label.colorValue,
+                                        ).withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(40),
+                                        border: Border.all(
+                                          color: Color(
+                                            label.colorValue,
+                                          ).withOpacity(0.5),
+                                          width: 0.5,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        label.name,
+                                        style: TextStyle(
+                                          fontSize: 8,
+                                          color: Color(label.colorValue),
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                            ),
+                          ],
                         ],
                       ),
                     ),

@@ -26,7 +26,7 @@ lqAssButton({onPressed, label}) {
   );
 }
 
-Widget buildPrimaryButton({onTap, isLoading, label, iconData}) {
+Widget buildPrimaryButton({onTap, isLoading = false, label, iconData}) {
   return GestureDetector(
     onTap: onTap,
     child: Container(
@@ -41,7 +41,14 @@ Widget buildPrimaryButton({onTap, isLoading, label, iconData}) {
                     Colors.grey.withOpacity(0.2),
                   ],
                 )
-                : primaryGrad,
+                : LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFC9A84C).withOpacity(0.9),
+                    Color(0xFF8B732D).withOpacity(0.8),
+                  ],
+                ),
         borderRadius: BorderRadius.circular(bmd),
       ),
       child: ClipRRect(
@@ -51,10 +58,17 @@ Widget buildPrimaryButton({onTap, isLoading, label, iconData}) {
           child: Container(
             decoration: BoxDecoration(
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 0.5,
+                color: Color(0xFFC9A84C).withOpacity(0.5),
+                width: 1.0,
               ),
               borderRadius: BorderRadius.circular(bmd),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0xFFC9A84C).withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Center(
               child:
