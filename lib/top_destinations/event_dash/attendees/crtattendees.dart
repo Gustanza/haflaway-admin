@@ -197,8 +197,8 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                                 subtitle: "Choose a card template",
                               ),
                               const SizedBox(height: 20),
-                              bldDrdDwn(
-                                lbl: "Card Type",
+                              _buildDropdown(
+                                hint: "Card Type",
                                 entries: scrdsMp.entries,
                                 controller: crdCont,
                                 onSelected: (val) {
@@ -441,6 +441,48 @@ class _CreateAttendeesState extends State<CreateAttendees> {
       onChanged: (phone) {
         phnnumber = phone.completeNumber;
       },
+    );
+  }
+
+  Widget _buildDropdown({
+    required String hint,
+    required Iterable<MapEntry<String, String>> entries,
+    required TextEditingController controller,
+    required void Function(String?) onSelected,
+  }) {
+    return _fieldWrapper(
+      child: DropdownButtonHideUnderline(
+        child: DropdownButtonFormField<String>(
+          value:
+              entries.any((e) => e.key == templateCardId)
+                  ? templateCardId
+                  : null,
+          hint: Text(hint, style: _T.f(size: 14, color: _T.grey3)),
+          dropdownColor: _T.card,
+          icon: const Icon(Icons.expand_more_rounded, color: _T.lime, size: 20),
+          isExpanded: true,
+          decoration: const InputDecoration(
+            contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+          ),
+          style: _T.f(size: 15, weight: FontWeight.w500),
+          items:
+              entries.map((entry) {
+                return DropdownMenuItem<String>(
+                  value: entry.key,
+                  child: Text(entry.value, style: _T.f(size: 15)),
+                );
+              }).toList(),
+          onChanged: (val) {
+            if (val != null) {
+              controller.text = entries.firstWhere((e) => e.key == val).value;
+              onSelected(val);
+            }
+          },
+        ),
+      ),
     );
   }
 
