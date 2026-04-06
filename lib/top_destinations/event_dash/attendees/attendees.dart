@@ -82,6 +82,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   List<Attendee> searchResults = [];
 
   String? _labelFilterId; // Added for label filtering
+  List<String> importSelectedLabels =
+      []; // Added for import dialog list selection
 
   @override
   void initState() {
@@ -651,11 +653,19 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                 campaignId: campaignId,
                                 allLabels: widget.edata.labels ?? [],
                                 onEdit: () async {
+                                  String entityTitle =
+                                      widget.kardType == KardType.invitation
+                                          ? "Invitation"
+                                          : widget.kardType ==
+                                              KardType.contribution
+                                          ? "Contributor"
+                                          : "Contact";
                                   await Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder:
                                           (context) => CreateAttendees(
                                             event: widget.edata,
+                                            title: entityTitle,
                                             kardType: widget.kardType,
                                             attendee: attendee,
                                           ),
@@ -1775,6 +1785,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               kard: kard,
               event: widget.edata,
               isContactImport: isContactImport,
+              availableLabels: widget.edata.labels ?? [],
             ),
           ),
         );
@@ -1800,6 +1811,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         sels[cell!.columnIndex] = cell.value;
       }
       xcelBytes = bytes;
+
+      // Reset selected labels when opening import dialog
+      setState(() {
+        importSelectedLabels = [];
+      });
+
       await showMatcher(sels);
     } else {
       showToast(isGood: false, msg: genErrMsg);
@@ -1816,146 +1833,218 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     for (var lcrd in lcrds) {
       synCrdmap[lcrd.id] = lcrd.type;
     }
-    // ends here
+
     return showModalBottomSheet(
       backgroundColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadiusGeometry.only(
-          topLeft: Radius.circular(bmd),
-          topRight: Radius.circular(bmd),
-        ),
-      ),
+      isScrollControlled: true,
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setAltState) {
             return modalBtmSheet(
-              bdrdm: bmd,
+              bdrdm: 28,
               child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 8,
+                ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: psm),
+                    // Pull Handle
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 24),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.tune_rounded,
+                          color: _T.lime,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          "Configure Import",
+                          style: _T.f(size: 20, weight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // SECTION 1: Lists
+                    if (widget.edata.labels != null &&
+                        widget.edata.labels!.isNotEmpty) ...[
+                      Text(
+                        "Step 1: Assign to Lists",
+                        style: _T.f(
+                          size: 14,
+                          color: _T.lime,
+                          weight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 44,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: widget.edata.labels!.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          itemBuilder: (context, i) {
+                            final label = widget.edata.labels![i];
+                            final isSelected = importSelectedLabels.contains(
+                              label.id,
+                            );
+                            return GestureDetector(
+                              onTap: () {
+                                setAltState(() {
+                                  if (isSelected) {
+                                    importSelectedLabels.remove(label.id);
+                                  } else {
+                                    importSelectedLabels.add(label.id);
+                                  }
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isSelected
+                                          ? Color(
+                                            label.colorValue,
+                                          ).withValues(alpha: 0.2)
+                                          : _T.card,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color:
+                                        isSelected
+                                            ? Color(label.colorValue)
+                                            : Colors.white.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                  ),
+                                ),
+                                child: Text(
+                                  label.name,
+                                  style: _T.f(
+                                    size: 13,
+                                    color:
+                                        isSelected
+                                            ? Color(label.colorValue)
+                                            : Colors.white.withValues(
+                                              alpha: 0.6,
+                                            ),
+                                    weight:
+                                        isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+
                     Text(
-                      "Import from File",
-                      style: TextStyle(
-                        fontSize: fsm + 4,
-                        fontWeight: FontWeight.bold,
+                      "Step 2: Map Excel Columns",
+                      style: _T.f(
+                        size: 14,
+                        color: _T.lime,
+                        weight: FontWeight.w600,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(psm),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Name",
-                            style: TextStyle(
-                              fontSize: fsm + 2,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          buildDrop(sels, impname),
-                        ],
-                      ),
+                    const SizedBox(height: 16),
+
+                    // MAPPING ROWS
+                    _buildMappingRow(
+                      icon: Icons.person_outline,
+                      label: "Name",
+                      dropdown: buildDrop(sels, impname),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(psm),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Phone",
-                            style: TextStyle(
-                              fontSize: fsm + 2,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          buildDrop(sels, impphone),
-                        ],
-                      ),
+                    const SizedBox(height: 16),
+                    _buildMappingRow(
+                      icon: Icons.phone_android_outlined,
+                      label: "Phone",
+                      dropdown: buildDrop(sels, impphone),
                     ),
-                    // Ahadi & Michango Stuff
+
                     if (widget.kardType == KardType.contribution ||
-                        widget.kardType == KardType.contact)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: psm),
+                        widget.kardType == KardType.contact) ...[
+                      const SizedBox(height: 16),
+                      _buildMappingRow(
+                        icon: Icons.favorite_border,
+                        label: "Pledges",
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _mapAhadi,
-                                  onChanged: (v) {
-                                    setAltState(() {
-                                      _mapAhadi = v ?? false;
-                                    });
-                                  },
-                                ),
-                                const Text(
-                                  "Pledge",
-                                  style: TextStyle(
-                                    fontSize: fsm + 2,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (_mapAhadi) buildDrop(sels, impahadi),
-                          ],
-                        ),
-                      ),
-                    if (widget.kardType == KardType.contribution ||
-                        widget.kardType == KardType.contact)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: psm),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _mapMchango,
-                                  onChanged: (v) {
-                                    setAltState(() {
-                                      _mapMchango = v ?? false;
-                                    });
-                                  },
-                                ),
-                                const Text(
-                                  "Contribution",
-                                  style: TextStyle(
-                                    fontSize: fsm + 2,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (_mapMchango) buildDrop(sels, impmchango),
-                          ],
-                        ),
-                      ),
-                    if (widget.kardType != KardType.contact)
-                      Padding(
-                        padding: const EdgeInsets.all(psm),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              "Card",
-                              style: TextStyle(
-                                fontSize: fsm + 2,
-                                fontWeight: FontWeight.w600,
+                            Transform.scale(
+                              scale: 0.9,
+                              child: Switch(
+                                value: _mapAhadi,
+                                activeColor: _T.lime,
+                                onChanged:
+                                    (v) => setAltState(() => _mapAhadi = v),
                               ),
                             ),
-                            buildDrop(synCrdmap, impcard),
+                            if (_mapAhadi) ...[
+                              const SizedBox(width: 8),
+                              Expanded(child: buildDrop(sels, impahadi)),
+                            ],
                           ],
                         ),
                       ),
-                    const SizedBox(height: psm),
-                    lqAssButton(
-                      label: "Continue",
-                      onPressed: () async {
+                      const SizedBox(height: 16),
+                      _buildMappingRow(
+                        icon: Icons.payments_outlined,
+                        label: "Contribution",
+                        child: Row(
+                          children: [
+                            Transform.scale(
+                              scale: 0.9,
+                              child: Switch(
+                                value: _mapMchango,
+                                activeColor: _T.lime,
+                                onChanged:
+                                    (v) => setAltState(() => _mapMchango = v),
+                              ),
+                            ),
+                            if (_mapMchango) ...[
+                              const SizedBox(width: 8),
+                              Expanded(child: buildDrop(sels, impmchango)),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    if (widget.kardType != KardType.contact) ...[
+                      const SizedBox(height: 16),
+                      _buildMappingRow(
+                        icon: Icons.card_membership_outlined,
+                        label: "Card Type",
+                        dropdown: buildDrop(synCrdmap, impcard),
+                      ),
+                    ],
+
+                    const SizedBox(height: 40),
+                    buildPrimaryButton(
+                      label: "Proceed to Preview",
+                      iconData: Icons.arrow_forward_rounded,
+                      onTap: () async {
                         if (isGreen()) {
                           poper();
                           Map<String, dynamic> mapp = {
@@ -1969,6 +2058,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                     widget.kardType == KardType.contact) &&
                                 _mapMchango)
                               'mchango': int.parse(impmchango.text),
+                            if (importSelectedLabels.isNotEmpty)
+                              'labelIds': importSelectedLabels,
                           };
                           var cardId =
                               widget.kardType == KardType.contact
@@ -1976,21 +2067,22 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                   : impcard.text;
                           await Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (context) {
-                                return ImpPreview(
-                                  mapp: mapp,
-                                  xcelBytes: xcelBytes!,
-                                  templateCardId: cardId,
-                                  event: widget.edata,
-                                  kardType: widget.kardType,
-                                );
-                              },
+                              builder:
+                                  (context) => ImpPreview(
+                                    mapp: mapp,
+                                    xcelBytes: xcelBytes!,
+                                    templateCardId: cardId,
+                                    event: widget.edata,
+                                    kardType: widget.kardType,
+                                    labelIds: importSelectedLabels,
+                                  ),
                             ),
                           );
                           await _loadAttendees();
                         }
                       },
                     ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -2001,18 +2093,77 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     );
   }
 
-  buildDrop(Map sels, TextEditingController mapcont) {
-    return DropdownMenu(
-      hintText: "Select values",
-      width: MediaQuery.of(context).size.width * 0.4,
-      inputDecorationTheme: const InputDecorationTheme(),
-      onSelected: (value) {
-        mapcont.text = "$value";
-      },
-      dropdownMenuEntries:
-          sels.entries.map((entry) {
-            return DropdownMenuEntry(value: entry.key, label: "${entry.value}");
-          }).toList(),
+  Widget _buildMappingRow({
+    required IconData icon,
+    required String label,
+    Widget? dropdown,
+    Widget? child,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: _T.lime.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: _T.lime, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 2,
+          child: Text(label, style: _T.f(weight: FontWeight.w600)),
+        ),
+        const SizedBox(width: 8),
+        Expanded(flex: 3, child: dropdown ?? child ?? const SizedBox.shrink()),
+      ],
+    );
+  }
+
+  Widget buildDrop(Map sels, TextEditingController mapcont) {
+    // Current value from the controller
+    dynamic currentKey;
+    try {
+      currentKey = int.tryParse(mapcont.text) ?? mapcont.text;
+      if (currentKey == "") currentKey = null;
+    } catch (_) {}
+
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: _T.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<dynamic>(
+          value: sels.containsKey(currentKey) ? currentKey : null,
+          hint: Text(
+            "Select Source",
+            style: _T.f(size: 13, color: Colors.white.withValues(alpha: 0.4)),
+          ),
+          dropdownColor: _T.card,
+          icon: const Icon(Icons.expand_more_rounded, color: _T.lime, size: 20),
+          isExpanded: true,
+          onChanged: (val) {
+            setState(() {
+              mapcont.text = "$val";
+            });
+          },
+          items:
+              sels.entries.map((entry) {
+                return DropdownMenuItem(
+                  value: entry.key,
+                  child: Text(
+                    "${entry.value}",
+                    style: _T.f(size: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
+        ),
+      ),
     );
   }
 

@@ -53,11 +53,13 @@ class ImpPreview extends StatefulWidget {
   final String templateCardId;
   final Map<String, dynamic>? mapp;
   final Uint8List? xcelBytes;
+  final List<String> labelIds;
   const ImpPreview({
     super.key,
     this.mapp,
     this.atList,
     this.xcelBytes,
+    this.labelIds = const [],
     required this.event,
     required this.templateCardId,
     required this.kardType,
@@ -95,7 +97,15 @@ class _ImpPreviewState extends State<ImpPreview> {
         hasError = false;
       });
     }
-    attendees = widget.atList ?? [];
+    attendees =
+        (widget.atList ?? []).map((a) {
+          // Merge any pre-selected labels onto the attendee copy
+          if (widget.labelIds.isNotEmpty) {
+            final merged = {...?a.labelIds, ...widget.labelIds}.toList();
+            a.labelIds = merged;
+          }
+          return a;
+        }).toList();
     if (mounted) {
       setState(() {
         isLoading = false;
@@ -143,6 +153,7 @@ class _ImpPreviewState extends State<ImpPreview> {
           email: '',
           phone: phoneItself,
           messages: {},
+          labelIds: List<String>.from(widget.labelIds),
           pledgedAmount:
               (widget.kardType == KardType.contribution ||
                       widget.kardType == KardType.contact)
@@ -184,6 +195,7 @@ class _ImpPreviewState extends State<ImpPreview> {
           child: Column(
             children: [
               _topBar(),
+              if (widget.labelIds.isNotEmpty) _labelsBanner(),
               Expanded(
                 child:
                     widget.templateCardId == "contact"
@@ -266,6 +278,51 @@ class _ImpPreviewState extends State<ImpPreview> {
                 ),
               )
               : const CupertinoActivityIndicator(color: _T.lime),
+        ],
+      ),
+    );
+  }
+
+  Widget _labelsBanner() {
+    final labels = widget.event.labels ?? [];
+    final selected =
+        labels.where((l) => widget.labelIds.contains(l.id)).toList();
+    if (selected.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Assigning to lists:', style: _T.f(size: 11, color: _T.grey1)),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children:
+                selected.map((label) {
+                  final c = Color(label.colorValue);
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: c.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: c.withValues(alpha: 0.6)),
+                    ),
+                    child: Text(
+                      label.name,
+                      style: _T.f(size: 12, color: c, weight: FontWeight.w600),
+                    ),
+                  );
+                }).toList(),
+          ),
         ],
       ),
     );

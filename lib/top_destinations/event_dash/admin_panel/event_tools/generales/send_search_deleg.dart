@@ -312,11 +312,18 @@ class _BuildResultsListState extends State<BuildResultsList> {
                         campaignId: widget.campaignId,
                         allLabels: widget.event.labels ?? [],
                         onEdit: () async {
+                          String entityTitle =
+                              widget.kardType == KardType.invitation
+                                  ? "Invitation"
+                                  : widget.kardType == KardType.contribution
+                                  ? "Contributor"
+                                  : "Contact";
                           await Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (context) {
                                 return CreateAttendees(
                                   event: widget.event,
+                                  title: entityTitle,
                                   kardType: widget.kardType,
                                   attendee: attendee,
                                 );
