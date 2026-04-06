@@ -487,9 +487,10 @@ class SendPreviewerState extends State<SendPreviewer> {
                   style: _T.f(size: 15, color: _T.grey1),
                 ),
                 const SizedBox(height: 24),
-                lqAssButton(
+                buildPrimaryButton(
                   label: "Send Now",
-                  onPressed: () async {
+                  iconData: Icons.send_rounded,
+                  onTap: () async {
                     List inviteesIds =
                         widget.senderList.map((e) {
                           return e.id;

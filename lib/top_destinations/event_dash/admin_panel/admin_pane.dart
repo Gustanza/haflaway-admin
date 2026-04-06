@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:ui';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
@@ -234,35 +235,51 @@ class _AdminPanelState extends State<AdminPanel> {
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: _T.bg,
-        body: RefreshIndicator(
-          onRefresh: loadData,
-          color: _T.lime,
-          backgroundColor: _T.card,
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
+        body: Stack(
+          children: [
+            // Ambient Orbs
+            const Positioned(
+              top: -100,
+              right: -100,
+              child: _GusOrb(size: 300, color: _T.lime, opacity: 0.08),
             ),
-            slivers: [
-              SliverToBoxAdapter(
-                child: SafeArea(
-                  bottom: false,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [_topBar(), _heroBlock()],
+            const Positioned(
+              bottom: -50,
+              left: -100,
+              child: _GusOrb(size: 250, color: _T.lime, opacity: 0.05),
+            ),
+            
+            RefreshIndicator(
+              onRefresh: loadData,
+              color: _T.lime,
+              backgroundColor: _T.card,
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: SafeArea(
+                      bottom: false,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [_topBar(), _heroBlock()],
+                      ),
+                    ),
                   ),
-                ),
+                  SliverToBoxAdapter(child: _miniStatRow()),
+                  SliverToBoxAdapter(child: _checkpointsSection()),
+                  SliverToBoxAdapter(child: _toolsSection()),
+                  SliverToBoxAdapter(child: _teamSection()),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: MediaQuery.of(context).padding.bottom + 24,
+                    ),
+                  ),
+                ],
               ),
-              SliverToBoxAdapter(child: _miniStatRow()),
-              SliverToBoxAdapter(child: _checkpointsSection()),
-              SliverToBoxAdapter(child: _toolsSection()),
-              SliverToBoxAdapter(child: _teamSection()),
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: MediaQuery.of(context).padding.bottom + 24,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1389,5 +1406,31 @@ class _ChkpnFormState extends State<ChkpnForm> {
       setState(() => isLoading = false);
       showToast(isGood: false, msg: '$e');
     }
+  }
+}
+
+class _GusOrb extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double opacity;
+
+  const _GusOrb({required this.size, required this.color, this.opacity = 0.05});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withOpacity(opacity),
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          child: const SizedBox.shrink(),
+        ),
+      ),
+    );
   }
 }
