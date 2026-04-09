@@ -1,11 +1,16 @@
-import 'dart:ui';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/utils/globalfns.dart';
+import 'package:haflaway/utils/urls.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Design Tokens (Matching AdminPane)
@@ -46,6 +51,7 @@ class EventSettings extends StatefulWidget {
 class _EventSettingsState extends State<EventSettings> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   bool isLoading = false;
+  bool _isGeneratingReport = false;
 
   // Settings state
   String selectedLanguage = 'sw';
@@ -86,6 +92,54 @@ class _EventSettingsState extends State<EventSettings> {
       showToast(isGood: false, msg: "Hitilafu: $e");
     } finally {
       if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _generateReport() async {
+    if (widget.event == null) return;
+    setState(() => _isGeneratingReport = true);
+    try {
+      final response = await http.post(
+        Uri.parse(generateAttendeeReportUrl),
+        headers: basicHeaders,
+        body: jsonEncode({'eventId': widget.event!.id}),
+      );
+
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['error'] == false) {
+        showToast(isGood: true, msg: "Report has been generated successfully");
+      } else {
+        showToast(
+          isGood: false,
+          msg: "Error: ${body['message'] ?? 'Failed to generate report'}",
+        );
+      }
+    } catch (e) {
+      showToast(isGood: false, msg: "Connection Error: $e");
+    } finally {
+      if (mounted) setState(() => _isGeneratingReport = false);
+    }
+  }
+
+  Future<void> _deleteReport(String reportId, String? storagePath) async {
+    if (widget.event == null) return;
+    try {
+      // 1. Delete Firestore Document
+      await firestore
+          .collection(ecol)
+          .doc(widget.event!.id)
+          .collection('reports')
+          .doc(reportId)
+          .delete();
+
+      // 2. Delete Storage File (if path available)
+      if (storagePath != null && storagePath.isNotEmpty) {
+        await FirebaseStorage.instance.ref().child(storagePath).delete();
+      }
+
+      showToast(isGood: true, msg: "Report deleted successfully");
+    } catch (e) {
+      showToast(isGood: false, msg: "Error deleting report: $e");
     }
   }
 
@@ -141,14 +195,12 @@ class _EventSettingsState extends State<EventSettings> {
 
                           // Future sections placeholder
                           _sectionHeader(
-                            icon: Icons.notifications_active_rounded,
-                            title: "NOTIFICATIONS",
-                            subtitle: "Automatic reminders & alerts",
+                            icon: Icons.assessment_rounded,
+                            title: "ATTENDEE REPORTS",
+                            subtitle: "Generate and download event reports",
                           ),
                           const SizedBox(height: 12),
-                          _buildPlaceholderSection(
-                            "Coming soon in next update",
-                          ),
+                          _buildReportsSection(),
                           const SizedBox(height: 32),
                         ],
                       ),
@@ -353,6 +405,191 @@ class _EventSettingsState extends State<EventSettings> {
               color: isSelected ? _T.lime : _T.grey1,
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReportsSection() {
+    return Column(
+      children: [
+        _buildActionTile(
+          icon: Icons.add_chart_rounded,
+          title: "Generate New Report",
+          isLoading: _isGeneratingReport,
+          onTap: _generateReport,
+        ),
+        const SizedBox(height: 16),
+        StreamBuilder<QuerySnapshot>(
+          stream:
+              firestore
+                  .collection(ecol)
+                  .doc(widget.event!.id)
+                  .collection('reports')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CupertinoActivityIndicator(color: _T.lime),
+              );
+            }
+
+            final docs = snapshot.data?.docs ?? [];
+            if (docs.isEmpty) {
+              return _buildPlaceholderSection("No reports generated yet");
+            }
+
+            return Container(
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: docs.length,
+                separatorBuilder:
+                    (context, index) => Container(
+                      height: 1,
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      color: _T.white.withOpacity(0.05),
+                    ),
+                itemBuilder: (context, index) {
+                  final report = docs[index].data() as Map<String, dynamic>;
+                  final url = report['url'] ?? '';
+                  final createdAt = report['createdAt'] ?? '';
+                  DateTime? dt;
+                  if (createdAt.isNotEmpty) {
+                    dt = DateTime.tryParse(createdAt);
+                  }
+
+                  return InkWell(
+                    onTap: () async {
+                      if (url.isNotEmpty) {
+                        final uri = Uri.parse(url);
+                        try {
+                          debugPrint("Abject: $uri");
+                          await launchUrl(uri);
+                        } catch (e) {
+                          showToast(isGood: false, msg: "Could not launch URL");
+                        }
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: _T.lime.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.description_rounded,
+                              color: _T.lime,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Attendee Report",
+                                  style: _T.f(
+                                    size: 14,
+                                    weight: FontWeight.w600,
+                                  ),
+                                ),
+                                if (dt != null)
+                                  Text(
+                                    timeago.format(dt),
+                                    style: _T.f(size: 12, color: _T.grey1),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed:
+                                () => _deleteReport(
+                                  docs[index].id,
+                                  report['storagePath'],
+                                ),
+                            icon: Icon(
+                              Icons.delete_outline_rounded,
+                              color: Colors.red.withOpacity(0.7),
+                              size: 18,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.download_for_offline_rounded,
+                            color: _T.lime,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionTile({
+    required IconData icon,
+    required String title,
+    required bool isLoading,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: isLoading ? null : onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _T.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color:
+                isLoading
+                    ? _T.lime.withOpacity(0.3)
+                    : _T.white.withOpacity(0.05),
+          ),
+        ),
+        child: Row(
+          children: [
+            if (isLoading)
+              const CupertinoActivityIndicator(color: _T.lime)
+            else
+              Icon(icon, color: _T.lime, size: 20),
+            const SizedBox(width: 12),
+            Text(
+              isLoading ? "Generating Report..." : title,
+              style: _T.f(
+                size: 15,
+                weight: FontWeight.w600,
+                color: isLoading ? _T.lime : _T.white,
+              ),
+            ),
+            const Spacer(),
+            if (!isLoading)
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: _T.white.withOpacity(0.2),
+                size: 14,
+              ),
+          ],
         ),
       ),
     );
