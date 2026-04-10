@@ -47,7 +47,7 @@ class HfApp extends StatelessWidget {
     //     );
     //     // await storage.useStorageEmulator("$lokol", 9199);
     //   } catch (e) {
-    //     debugPrint("Abject: $e");
+    //     debugPrint("Abject: $e"); anyth
     //   }
     // }
     return Center(
