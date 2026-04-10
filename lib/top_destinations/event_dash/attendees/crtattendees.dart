@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,7 @@ import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/hfhttp/clientelle.dart';
 import 'package:haflaway/utils/attstates.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_field/phone_number.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/card.dart';
@@ -174,19 +176,22 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                               subtitle: "Basic identification info",
                             ),
                             const SizedBox(height: 20),
-                            _fieldWrapper(
-                              child: TextFormField(
-                                controller: ncont,
-                                style: _T.f(size: 15, weight: FontWeight.w500),
-                                textCapitalization: TextCapitalization.words,
-                                decoration: _inputDeco(hint: "Full Name"),
-                                validator:
-                                    (v) => validator(lbl: "Name", value: v),
-                              ),
+                            _buildPremiumField(
+                              controller: ncont,
+                              label: "Full Name",
+                              hint: "e.g. JOHN DOE",
+                              validator:
+                                  (v) => validator(lbl: "Name", value: v),
                             ),
-                            const SizedBox(height: 16),
-                            _fieldWrapper(
-                              child: buildPhone(mobileCont: phncont),
+                            const SizedBox(height: 20),
+                            _buildPremiumField(
+                              controller: phncont,
+                              label: "Phone Number",
+                              hint: "Phone Number",
+                              isPhone: true,
+                              onPhoneChanged: (phone) {
+                                phnnumber = phone.completeNumber;
+                              },
                             ),
                             const SizedBox(height: 32),
 
@@ -197,13 +202,50 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                                 subtitle: "Choose a card template",
                               ),
                               const SizedBox(height: 20),
-                              _buildDropdown(
-                                hint: "Card Type",
-                                entries: scrdsMp.entries,
-                                controller: crdCont,
+                              _inputLabel("CHOOSE CARD TEMPLATE"),
+                              const SizedBox(height: 12),
+                              DropdownMenu<String>(
+                                initialSelection:
+                                    templateCardId != "_"
+                                        ? templateCardId
+                                        : null,
+                                width: MediaQuery.of(context).size.width - 40,
+                                textStyle: _T.f(size: 15, color: _T.white),
+                                inputDecorationTheme: InputDecorationTheme(
+                                  filled: true,
+                                  fillColor: _T.bg,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: _T.white.withOpacity(0.1),
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: _T.white.withOpacity(0.1),
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                ),
                                 onSelected: (val) {
-                                  safeState(() => templateCardId = val ?? "_");
+                                  if (val != null) {
+                                    safeState(() => templateCardId = val);
+                                  }
                                 },
+                                dropdownMenuEntries:
+                                    scrdsMp.entries.map((entry) {
+                                      return DropdownMenuEntry<String>(
+                                        value: entry.key,
+                                        label: entry.value,
+                                        style: MenuItemButton.styleFrom(
+                                          foregroundColor: _T.white,
+                                        ),
+                                      );
+                                    }).toList(),
                               ),
                               const SizedBox(height: 32),
                             ],
@@ -387,7 +429,10 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: _T.f(size: 16, weight: FontWeight.w700)),
+            Text(
+              title,
+              style: _T.f(size: 16, weight: FontWeight.w700, color: _T.white),
+            ),
             Text(subtitle, style: _T.f(size: 12, color: _T.grey2)),
           ],
         ),
@@ -395,94 +440,104 @@ class _CreateAttendeesState extends State<CreateAttendees> {
     );
   }
 
-  Widget _fieldWrapper({required Widget child}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _T.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+  // ── Premium UI Helpers ────────────────────────────────────────────────────
+
+  Widget _inputLabel(String label) {
+    return Text(
+      label,
+      style: _T.f(
+        size: 10,
+        weight: FontWeight.w700,
+        color: _T.grey2,
+        letterSpacing: 1.2,
       ),
-      child: child,
     );
   }
 
-  InputDecoration _inputDeco({required String hint}) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: _T.f(size: 14, color: _T.grey3),
-      contentPadding: const EdgeInsets.all(18),
-      border: InputBorder.none,
-      enabledBorder: InputBorder.none,
-      focusedBorder: InputBorder.none,
-    );
-  }
-
-  buildPhone({mobileCont}) {
-    return IntlPhoneField(
-      controller: mobileCont,
-      style: _T.f(size: 15, weight: FontWeight.w500),
-      dropdownTextStyle: _T.f(size: 14),
-      cursorColor: _T.lime,
-      dropdownIcon: const Icon(
-        Icons.expand_more_rounded,
-        color: _T.lime,
-        size: 20,
-      ),
-      decoration: InputDecoration(
-        hintText: 'Phone Number',
-        hintStyle: _T.f(size: 14, color: _T.grey3),
-        contentPadding: const EdgeInsets.all(18),
-        border: InputBorder.none,
-        enabledBorder: InputBorder.none,
-        focusedBorder: InputBorder.none,
-        counterText: '',
-      ),
-      initialCountryCode: 'TZ',
-      onChanged: (phone) {
-        phnnumber = phone.completeNumber;
-      },
-    );
-  }
-
-  Widget _buildDropdown({
-    required String hint,
-    required Iterable<MapEntry<String, String>> entries,
+  Widget _buildPremiumField({
     required TextEditingController controller,
-    required void Function(String?) onSelected,
+    required String label,
+    required String hint,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    int maxLines = 1,
+    Widget? suffix,
+    bool isPhone = false,
+    void Function(PhoneNumber)? onPhoneChanged,
+    String? Function(String?)? validator,
   }) {
-    return _fieldWrapper(
-      child: DropdownButtonHideUnderline(
-        child: DropdownButtonFormField<String>(
-          value:
-              entries.any((e) => e.key == templateCardId)
-                  ? templateCardId
-                  : null,
-          hint: Text(hint, style: _T.f(size: 14, color: _T.grey3)),
-          dropdownColor: _T.card,
-          icon: const Icon(Icons.expand_more_rounded, color: _T.lime, size: 20),
-          isExpanded: true,
-          decoration: const InputDecoration(
-            contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 4),
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-          ),
-          style: _T.f(size: 15, weight: FontWeight.w500),
-          items:
-              entries.map((entry) {
-                return DropdownMenuItem<String>(
-                  value: entry.key,
-                  child: Text(entry.value, style: _T.f(size: 15)),
-                );
-              }).toList(),
-          onChanged: (val) {
-            if (val != null) {
-              controller.text = entries.firstWhere((e) => e.key == val).value;
-              onSelected(val);
-            }
-          },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: _T.f(size: 13, weight: FontWeight.w500, color: _T.grey1),
         ),
-      ),
+        const SizedBox(height: 8),
+        isPhone
+            ? IntlPhoneField(
+              controller: controller,
+              style: _T.f(size: 15, color: _T.white),
+              dropdownTextStyle: _T.f(size: 15, color: _T.white),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: _T.f(size: 15, color: _T.grey3),
+                filled: true,
+                fillColor: _T.bg,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: _T.lime, width: 1.5),
+                ),
+                counterText: '',
+              ),
+              initialCountryCode: 'TZ',
+              onChanged: onPhoneChanged,
+            )
+            : TextFormField(
+              controller: controller,
+              readOnly: readOnly,
+              onTap: onTap,
+              maxLines: maxLines,
+              validator: validator,
+              textCapitalization: TextCapitalization.sentences,
+              style: _T.f(size: 15, color: _T.white),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: _T.f(size: 15, color: _T.grey3),
+                filled: true,
+                fillColor: _T.bg,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                suffixIcon: suffix,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: _T.lime, width: 1.5),
+                ),
+              ),
+            ),
+      ],
     );
   }
 
@@ -741,11 +796,7 @@ class _GusOrb extends StatelessWidget {
   final Color color;
   final double opacity;
 
-  const _GusOrb({
-    required this.size,
-    required this.color,
-    required this.opacity,
-  });
+  const _GusOrb({required this.size, required this.color, this.opacity = 0.05});
 
   @override
   Widget build(BuildContext context) {
@@ -754,11 +805,12 @@ class _GusOrb extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            color.withValues(alpha: opacity),
-            color.withValues(alpha: 0),
-          ],
+        color: color.withOpacity(opacity),
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          child: const SizedBox.shrink(),
         ),
       ),
     );

@@ -12,7 +12,10 @@ class PackageProvider extends ChangeNotifier {
 
   Future getAppInfo() async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    _isSuperAdmin = packageInfo.packageName == "com.haflaway.super_admin_app";
+    debugPrint("Current Package Name: ${packageInfo.packageName}");
+    _isSuperAdmin =
+        packageInfo.packageName.contains("com.haflaway.super_admin_app") ||
+        packageInfo.packageName.contains("com.haflaway.admin");
     _appVersion = packageInfo.version;
     _buildNumber = packageInfo.buildNumber;
     notifyListeners();
