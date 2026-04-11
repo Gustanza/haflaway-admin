@@ -510,7 +510,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final bool inSelectMode = selectList.isNotEmpty;
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
