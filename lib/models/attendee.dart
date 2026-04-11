@@ -126,6 +126,16 @@ class Attendee {
   }
 
   List<String>? labelIds;
+
+  bool isCardPending(KardType type) {
+    var cardMap = cards[type.name];
+    if (cardMap == null) return true;
+    String url = cardMap['url'] ?? "";
+    // If URL is empty or doesn't look like a real URL (placeholder)
+    return url.isEmpty ||
+        !url.startsWith("http") ||
+        url.contains("placeholder");
+  }
 }
 
 class AttributeCard {

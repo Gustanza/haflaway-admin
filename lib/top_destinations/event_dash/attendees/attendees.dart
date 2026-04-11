@@ -555,6 +555,16 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     ),
                   ),
 
+                  // ── Pending Notice ──
+                  if (!isSearching &&
+                      atList.any((at) => at.isCardPending(widget.kardType)))
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: _PendingBanner(onRefresh: _loadAttendees),
+                      ),
+                    ),
+
                   // ── Hero Card for Contributions ──
                   if (widget.kardType == KardType.contribution &&
                       atList.isNotEmpty &&
@@ -2340,6 +2350,81 @@ class _GusOrb extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
           child: const SizedBox.shrink(),
         ),
+      ),
+    );
+  }
+}
+
+class _PendingBanner extends StatelessWidget {
+  final Future<void> Function() onRefresh;
+  const _PendingBanner({required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.withOpacity(0.2), width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              color: Colors.orange,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Generating Cards",
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  "Some guest cards are still being processed. Refresh in a moment to see them.",
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          TextButton(
+            onPressed: onRefresh,
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.orange.withOpacity(0.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: Text(
+              "Refresh",
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Colors.orange,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
