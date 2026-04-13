@@ -128,6 +128,7 @@ class Attendee {
   List<String>? labelIds;
 
   bool isCardPending(KardType type) {
+    if (type == KardType.contact) return false;
     var cardMap = cards[type.name];
     if (cardMap == null) return true;
     String url = cardMap['url'] ?? "";

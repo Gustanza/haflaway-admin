@@ -410,39 +410,29 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           },
         ),
 
-        // PopClickers(
-        //   leading: Icon(Icons.sms),
-        //   title: Text("Rekebisha Burger"),
-        //   onTap: () async {
-        //     try {
-        //       firestore
-        //           .collection(ecol)
-        //           .doc(widget.edata.id)
-        //           .collection(atcol)
-        //           .where("cards.invitation.name", isEqualTo: "DOUBLE ")
-        //           .get()
-        //           .then((snapshot) {
-        //             print("Docuements: ${snapshot.docs.length}");
-        //             for (var doc in snapshot.docs) {
-        //               doc.reference.set({
-        //                 "checkinStatus": [
-        //                   {
-        //                     "attendee_name": "SLOT 01",
-        //                     "checkpoints": {"JHsilQlhDgHEpbnyBbfQ": false},
-        //                   },
-        //                   {
-        //                     "attendee_name": "SLOT 02",
-        //                     "checkpoints": {"JHsilQlhDgHEpbnyBbfQ": false},
-        //                   },
-        //                 ],
-        //               }, SetOptions(merge: true));
-        //             }
-        //           });
-        //     } catch (e) {
-        //       debugPrint("Shida: $e");
-        //     }
-        //   },
-        // ),
+        PopClickers(
+          leading: Icon(Icons.sms),
+          title: Text("Rekebisha Atts"),
+          onTap: () async {
+            try {
+              firestore
+                  .collection(ecol)
+                  .doc(widget.edata.id)
+                  .collection(atcol)
+                  .get()
+                  .then((snapshot) {
+                    for (var doc in snapshot.docs) {
+                      debugPrint("Look: ${doc['fullName'].toLowerCase()}");
+                      doc.reference.set({
+                        "fullNameLower": doc['fullName'].toLowerCase(),
+                      }, SetOptions(merge: true));
+                    }
+                  });
+            } catch (e) {
+              debugPrint("Shida: $e");
+            }
+          },
+        ),
       ],
     );
   }
@@ -775,12 +765,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               color: Colors.redAccent,
               onTap: delSelect,
             )
-          else if (widget.kardType != KardType.contact)
+          else
             Row(
               children: [
                 if (!isSearching) ...[
-                  _buildFilterButton(),
-                  const SizedBox(width: 8),
+                  if (widget.kardType != KardType.contact) ...[
+                    _buildFilterButton(),
+                    const SizedBox(width: 8),
+                  ],
                   _floatingButton(
                     icon: Icons.search,
                     onTap: () {
@@ -810,9 +802,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     ),
                   ),
               ],
-            )
-          else
-            const SizedBox.shrink(),
+            ),
         ],
       ),
     );
