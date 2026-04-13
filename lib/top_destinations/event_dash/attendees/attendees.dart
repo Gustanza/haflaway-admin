@@ -410,29 +410,29 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           },
         ),
 
-        PopClickers(
-          leading: Icon(Icons.sms),
-          title: Text("Rekebisha Atts"),
-          onTap: () async {
-            try {
-              firestore
-                  .collection(ecol)
-                  .doc(widget.edata.id)
-                  .collection(atcol)
-                  .get()
-                  .then((snapshot) {
-                    for (var doc in snapshot.docs) {
-                      debugPrint("Look: ${doc['fullName'].toLowerCase()}");
-                      doc.reference.set({
-                        "fullNameLower": doc['fullName'].toLowerCase(),
-                      }, SetOptions(merge: true));
-                    }
-                  });
-            } catch (e) {
-              debugPrint("Shida: $e");
-            }
-          },
-        ),
+        // PopClickers(
+        //   leading: Icon(Icons.sms),
+        //   title: Text("Rekebisha Atts"),
+        //   onTap: () async {
+        //     try {
+        //       firestore
+        //           .collection(ecol)
+        //           .doc(widget.edata.id)
+        //           .collection(atcol)
+        //           .get()
+        //           .then((snapshot) {
+        //             for (var doc in snapshot.docs) {
+        //               debugPrint("Look: ${doc['fullName'].toLowerCase()}");
+        //               doc.reference.set({
+        //                 "fullNameLower": doc['fullName'].toLowerCase(),
+        //               }, SetOptions(merge: true));
+        //             }
+        //           });
+        //     } catch (e) {
+        //       debugPrint("Shida: $e");
+        //     }
+        //   },
+        // ),
       ],
     );
   }

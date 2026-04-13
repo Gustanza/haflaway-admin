@@ -52,7 +52,7 @@ class HfApp extends StatelessWidget {
     // }
     return Center(
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 500),
+        constraints: BoxConstraints(maxWidth: 1400),
         child: MaterialApp(
           home: const SplashScreen(),
           debugShowCheckedModeBanner: false,
