@@ -26,85 +26,59 @@ lqAssButton({onPressed, label}) {
   );
 }
 
-Widget buildPrimaryButton({onTap, isLoading, label, iconData}) {
+Widget buildPrimaryButton({onTap, isLoading = false, label, iconData}) {
   return GestureDetector(
     onTap: onTap,
     child: Container(
       width: double.infinity,
-      height: kToolbarHeight * 1.1,
+      height: 50,
       decoration: BoxDecoration(
-        gradient:
-            isLoading
-                ? LinearGradient(
-                  colors: [
-                    Colors.grey.withOpacity(0.3),
-                    Colors.grey.withOpacity(0.2),
-                  ],
-                )
-                : primaryGrad,
-        borderRadius: BorderRadius.circular(bmd),
+        color: isLoading ? Colors.grey.withOpacity(0.5) : Color(0xFFC9A84C),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(bmd),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 0.5,
+      child: Center(
+        child: isLoading
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Please Wait...",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    iconData ?? Icons.download_rounded,
+                    color: Colors.black,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "$label",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.circular(bmd),
-            ),
-            child: Center(
-              child:
-                  isLoading
-                      ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white.withOpacity(0.8),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: psm),
-                          Text(
-                            "Please Wait...",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: fsm + 1,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      )
-                      : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            iconData ?? Icons.download_rounded,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                          const SizedBox(width: psm),
-                          Text(
-                            "$label",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: fsm + 1,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-            ),
-          ),
-        ),
       ),
     ),
   );

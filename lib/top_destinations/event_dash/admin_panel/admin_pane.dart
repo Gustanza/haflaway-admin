@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:ui';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
@@ -11,6 +12,7 @@ import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/in_check.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/settings/event_settings.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
 import 'package:haflaway/top_destinations/event_dash/cards/cards.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
@@ -234,35 +236,51 @@ class _AdminPanelState extends State<AdminPanel> {
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: _T.bg,
-        body: RefreshIndicator(
-          onRefresh: loadData,
-          color: _T.lime,
-          backgroundColor: _T.card,
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
+        body: Stack(
+          children: [
+            // Ambient Orbs
+            const Positioned(
+              top: -100,
+              right: -100,
+              child: _GusOrb(size: 300, color: _T.lime, opacity: 0.08),
             ),
-            slivers: [
-              SliverToBoxAdapter(
-                child: SafeArea(
-                  bottom: false,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [_topBar(), _heroBlock()],
+            const Positioned(
+              bottom: -50,
+              left: -100,
+              child: _GusOrb(size: 250, color: _T.lime, opacity: 0.05),
+            ),
+
+            RefreshIndicator(
+              onRefresh: loadData,
+              color: _T.lime,
+              backgroundColor: _T.card,
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: SafeArea(
+                      bottom: false,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [_topBar(), _heroBlock()],
+                      ),
+                    ),
                   ),
-                ),
+                  SliverToBoxAdapter(child: _miniStatRow()),
+                  SliverToBoxAdapter(child: _checkpointsSection()),
+                  SliverToBoxAdapter(child: _toolsSection()),
+                  SliverToBoxAdapter(child: _teamSection()),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: MediaQuery.of(context).padding.bottom + 24,
+                    ),
+                  ),
+                ],
               ),
-              SliverToBoxAdapter(child: _miniStatRow()),
-              SliverToBoxAdapter(child: _checkpointsSection()),
-              SliverToBoxAdapter(child: _toolsSection()),
-              SliverToBoxAdapter(child: _teamSection()),
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: MediaQuery.of(context).padding.bottom + 24,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -299,17 +317,60 @@ class _AdminPanelState extends State<AdminPanel> {
             ),
           ),
           const Spacer(),
-          GestureDetector(
-            onTap: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => CreateEvent(event: event)),
-              );
-              loadData();
-            },
-            child: Text(
-              'Edit',
-              style: _T.f(size: 15, weight: FontWeight.w500, color: _T.lime),
+          PopupMenuButton<int>(
+            icon: const Icon(CupertinoIcons.ellipsis, color: _T.lime, size: 20),
+            color: _T.card,
+            offset: const Offset(0, 40),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: _T.white.withOpacity(0.1)),
             ),
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem(
+                    value: 1,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          CupertinoIcons.pencil,
+                          color: _T.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Text('Edit Event', style: _T.f(size: 14)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 2,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          CupertinoIcons.settings,
+                          color: _T.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Text('Settings', style: _T.f(size: 14)),
+                      ],
+                    ),
+                  ),
+                ],
+            onSelected: (value) async {
+              if (value == 1) {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => CreateEvent(event: event)),
+                );
+                loadData();
+              } else if (value == 2) {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => EventSettings(event: event),
+                  ),
+                );
+                loadData();
+              }
+            },
           ),
         ],
       ),
@@ -1389,5 +1450,31 @@ class _ChkpnFormState extends State<ChkpnForm> {
       setState(() => isLoading = false);
       showToast(isGood: false, msg: '$e');
     }
+  }
+}
+
+class _GusOrb extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double opacity;
+
+  const _GusOrb({required this.size, required this.color, this.opacity = 0.05});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withOpacity(opacity),
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          child: const SizedBox.shrink(),
+        ),
+      ),
+    );
   }
 }

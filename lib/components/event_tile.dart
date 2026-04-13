@@ -14,7 +14,8 @@ import 'package:provider/provider.dart';
 
 class EventTile extends StatefulWidget {
   final Event eventData;
-  const EventTile({super.key, required this.eventData});
+  final VoidCallback? onRefresh;
+  const EventTile({super.key, required this.eventData, this.onRefresh});
 
   @override
   State<EventTile> createState() => _EventTileState();
@@ -39,6 +40,14 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           color: Teme.card,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,6 +307,7 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                                 .delete()
                                 .then((e) {
                                   showToast(isGood: true, msg: "Event Deleted");
+                                  widget.onRefresh?.call();
                                 })
                                 .catchError((e) {
                                   showToast(isGood: false, msg: "$e");
@@ -336,6 +346,7 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                     .update({"status": "Draft"})
                     .then((e) {
                       showToast(isGood: true, msg: "Event set as Draft");
+                      widget.onRefresh?.call();
                     })
                     .catchError((e) {
                       showToast(isGood: false, msg: "$e");
@@ -352,6 +363,7 @@ class _EventTileState extends State<EventTile> with TickerProviderStateMixin {
                     .update({"status": "Published"})
                     .then((e) {
                       showToast(isGood: true, msg: "Event has been published");
+                      widget.onRefresh?.call();
                     })
                     .catchError((e) {
                       showToast(isGood: false, msg: "$e");

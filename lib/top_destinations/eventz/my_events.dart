@@ -18,6 +18,7 @@ import 'package:haflaway/utils/gus_theme.dart';
 import 'package:in_app_update/in_app_update.dart';
 import 'package:haflaway/top_destinations/app_users/app_users.dart';
 import 'package:haflaway/top_destinations/settings/account.dart';
+import 'package:haflaway/utils/strings.dart';
 import 'package:provider/provider.dart';
 
 class HaflaWayHome extends StatefulWidget {
@@ -374,6 +375,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                                     ),
                                     child: EventTile(
                                       eventData: activeList[index],
+                                      onRefresh: loadEvents,
                                     ),
                                   ),
                                 );
@@ -390,7 +392,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
   }
 
   Widget _appleHeader(BuildContext context) {
-    var prov = context.read<PackageProvider>();
+    var prov = context.watch<PackageProvider>();
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Row(

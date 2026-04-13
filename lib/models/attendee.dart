@@ -64,6 +64,7 @@ class Attendee {
     this.messageIndexes,
     this.idComment = 'No Comment',
     required this.messages,
+    this.labelIds = const [],
   });
 
   Map<String, dynamic> toMap() => {
@@ -81,6 +82,7 @@ class Attendee {
     "createdAt": createdAt.toIso8601String(),
     if (paidAmount != null) "paidAmount": paidAmount,
     if (pledgedAmount != null) "pledgedAmount": pledgedAmount,
+    "labelIds": labelIds ?? [],
   };
 
   factory Attendee.fromMap(String id, Map<String, dynamic> map) {
@@ -119,7 +121,21 @@ class Attendee {
               : 0.00,
       idComment: map['idComment'] ?? "No Comment",
       attendanceStatus: map['attendanceStatus'] ?? "Not Confirmed",
+      labelIds: List<String>.from(map['labelIds'] ?? []),
     );
+  }
+
+  List<String>? labelIds;
+
+  bool isCardPending(KardType type) {
+    if (type == KardType.contact) return false;
+    var cardMap = cards[type.name];
+    if (cardMap == null) return true;
+    String url = cardMap['url'] ?? "";
+    // If URL is empty or doesn't look like a real URL (placeholder)
+    return url.isEmpty ||
+        !url.startsWith("http") ||
+        url.contains("placeholder");
   }
 }
 

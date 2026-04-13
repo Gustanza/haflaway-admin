@@ -46,8 +46,10 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   List<Attendee> attendeeList = [];
   String selStatus = shtates.keys.first;
   String selChannel = shannnels.keys.first;
+  String? _labelFilterId;
   TextEditingController channelCon = TextEditingController();
   TextEditingController statusCon = TextEditingController();
+  TextEditingController listCon = TextEditingController();
 
   bool isSearching = false;
   TextEditingController searchController = TextEditingController();
@@ -62,6 +64,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     super.initState();
     channelCon.text = shannnels[selChannel] ?? "";
     statusCon.text = shtates[selStatus] ?? "";
+    listCon.text = "All Lists";
     _loadAttendees();
     _scrollController.addListener(_scrollListener);
   }
@@ -69,6 +72,9 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   @override
   void dispose() {
     searchController.dispose();
+    channelCon.dispose();
+    statusCon.dispose();
+    listCon.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -89,37 +95,82 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         isLoading = true;
         selectList.clear();
       });
-      var snapshot =
-          await firestore
-              .collection(ecol)
-              .doc(widget.event.id)
-              .collection(atcol)
-              .where(
-                "messageIndexes",
-                arrayContains:
-                    "${selChannel}_${widget.campaignId}_${selStatus}",
-              )
-              .orderBy("createdAt", descending: true)
-              .limit(pageSize)
-              .get();
+      
+      // Debug: Print current filter values
+      debugPrint("=== LOADING ATTENDEES ===");
+      debugPrint("Channel: $selChannel");
+      debugPrint("Status: $selStatus");
+      debugPrint("List Filter: $_labelFilterId");
+      debugPrint("Campaign ID: ${widget.campaignId}");
+      
+      String messageIndexPattern = "${selChannel}_${widget.campaignId}_${selStatus}";
+      debugPrint("Message Index Pattern: $messageIndexPattern");
+      
+      Query<Map<String, dynamic>> query;
+      
+      if (_labelFilterId != null) {
+        // First get all attendees from the selected list
+        debugPrint("Getting attendees from list: $_labelFilterId");
+        query = firestore
+            .collection(ecol)
+            .doc(widget.event.id)
+            .collection(atcol)
+            .where("labelIds", arrayContains: _labelFilterId);
+      } else {
+        // Get all attendees with the message status
+        debugPrint("Getting attendees with message status");
+        query = firestore
+            .collection(ecol)
+            .doc(widget.event.id)
+            .collection(atcol)
+            .where("messageIndexes", arrayContains: messageIndexPattern);
+      }
+      
+      var snapshot = await query
+          .orderBy("createdAt", descending: true)
+          .limit(pageSize)
+          .get();
       var docs = snapshot.docs;
-      if (docs.isEmpty) {
+      debugPrint("Found ${docs.length} documents from initial query");
+      
+      List<Attendee> filteredAttendees = [];
+      
+      if (_labelFilterId != null) {
+        // If list is selected, filter by message status in memory
+        filteredAttendees = docs.map<Attendee>((e) {
+          var attendee = Attendee.fromMap(e.id, e.data());
+          debugPrint("List Attendee: ${attendee.fullName}, MessageIndexes: ${attendee.messageIndexes}");
+          return attendee;
+        }).where((attendee) {
+          // Check if attendee has the required message index
+          return attendee.messageIndexes?.contains(messageIndexPattern) ?? false;
+        }).toList();
+        debugPrint("After message status filtering: ${filteredAttendees.length} attendees");
+      } else {
+        // No list filter, use all results
+        filteredAttendees = docs.map<Attendee>((e) {
+          var attendee = Attendee.fromMap(e.id, e.data());
+          debugPrint("Status Attendee: ${attendee.fullName}, MessageIndexes: ${attendee.messageIndexes}, LabelIds: ${attendee.labelIds}");
+          return attendee;
+        }).toList();
+      }
+      
+      if (filteredAttendees.isEmpty) {
         return safeState(() {
           hasMore = false;
           isLoading = false;
           attendeeList = [];
         });
       }
+      
       lastDocument = docs.last;
-      attendeeList =
-          docs.map<Attendee>((e) {
-            return Attendee.fromMap(e.id, e.data());
-          }).toList();
+      attendeeList = filteredAttendees;
       safeState(() {
         hasMore = true;
         isLoading = false;
       });
     } catch (e) {
+      debugPrint("Error loading attendees: $e");
       safeState(() {
         hasMore = true;
         isLoading = false;
@@ -133,38 +184,76 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         hasMore = true;
         isLoading = true;
       });
-      var snapshot =
-          await firestore
-              .collection(ecol)
-              .doc(widget.event.id)
-              .collection(atcol)
-              .where(
-                "messageIndexes",
-                arrayContains:
-                    "${selChannel}_${widget.campaignId}_${selStatus}",
-              )
-              .orderBy("createdAt", descending: true)
-              .startAfterDocument(lastDocument!)
-              .limit(pageSize)
-              .get();
+      
+      String messageIndexPattern = "${selChannel}_${widget.campaignId}_${selStatus}";
+      debugPrint("=== LOADING MORE ATTENDEES ===");
+      debugPrint("Message Index Pattern: $messageIndexPattern");
+      
+      Query<Map<String, dynamic>> query;
+      
+      if (_labelFilterId != null) {
+        // First get more attendees from the selected list
+        debugPrint("Getting more attendees from list: $_labelFilterId");
+        query = firestore
+            .collection(ecol)
+            .doc(widget.event.id)
+            .collection(atcol)
+            .where("labelIds", arrayContains: _labelFilterId);
+      } else {
+        // Get more attendees with the message status
+        debugPrint("Getting more attendees with message status");
+        query = firestore
+            .collection(ecol)
+            .doc(widget.event.id)
+            .collection(atcol)
+            .where("messageIndexes", arrayContains: messageIndexPattern);
+      }
+      
+      var snapshot = await query
+          .orderBy("createdAt", descending: true)
+          .startAfterDocument(lastDocument!)
+          .limit(pageSize)
+          .get();
       var docs = snapshot.docs;
-      if (docs.isEmpty) {
+      debugPrint("Found ${docs.length} more documents from initial query");
+      
+      List<Attendee> filteredAttendees;
+      
+      if (_labelFilterId != null) {
+        // If list is selected, filter by message status in memory
+        filteredAttendees = docs.map<Attendee>((e) {
+          var attendee = Attendee.fromMap(e.id, e.data());
+          debugPrint("More List Attendee: ${attendee.fullName}, MessageIndexes: ${attendee.messageIndexes}");
+          return attendee;
+        }).where((attendee) {
+          // Check if attendee has the required message index
+          return attendee.messageIndexes?.contains(messageIndexPattern) ?? false;
+        }).toList();
+        debugPrint("After message status filtering: ${filteredAttendees.length} more attendees");
+      } else {
+        // No list filter, use all results
+        filteredAttendees = docs.map<Attendee>((e) {
+          var attendee = Attendee.fromMap(e.id, e.data());
+          debugPrint("More Status Attendee: ${attendee.fullName}, MessageIndexes: ${attendee.messageIndexes}");
+          return attendee;
+        }).toList();
+      }
+      
+      if (filteredAttendees.isEmpty) {
         return safeState(() {
           hasMore = false;
           isLoading = false;
         });
       }
+      
       lastDocument = docs.last;
-      List<Attendee> tmpList =
-          docs.map<Attendee>((e) {
-            return Attendee.fromMap(e.id, e.data());
-          }).toList();
-      attendeeList.addAll(tmpList);
+      attendeeList.addAll(filteredAttendees);
       safeState(() {
         hasMore = true;
         isLoading = false;
       });
     } catch (e) {
+      debugPrint("Error loading more attendees: $e");
       safeState(() {
         hasMore = true;
         isLoading = false;
@@ -343,20 +432,35 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                         horizontal: 16,
                         vertical: 12,
                       ),
-                      child: Row(
+                      child: Column(
                         children: [
-                          _buildPremiumField(
-                            controller: channelCon,
-                            label: 'CHANNEL',
-                            hint: 'Select Channel',
-                            onTap: showSelectChannel,
+                          Row(
+                            children: [
+                              _buildPremiumField(
+                                controller: channelCon,
+                                label: 'CHANNEL',
+                                hint: 'Select Channel',
+                                onTap: showSelectChannel,
+                              ),
+                              const SizedBox(width: 12),
+                              _buildPremiumField(
+                                controller: statusCon,
+                                label: 'STATUS',
+                                hint: 'Select Status',
+                                onTap: showSelectStatus,
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          _buildPremiumField(
-                            controller: statusCon,
-                            label: 'STATUS',
-                            hint: 'Select Status',
-                            onTap: showSelectStatus,
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              _buildPremiumField(
+                                controller: listCon,
+                                label: 'LISTS',
+                                hint: 'Select List',
+                                onTap: showSelectList,
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -471,6 +575,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           kardType: widget.kardType,
           eventId: widget.event.id ?? "_",
           campaignId: widget.campaignId,
+          allLabels: widget.event.labels ?? [],
           onEdit: () async {
             await Navigator.of(context).push(
               MaterialPageRoute(
@@ -727,6 +832,19 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     );
   }
 
+  showSelectList() {
+    return showModalBottomSheet(
+      backgroundColor: Colors.transparent,
+      context: context,
+      builder: (context) {
+        return modalBtmSheet(
+          bdrdm: 28,
+          child: _buildListSelectionSheet(),
+        );
+      },
+    );
+  }
+
   Widget _buildSelectionSheet({
     required String title,
     required Map items,
@@ -796,6 +914,130 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                     ),
                   );
                 }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListSelectionSheet() {
+    final labels = widget.event.labels ?? [];
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Center(
+          child: Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 20),
+            width: 36,
+            height: 5,
+            decoration: BoxDecoration(
+              color: _T.grey2.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+        _T.f(size: 20, weight: FontWeight.w800).toText("Select List"),
+        const SizedBox(height: 16),
+        Flexible(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(20),
+            children: [
+              // All Lists option
+              GestureDetector(
+                onTap: () {
+                  safeState(() {
+                    _labelFilterId = null;
+                    listCon.text = "All Lists";
+                    _loadAttendees();
+                  });
+                  popper();
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: _labelFilterId == null
+                        ? _T.lime.withOpacity(0.1)
+                        : _T.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _labelFilterId == null ? _T.lime : _T.white.withOpacity(0.05),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _T.f(
+                        size: 16,
+                        color: _labelFilterId == null ? _T.lime : _T.white,
+                        weight: _labelFilterId == null ? FontWeight.w700 : FontWeight.w500,
+                      ).toText("All Lists"),
+                      if (_labelFilterId == null)
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: _T.lime,
+                          size: 20,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              // Individual label options
+              ...labels.map((label) => GestureDetector(
+                onTap: () {
+                  safeState(() {
+                    _labelFilterId = _labelFilterId == label.id ? null : label.id;
+                    listCon.text = _labelFilterId == null ? "All Lists" : label.name;
+                    _loadAttendees();
+                  });
+                  popper();
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: _labelFilterId == label.id
+                        ? _T.lime.withOpacity(0.1)
+                        : _T.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _labelFilterId == label.id ? _T.lime : _T.white.withOpacity(0.05),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: Color(label.colorValue),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          _T.f(
+                            size: 16,
+                            color: _labelFilterId == label.id ? _T.lime : _T.white,
+                            weight: _labelFilterId == label.id ? FontWeight.w700 : FontWeight.w500,
+                          ).toText(label.name),
+                        ],
+                      ),
+                      if (_labelFilterId == label.id)
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: _T.lime,
+                          size: 20,
+                        ),
+                    ],
+                  ),
+                ),
+              )).toList(),
+            ],
           ),
         ),
       ],
@@ -876,15 +1118,12 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeOutBack,
-      bottom: isSel ? 20 : -100,
-      left: 12, // Reduced margin
-      right: 12, // Reduced margin
+      bottom: isSel ? 20 : -140,
+      left: 16,
+      right: 16,
       child: glassDialog(
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 12,
-          ), // Reduced internal horizontal padding
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               Expanded(

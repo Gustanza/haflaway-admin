@@ -28,6 +28,7 @@ Widget buildAttendeeCard({
   required bool hasKey,
   required String campaignId,
   required String eventId,
+  required List<AttendeeLabel> allLabels, // Added
   required Function() onSelected,
   required Function(String) onStatusChange,
 }) {
@@ -64,123 +65,243 @@ Widget buildAttendeeCard({
             ),
         child: Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: ClipRRect(
-            borderRadius: BorderRadius.zero,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      hasKey
-                          ? const Color(0xFF1E2800)
-                          : const Color(0xFF141414),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color:
-                        hasKey
-                            ? const Color(0xFFC9A84C).withValues(alpha: 0.45)
-                            : const Color(0xFF1F1F1F), // Very subtle border
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    // ── Avatar ──
-                    Stack(
-                      clipBehavior: Clip.none,
+          child: Builder(
+            builder: (context) {
+              final isPending = attendee.isCardPending(kardType);
+
+              return ClipRRect(
+                borderRadius: BorderRadius.zero,
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          hasKey
+                              ? const Color(0xFF1E2800)
+                              : const Color(0xFF141414),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color:
+                            isPending
+                                ? Colors.orange.withOpacity(0.3)
+                                : hasKey
+                                ? const Color(
+                                  0xFFC9A84C,
+                                ).withValues(alpha: 0.45)
+                                : const Color(0xFF1F1F1F),
+                        width: isPending ? 1.5 : 1,
+                      ),
+                      boxShadow:
+                          isPending
+                              ? [
+                                BoxShadow(
+                                  color: Colors.orange.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  spreadRadius: 1,
+                                ),
+                              ]
+                              : null,
+                    ),
+                    child: Row(
                       children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: avatarColor.withValues(alpha: 0.3),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              initials,
-                              style: TextStyle(
-                                color: avatarColor,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (messageCount > 0)
-                          Positioned(
-                            top: -3,
-                            right: -3,
-                            child: Container(
-                              padding: EdgeInsets.all(messageCount > 9 ? 3 : 4),
+                        // ... (avatars and initials)
+
+                        // ── Avatar ──
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
                               decoration: BoxDecoration(
-                                color: Colors.red,
+                                color: avatarColor.withValues(alpha: 0.3),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: _warmBg, width: 2),
                               ),
-                              constraints: const BoxConstraints(
-                                minWidth: 16,
-                                minHeight: 16,
-                              ),
-                              child: Text(
-                                messageCount > 99 ? "99+" : "$messageCount",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1,
+                              child: Center(
+                                child: Text(
+                                  initials,
+                                  style: TextStyle(
+                                    color: avatarColor,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                               ),
                             ),
+                            if (messageCount > 0)
+                              Positioned(
+                                top: -3,
+                                right: -3,
+                                child: Container(
+                                  padding: EdgeInsets.all(
+                                    messageCount > 9 ? 3 : 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: _warmBg,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 16,
+                                    minHeight: 16,
+                                  ),
+                                  child: Text(
+                                    messageCount > 99 ? "99+" : "$messageCount",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(width: 14),
+                        // ── Name + Phone ──
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                fullname,
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                  letterSpacing: 0.1,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 3),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      attendee.phone,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        color: Colors.white.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        fontStyle: FontStyle.italic,
+                                        letterSpacing: 0.2,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (isPending)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                          color: Colors.orange.withOpacity(0.3),
+                                          width: 0.5,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.hourglass_empty_rounded,
+                                            color: Colors.orange,
+                                            size: 10,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            "PENDING",
+                                            style: GoogleFonts.inter(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.orange,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+
+                              if (attendee.labelIds != null &&
+                                  attendee.labelIds!.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  children:
+                                      attendee.labelIds!.map((labelId) {
+                                        final label = allLabels.firstWhere(
+                                          (l) => l.id == labelId,
+                                          orElse:
+                                              () => AttendeeLabel(
+                                                id: '',
+                                                name: '?',
+                                                colorValue: 0xFF555555,
+                                              ),
+                                        );
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Color(
+                                              label.colorValue,
+                                            ).withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(
+                                              40,
+                                            ),
+                                            border: Border.all(
+                                              color: Color(
+                                                label.colorValue,
+                                              ).withOpacity(0.5),
+                                              width: 0.5,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            label.name,
+                                            style: TextStyle(
+                                              fontSize: 8,
+                                              color: Color(label.colorValue),
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                ),
+                              ],
+                            ],
                           ),
+                        ),
+                        // ── Attendance dot indicator ──
+                        if (kardType == KardType.invitation)
+                          _buildStatusDot(attendee.attendanceStatus),
                       ],
                     ),
-                    const SizedBox(width: 14),
-                    // ── Name + Phone ──
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            fullname,
-                            style: GoogleFonts.inter(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                              color: Colors.white,
-                              letterSpacing: 0.1,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            attendee.phone,
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: Colors.white.withValues(alpha: 0.5),
-                              fontStyle: FontStyle.italic,
-                              letterSpacing: 0.2,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    // ── Attendance dot indicator ──
-                    if (kardType == KardType.invitation)
-                      _buildStatusDot(attendee.attendanceStatus),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
       );

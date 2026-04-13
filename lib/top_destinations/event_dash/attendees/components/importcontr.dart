@@ -15,11 +15,13 @@ class ImportContributor extends StatefulWidget {
   final Event event;
   final Kard kard;
   final bool isContactImport;
+  final List<AttendeeLabel> availableLabels;
   const ImportContributor({
     super.key,
     required this.event,
     required this.kard,
     this.isContactImport = false,
+    this.availableLabels = const [],
   });
 
   @override
@@ -65,6 +67,7 @@ class _ImportContributorState extends State<ImportContributor> {
               event: widget.event,
               kardType: KardType.invitation,
               isContactImport: widget.isContactImport,
+              availableLabels: widget.availableLabels,
             );
           }
         } else if (snapshot.hasError) {
@@ -83,9 +86,12 @@ Widget buildContrList({
   required KardType kardType,
   required Kard kard,
   bool isContactImport = false,
+  List<AttendeeLabel> availableLabels = const [],
 }) {
   TextEditingController controller = TextEditingController();
   List<Attendee> selectList = [];
+  List<String> selectedLabelIds = [];
+
   if (list.isEmpty) {
     return buildEmptyState();
   }
@@ -132,6 +138,7 @@ Widget buildContrList({
                         templateCardId: kard.id,
                         atList: selectList,
                         kardType: kardType,
+                        labelIds: selectedLabelIds,
                       );
                     },
                   ),
@@ -140,7 +147,70 @@ Widget buildContrList({
               child: Text("Next Step"),
             ),
           ),
-          const SizedBox(height: psm),
+          // ── List (Label) Selection ──
+          if (availableLabels.isNotEmpty) ...[
+            const SizedBox(height: psm * 0.5),
+            Text(
+              "Assign to Lists",
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+            ),
+            const SizedBox(height: psm * 0.5),
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: availableLabels.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, i) {
+                  final label = availableLabels[i];
+                  final isSelected = selectedLabelIds.contains(label.id);
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (isSelected) {
+                          selectedLabelIds.remove(label.id);
+                        } else {
+                          selectedLabelIds.add(label.id);
+                        }
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            isSelected
+                                ? Color(label.colorValue).withOpacity(0.2)
+                                : Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color:
+                              isSelected
+                                  ? Color(label.colorValue)
+                                  : Colors.white.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Text(
+                        label.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              isSelected
+                                  ? Color(label.colorValue)
+                                  : Colors.white.withOpacity(0.6),
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: psm * 0.5),
+          ],
           buildField(
             cont: controller,
             lbl: "Search here",

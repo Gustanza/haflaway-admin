@@ -10,7 +10,7 @@ import 'package:haflaway/utils/gus_theme.dart';
 import 'package:provider/provider.dart';
 
 Widget drawer({required BuildContext context}) {
-  var provider = Provider.of<PackageProvider>(context, listen: false);
+  var provider = Provider.of<PackageProvider>(context, listen: true);
   return Drawer(
     backgroundColor: Colors.transparent,
     elevation: 0,
@@ -97,7 +97,7 @@ Widget drawer({required BuildContext context}) {
                       if (provider.isSuperAdmin)
                         _buildDrawerItem(
                           icon: Icons.people_outline_rounded,
-                          title: "Users Management",
+                          title: "Users",
                           onTap: () {
                             Navigator.of(context).pop();
                             Navigator.of(context).push(

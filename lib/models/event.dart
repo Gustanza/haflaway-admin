@@ -63,6 +63,32 @@ const cardcount = 'Card Count';
 const cardcap = 'Card Capacity';
 /* create card strings */
 
+class AttendeeLabel {
+  final String id;
+  final String name;
+  final int colorValue;
+
+  AttendeeLabel({
+    required this.id,
+    required this.name,
+    required this.colorValue,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'name': name,
+    'colorValue': colorValue,
+  };
+
+  factory AttendeeLabel.fromMap(Map<String, dynamic> map) {
+    return AttendeeLabel(
+      id: map['id'] ?? '',
+      name: map['name'] ?? '',
+      colorValue: map['colorValue'] ?? 0xFF000000,
+    );
+  }
+}
+
 class Event {
   String? id;
   bool? usepng;
@@ -87,6 +113,7 @@ class Event {
   double? totalPledge;
   double? totalPayment;
   List<EventCalendar>? calendar;
+  List<AttendeeLabel>? labels;
 
   Event({
     this.id,
@@ -112,6 +139,7 @@ class Event {
     this.totalPledge,
     this.totalPayment,
     this.calendar = const [],
+    this.labels = const [],
   });
 
   Map<String, dynamic> toMap() => {
@@ -140,6 +168,11 @@ class Event {
     if (calendar != null)
       'calendar':
           calendar?.map((e) {
+            return e.toMap();
+          }).toList(),
+    if (labels != null)
+      'labels':
+          labels?.map((e) {
             return e.toMap();
           }).toList(),
   };
@@ -178,6 +211,11 @@ class Event {
           map['calendar'].map<EventCalendar>((e) {
             return EventCalendar.fromMap(e);
           }).toList(),
+      labels:
+          (map['labels'] as List?)?.map<AttendeeLabel>((e) {
+            return AttendeeLabel.fromMap(e);
+          }).toList() ??
+          [],
     );
   }
 }

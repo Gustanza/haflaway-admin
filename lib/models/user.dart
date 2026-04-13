@@ -15,6 +15,7 @@ class Userr {
   String? registrationDate;
   String? lastLoginDate;
   String? couponCode;
+  String? searchName;
 
   Userr({
     this.id,
@@ -29,6 +30,7 @@ class Userr {
     this.clearanceLevel,
     this.registrationDate,
     this.lastLoginDate,
+    this.searchName,
   });
 
   Map<String, dynamic> kwendaJson() => {
@@ -43,6 +45,7 @@ class Userr {
     if (registrationDate != null) uregdate: registrationDate,
     if (lastLoginDate != null) ulastlogin: lastLoginDate,
     if (clearanceLevel != null) uclearance: clearanceLevel,
+    if (searchName != null) usearchName: searchName,
   };
 
   factory Userr.fromMap(String id, Map<String, dynamic> map) {
@@ -61,6 +64,7 @@ class Userr {
           map['registrationDate'] ?? DateTime(1990).toIso8601String(),
       clearanceLevel: map['clearanceLevel'] != null ? map['clearanceLevel'] : 0,
       lastLoginDate: map['lastLoginDate'] ?? DateTime(1990).toIso8601String(),
+      searchName: map[usearchName] ?? "",
     );
   }
 }
@@ -75,3 +79,4 @@ String uemail = "email";
 String ubalance = "balance";
 String uclearance = 'clearanceLevel';
 String uprofileImage = "profileImage";
+String usearchName = "searchName";
