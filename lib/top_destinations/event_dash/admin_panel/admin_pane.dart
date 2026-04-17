@@ -10,8 +10,8 @@ import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/in_check.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/index.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/gallery/event_gallery.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/settings/event_settings.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/users_perms/users.dart';
 import 'package:haflaway/top_destinations/event_dash/cards/cards.dart';
@@ -19,6 +19,7 @@ import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/attendees.dart';
+import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:intl/intl.dart';
 
@@ -88,6 +89,7 @@ class _AdminPanelState extends State<AdminPanel> {
   int contactsCount = 0;
   int cardTempsNo = 0;
   int evMsgTmpCount = 0;
+  int galleryCount = 0;
   List<CheckPoint> checkpoints = [];
 
   final firestore = FirebaseFirestore.instance;
@@ -112,6 +114,7 @@ class _AdminPanelState extends State<AdminPanel> {
       final cardsRef   = firestore.collection(ecol).doc(widget.eventO.id).collection(cardcol);
       final msgsRef    = firestore.collection(ecol).doc(widget.eventO.id).collection(evMsgTmpCol);
       final checkPointsRef = firestore.collection(ecol).doc(widget.eventO.id).collection(echecksub);
+      final galleryRef = firestore.collection(ecol).doc(widget.eventO.id).collection(egalsub);
 
       final result = await Future.wait([
         eventRef.get(),
@@ -119,13 +122,15 @@ class _AdminPanelState extends State<AdminPanel> {
         cardsRef.count().get(),
         msgsRef.count().get(),
         checkPointsRef.get(),
+        galleryRef.count().get(),
       ]);
 
-      final eventSnapshot  = result[0] as DocumentSnapshot<Map<String, dynamic>>;
-      final attsSnapshot   = result[1] as QuerySnapshot<Map<String, dynamic>>;
-      final crdsSnapshot   = result[2] as AggregateQuerySnapshot;
-      final msgsSnapshot   = result[3] as AggregateQuerySnapshot;
+      final eventSnapshot    = result[0] as DocumentSnapshot<Map<String, dynamic>>;
+      final attsSnapshot     = result[1] as QuerySnapshot<Map<String, dynamic>>;
+      final crdsSnapshot     = result[2] as AggregateQuerySnapshot;
+      final msgsSnapshot     = result[3] as AggregateQuerySnapshot;
       final checkPnsSnapshot = result[4] as QuerySnapshot<Map<String, dynamic>>;
+      final galSnapshot      = result[5] as AggregateQuerySnapshot;
 
       invsCount = attsSnapshot.docs
           .where((t) => Attendee.fromMap(t.id, t.data()).cards.containsKey(KardType.invitation.name))
@@ -143,6 +148,7 @@ class _AdminPanelState extends State<AdminPanel> {
       event          = Event.fromMap(eventSnapshot.id, eventSnapshot.data()!);
       cardTempsNo    = crdsSnapshot.count ?? 0;
       evMsgTmpCount  = msgsSnapshot.count ?? 0;
+      galleryCount   = galSnapshot.count ?? 0;
       adminsCount    = event?.adminsIds?.length ?? 0;
       scannersCount  = event?.usersIds?.length ?? 0;
 
@@ -677,9 +683,18 @@ class _AdminPanelState extends State<AdminPanel> {
           'SCAN CHECKPOINTS',
           action: 'Add new',
           onAction: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => CheckPoints(edata: widget.eventO)),
-            );
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (ctx) => SizedBox(
+                height: MediaQuery.of(ctx).size.height * 0.85,
+                child: modalBtmSheet(
+                  bdrdm: 28,
+                  child: ChkpnForm(eId: event?.id ?? widget.eventO.id ?? ''),
+                ),
+              ),
+            ).then((_) => loadData());
           },
         ),
         Padding(
@@ -855,6 +870,19 @@ class _AdminPanelState extends State<AdminPanel> {
                 onTap: () async {
                   await Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => InvEditor(eId: widget.eventO.id ?? '')),
+                  );
+                  loadData();
+                },
+              ),
+              _toolCard(
+                icon: Icons.photo_library_outlined,
+                count: '$galleryCount',
+                title: 'Gallery',
+                subtitle: 'Event photos',
+                isActive: true,
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => EventGallery(event: event!)),
                   );
                   loadData();
                 },
@@ -1052,41 +1080,75 @@ class _AdminPanelState extends State<AdminPanel> {
   }
 
   Widget _avStack() {
-    const data = [
-      (Color(0xFF3D1A0A), Color(0xFFE07040), 'FA'),
-      (Color(0xFF0A1830), Color(0xFF5A8ADB), 'JK'),
-      (Color(0xFF0D2018), Color(0xFF3DAA76), 'AM'),
-      (Color(0xFF1E0D30), Color(0xFFBF5AF2), 'SK'),
+    const palette = [
+      (Color(0xFF3D1A0A), Color(0xFFE07040)),
+      (Color(0xFF0A1830), Color(0xFF5A8ADB)),
+      (Color(0xFF0D2018), Color(0xFF3DAA76)),
+      (Color(0xFF1E0D30), Color(0xFFBF5AF2)),
     ];
     const double sz = 34;
     const double ov = 10;
-    final double w = sz + (data.length - 1) * (sz - ov);
+
+    final visibleCount = adminsCount.clamp(0, 5);
+    final overflow     = adminsCount > 5 ? adminsCount - 5 : 0;
+    final totalSlots   = visibleCount + (overflow > 0 ? 1 : 0);
+    final double w     = totalSlots == 0 ? sz : sz + (totalSlots - 1) * (sz - ov);
+
+    if (adminsCount == 0) {
+      return Container(
+        width: sz, height: sz,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: _T.card3,
+          border: Border.all(color: _T.card, width: 2.5),
+        ),
+        child: const Icon(Icons.person_outline_rounded, color: _T.lbl4, size: 16),
+      );
+    }
 
     return SizedBox(
       width: w,
       height: sz,
       child: Stack(
-        children: data.asMap().entries.map((e) {
-          final d = e.value;
-          return Positioned(
-            left: e.key * (sz - ov),
-            child: Container(
-              width: sz,
-              height: sz,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: d.$1,
-                border: Border.all(color: _T.card, width: 2.5),
+        children: [
+          ...List.generate(visibleCount, (i) {
+            final p = palette[i % palette.length];
+            return Positioned(
+              left: i * (sz - ov).toDouble(),
+              child: Container(
+                width: sz,
+                height: sz,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: p.$1,
+                  border: Border.all(color: _T.card, width: 2.5),
+                ),
+                child: const Center(
+                  child: Icon(Icons.person_rounded, color: Colors.white38, size: 16),
+                ),
               ),
-              child: Center(
-                child: Text(
-                  d.$3,
-                  style: _T.f(size: 10, weight: FontWeight.w700, color: d.$2),
+            );
+          }),
+          if (overflow > 0)
+            Positioned(
+              left: visibleCount * (sz - ov).toDouble(),
+              child: Container(
+                width: sz,
+                height: sz,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _T.card3,
+                  border: Border.all(color: _T.card, width: 2.5),
+                ),
+                child: Center(
+                  child: Text(
+                    '+$overflow',
+                    style: _T.f(size: 9, weight: FontWeight.w800, color: _T.lbl2),
+                  ),
                 ),
               ),
             ),
-          );
-        }).toList(),
+        ],
       ),
     );
   }

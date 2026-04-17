@@ -16,6 +16,7 @@ const eplocation = 'Event location';
 String eId = 'id';
 //--checkpoints---//
 const echecksub = "checkpoints";
+const egalsub = "gallery";
 const echeckname = 'name';
 const echecknameVal = "General Entrance";
 //--checkpoints---//

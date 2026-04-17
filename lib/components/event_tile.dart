@@ -17,13 +17,10 @@ import 'package:provider/provider.dart';
 
 abstract class _E {
   static const card    = Color(0xFF1C1C1E);
-  static const card2   = Color(0xFF28282C);
   static const card3   = Color(0xFF3A3A3C);
   static const sep     = Color(0xFF2C2C2E);
   static const lime    = Color(0xFFC9A84C);
   static const lbl1    = Color(0xFFEEEEF0);
-  static const lbl2    = Color(0xFFAEAEB2);
-  static const lbl3    = Color(0xFF8E8E93);
   static const lbl4    = Color(0xFF48484A);
 
   static TextStyle f({
@@ -85,243 +82,192 @@ class _EventTileState extends State<EventTile> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Thumbnail ───────────────────────────────────────────────────────
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20),
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: MediaQuery.of(context).size.height * 0.28,
-                  child: buildImage(url: widget.eventData.eventThumbnail),
-                ),
-              ),
 
-              // Bottom gradient so the card content below reads cleanly
-              Positioned.fill(
-                child: ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(20)),
-                  child: DecoratedBox(
+          // ── Thumbnail + overlaid content ────────────────────────────────────
+          ClipRRect(
+            borderRadius: BorderRadius.vertical(
+              top: const Radius.circular(20),
+              bottom: prov.isSuperAdmin ? Radius.zero : const Radius.circular(20),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: MediaQuery.of(context).size.height * 0.52,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Image
+                  buildImage(url: widget.eventData.eventThumbnail),
+
+                  // Gradient — heavier at the bottom so text is readable
+                  DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.55),
+                          Colors.black.withValues(alpha: 0.30),
+                          Colors.black.withValues(alpha: 0.82),
                         ],
-                        stops: const [0.45, 1.0],
+                        stops: const [0.30, 0.58, 1.0],
                       ),
                     ),
                   ),
-                ),
-              ),
 
-              // Date badge — top-left
-              Positioned(
-                top: 14,
-                left: 14,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: _E.card.withValues(alpha: 0.88),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _E.sep, width: 0.8),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        month,
-                        style: _E.f(
-                          size: 10,
-                          weight: FontWeight.w800,
-                          color: _E.lime,
-                          letterSpacing: 1.2,
-                        ),
+                  // Date badge — top-left
+                  Positioned(
+                    top: 14,
+                    left: 14,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _E.card.withValues(alpha: 0.88),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _E.sep, width: 0.8),
                       ),
-                      Text(
-                        day,
-                        style: _E.f(
-                          size: 22,
-                          weight: FontWeight.w800,
-                          color: _E.lbl1,
-                          height: 1.1,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Status badge — top-right
-              Positioned(
-                top: 14,
-                right: 14,
-                child: _statusBadge(isPublished, status),
-              ),
-            ],
-          ),
-
-          // ── Content ─────────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                Text(
-                  widget.eventData.title ?? "",
-                  style: _E.f(
-                    size: 20,
-                    weight: FontWeight.w800,
-                    color: _E.lbl1,
-                    letterSpacing: -0.5,
-                    height: 1.2,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                const SizedBox(height: 12),
-
-                // Meta row — date/time + location in a single card
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: _E.card2,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _E.sep, width: 0.8),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.access_time_rounded,
-                              color: _E.lime, size: 14),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              eventfDt,
-                              style: _E.f(size: 13, color: _E.lbl2),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
+                          Text(month, style: _E.f(size: 10, weight: FontWeight.w800, color: _E.lime, letterSpacing: 1.2)),
+                          Text(day,   style: _E.f(size: 22, weight: FontWeight.w800, color: _E.lbl1, height: 1.1)),
                         ],
                       ),
-                      if ((widget.eventData.location ?? '').isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Divider(
-                              height: 1, thickness: 0.5, color: _E.sep),
+                    ),
+                  ),
+
+                  // Status badge — top-right
+                  Positioned(
+                    top: 14,
+                    right: 14,
+                    child: _statusBadge(isPublished, status),
+                  ),
+
+                  // Title + meta — anchored to bottom of image
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 16,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.eventData.title ?? '',
+                          style: _E.f(
+                            size: 21,
+                            weight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 10),
                         Row(
                           children: [
-                            Icon(Icons.location_on_outlined,
-                                color: _E.lime, size: 14),
-                            const SizedBox(width: 8),
+                            const Icon(Icons.access_time_rounded, color: _E.lime, size: 13),
+                            const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                '${widget.eventData.location}',
-                                style: _E.f(size: 13, color: _E.lbl3),
+                                eventfDt,
+                                style: _E.f(size: 12, color: Colors.white.withValues(alpha: 0.75)),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                // Super-admin actions
-                if (prov.isSuperAdmin) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      // Publish toggle
-                      GestureDetector(
-                        onTap: () async => await showPublish(
-                            eventId: widget.eventData.id ?? "_"),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: isPublished
-                                ? const Color(0xFF30D158).withValues(alpha: 0.12)
-                                : _E.card3.withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isPublished
-                                  ? const Color(0xFF30D158).withValues(alpha: 0.4)
-                                  : _E.lbl4,
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                        if ((widget.eventData.location ?? '').isNotEmpty) ...[
+                          const SizedBox(height: 5),
+                          Row(
                             children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  color: isPublished
-                                      ? const Color(0xFF30D158)
-                                      : _E.lbl4,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 7),
-                              Text(
-                                status.toUpperCase(),
-                                style: _E.f(
-                                  size: 11,
-                                  weight: FontWeight.w700,
-                                  color: isPublished
-                                      ? const Color(0xFF30D158)
-                                      : _E.lbl4,
-                                  letterSpacing: 0.6,
+                              const Icon(Icons.location_on_outlined, color: _E.lime, size: 13),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  widget.eventData.location!,
+                                  style: _E.f(size: 12, color: Colors.white.withValues(alpha: 0.60)),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                      const Spacer(),
-                      // Delete
-                      GestureDetector(
-                        onTap: () async => await showDeleteConfirm(
-                            eventId: widget.eventData.id ?? "_"),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFF453A).withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: const Color(0xFFFF453A).withValues(alpha: 0.35),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: const Icon(
-                            CupertinoIcons.delete,
-                            color: Color(0xFFFF453A),
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      ],
+                    ),
                   ),
                 ],
-              ],
+              ),
             ),
           ),
+
+          // ── Super-admin actions ──────────────────────────────────────────────
+          if (prov.isSuperAdmin)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () async => await showPublish(eventId: widget.eventData.id ?? '_'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: isPublished
+                            ? const Color(0xFF30D158).withValues(alpha: 0.12)
+                            : _E.card3.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isPublished
+                              ? const Color(0xFF30D158).withValues(alpha: 0.4)
+                              : _E.lbl4,
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6, height: 6,
+                            decoration: BoxDecoration(
+                              color: isPublished ? const Color(0xFF30D158) : _E.lbl4,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 7),
+                          Text(
+                            status.toUpperCase(),
+                            style: _E.f(
+                              size: 11,
+                              weight: FontWeight.w700,
+                              color: isPublished ? const Color(0xFF30D158) : _E.lbl4,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () async => await showDeleteConfirm(eventId: widget.eventData.id ?? '_'),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF453A).withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xFFFF453A).withValues(alpha: 0.35),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: const Icon(CupertinoIcons.delete, color: Color(0xFFFF453A), size: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
