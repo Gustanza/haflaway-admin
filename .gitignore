@@ -46,3 +46,4 @@ app.*.map.json
 
 # Access Control Stuff
 functions/
+haflaway_spa/
