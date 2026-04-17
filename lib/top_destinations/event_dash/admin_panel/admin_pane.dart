@@ -28,7 +28,7 @@ import 'package:intl/intl.dart';
 
 class _T {
   // Backgrounds
-  static const bg = Color(0xFF0A0A0A); // near-black page
+  static const bg = Color(0xFF0A0A0A); // near-black page  
   static const card = Color(0xFF141414); // card surface
   static const card2 = Color(0xFF1A1A1A); // slightly lighter card
 
