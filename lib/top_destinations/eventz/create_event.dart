@@ -122,6 +122,8 @@ class _CreateEventState extends State<CreateEvent> {
                                     ),
                                     sliver: SliverList(
                                       delegate: SliverChildListDelegate([
+                                        _titleBlock(),
+                                        const SizedBox(height: 8),
                                         _sectionThumbnail(),
                                         const SizedBox(height: 24),
                                         _sectionBasicInfo(),
@@ -151,6 +153,35 @@ class _CreateEventState extends State<CreateEvent> {
     );
   }
 
+  // ── Title Block ─────────────────────────────────────────────────────────
+  Widget _titleBlock() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.event == null ? 'Create Event' : 'Edit Event',
+            style: _T.f(
+              size: 28,
+              weight: FontWeight.w800,
+              color: _T.white,
+              letterSpacing: -0.8,
+              height: 1.12,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            widget.event == null
+                ? 'Fill in the details below to get started.'
+                : 'Update your event details below.',
+            style: _T.f(size: 13, color: _T.lbl3, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Section: Thumbnail ──────────────────────────────────────────────────
   Widget _sectionThumbnail() {
     return Column(
@@ -172,7 +203,7 @@ class _CreateEventState extends State<CreateEvent> {
             decoration: BoxDecoration(
               color: _T.card,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: _T.white.withOpacity(0.05)),
+              border: Border.all(color: _T.sep),
               image:
                   pichaBytes != null
                       ? DecorationImage(
@@ -201,7 +232,7 @@ class _CreateEventState extends State<CreateEvent> {
                         const SizedBox(height: 8),
                         Text(
                           'Upload Thumbnail',
-                          style: _T.f(size: 13, color: _T.grey1),
+                          style: _T.f(size: 13, color: _T.lbl2),
                         ),
                       ],
                     )
@@ -219,6 +250,7 @@ class _CreateEventState extends State<CreateEvent> {
       decoration: BoxDecoration(
         color: _T.card,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _T.sep, width: 0.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,6 +295,7 @@ class _CreateEventState extends State<CreateEvent> {
       decoration: BoxDecoration(
         color: _T.card,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _T.sep, width: 0.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,6 +353,7 @@ class _CreateEventState extends State<CreateEvent> {
       decoration: BoxDecoration(
         color: _T.card,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _T.sep, width: 0.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,11 +382,11 @@ class _CreateEventState extends State<CreateEvent> {
               fillColor: _T.bg,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+                borderSide: BorderSide(color: _T.sep),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+                borderSide: BorderSide(color: _T.sep),
               ),
             ),
             onSelected: (value) {
@@ -386,7 +420,7 @@ class _CreateEventState extends State<CreateEvent> {
       style: _T.f(
         size: 10,
         weight: FontWeight.w700,
-        color: _T.grey2,
+        color: _T.lbl3,
         letterSpacing: 1.2,
       ),
     );
@@ -407,7 +441,7 @@ class _CreateEventState extends State<CreateEvent> {
       children: [
         Text(
           label,
-          style: _T.f(size: 13, weight: FontWeight.w500, color: _T.grey1),
+          style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl2),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -420,7 +454,7 @@ class _CreateEventState extends State<CreateEvent> {
           style: _T.f(size: 15, color: _T.white),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: _T.f(size: 15, color: _T.grey3),
+            hintStyle: _T.f(size: 15, color: _T.lbl4),
             filled: true,
             fillColor: _T.bg,
             contentPadding: const EdgeInsets.symmetric(
@@ -430,11 +464,11 @@ class _CreateEventState extends State<CreateEvent> {
             suffixIcon: suffix,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+              borderSide: BorderSide(color: _T.sep),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+              borderSide: BorderSide(color: _T.sep),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -453,7 +487,7 @@ class _CreateEventState extends State<CreateEvent> {
       dropdownTextStyle: _T.f(size: 15, color: _T.white),
       decoration: InputDecoration(
         hintText: 'Phone Number',
-        hintStyle: _T.f(size: 15, color: _T.grey3),
+        hintStyle: _T.f(size: 15, color: _T.lbl4),
         filled: true,
         fillColor: _T.bg,
         contentPadding: const EdgeInsets.symmetric(
@@ -462,11 +496,11 @@ class _CreateEventState extends State<CreateEvent> {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+          borderSide: BorderSide(color: _T.sep),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+          borderSide: BorderSide(color: _T.sep),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -569,7 +603,7 @@ class _CreateEventState extends State<CreateEvent> {
             width: 36,
             height: 5,
             decoration: BoxDecoration(
-              color: _T.grey2.withOpacity(0.5),
+              color: _T.lbl3.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(10),
             ),
           ),
@@ -582,11 +616,11 @@ class _CreateEventState extends State<CreateEvent> {
             children: [
               Text(
                 "Choose Category",
-                style: _T.f(size: 24, weight: FontWeight.w800, color: _T.white),
+                style: _T.f(size: 18, weight: FontWeight.w800, color: _T.white),
               ),
               IconButton(
                 onPressed: popper,
-                icon: Icon(Icons.close_rounded, color: _T.grey1, size: 24),
+                icon: Icon(Icons.close_rounded, color: _T.lbl2, size: 24),
               ),
             ],
           ),
@@ -595,7 +629,7 @@ class _CreateEventState extends State<CreateEvent> {
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Divider(color: _T.grey2.withOpacity(0.3), height: 1),
+          child: Divider(color: _T.lbl3.withValues(alpha: 0.3), height: 1),
         ),
         const SizedBox(height: 16),
 
@@ -609,7 +643,7 @@ class _CreateEventState extends State<CreateEvent> {
               final isSelected = fEventCatId == cat.id;
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: InkWell(
                   onTap: () {
                     safeState(() {
@@ -623,23 +657,23 @@ class _CreateEventState extends State<CreateEvent> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                     decoration: BoxDecoration(
                       color:
                           isSelected
-                              ? _T.lime.withOpacity(0.15)
-                              : _T.white.withOpacity(0.04),
-                      borderRadius: BorderRadius.circular(20),
+                              ? _T.lime.withValues(alpha: 0.15)
+                              : _T.card2,
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color:
-                            isSelected ? _T.lime : _T.white.withOpacity(0.08),
-                        width: isSelected ? 2 : 1,
+                            isSelected ? _T.lime : _T.sep,
+                        width: isSelected ? 1.5 : 0.8,
                       ),
                       boxShadow:
                           isSelected
                               ? [
                                 BoxShadow(
-                                  color: _T.lime.withOpacity(0.1),
+                                  color: _T.lime.withValues(alpha: 0.1),
                                   blurRadius: 20,
                                   spreadRadius: -4,
                                 ),
@@ -649,21 +683,22 @@ class _CreateEventState extends State<CreateEvent> {
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          width: 44,
+                          height: 44,
                           decoration: BoxDecoration(
                             color:
                                 isSelected
-                                    ? _T.lime
-                                    : _T.grey2.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(14),
+                                    ? _T.lime.withValues(alpha: 0.12)
+                                    : _T.card3,
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
                             _getCatIcon(cat.name),
-                            color: isSelected ? Colors.black : _T.white,
-                            size: 22,
+                            color: isSelected ? _T.lime : _T.lbl2,
+                            size: 20,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -671,35 +706,28 @@ class _CreateEventState extends State<CreateEvent> {
                               Text(
                                 cat.name,
                                 style: _T.f(
-                                  size: 17,
-                                  weight:
-                                      isSelected
-                                          ? FontWeight.w800
-                                          : FontWeight.w600,
-                                  color: isSelected ? _T.lime : _T.white,
+                                  size: 14,
+                                  weight: FontWeight.w700,
+                                  color: isSelected ? _T.lime : _T.lbl1,
                                 ),
                               ),
                               if (isSelected)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    "Selected",
-                                    style: _T.f(
-                                      size: 11,
-                                      color: _T.lime.withOpacity(0.8),
-                                      weight: FontWeight.w500,
-                                    ),
+                                Text(
+                                  "Selected",
+                                  style: _T.f(
+                                    size: 12,
+                                    color: _T.lbl3,
+                                    height: 1.35,
                                   ),
                                 ),
                             ],
                           ),
                         ),
-                        if (isSelected)
-                          const Icon(
-                            Icons.check_circle_rounded,
-                            color: _T.lime,
-                            size: 24,
-                          ),
+                        const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: _T.lbl4,
+                          size: 12,
+                        ),
                       ],
                     ),
                   ),
@@ -716,37 +744,52 @@ class _CreateEventState extends State<CreateEvent> {
   // ── Top Bar ──────────────────────────────────────────────────────────────────
   Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 4),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: _T.lime,
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  widget.event == null ? 'Create Event' : 'Edit Event',
-                  style: _T.f(
-                    size: 15,
-                    weight: FontWeight.w500,
-                    color: _T.white,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _T.sep, width: 0.8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: _T.lime,
+                    size: 13,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 5),
+                  Text(
+                    'Back',
+                    style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl1),
+                  ),
+                ],
+              ),
             ),
           ),
           const Spacer(),
           GestureDetector(
             onTap: () => saver(),
-            child: Text(
-              'Save',
-              style: _T.f(size: 15, weight: FontWeight.w600, color: _T.lime),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: _T.limeDim,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: _T.lime.withValues(alpha: 0.35),
+                  width: 0.8,
+                ),
+              ),
+              child: Text(
+                widget.event == null ? 'Create' : 'Save',
+                style: _T.f(size: 13, weight: FontWeight.w700, color: _T.lime),
+              ),
             ),
           ),
         ],
@@ -897,22 +940,27 @@ class _CreateEventState extends State<CreateEvent> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Design Tokens (Apple / Obsidian Hybrid)
+// Design Tokens  ·  Apple-dark, not pitch-black
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _T {
-  static const bg = Color(0xFF0A0A0A);
-  static const card = Color(0xFF141414);
-  static const lime = Color(0xFFC9A84C);
+  static const bg    = Color(0xFF111114);
+  static const card  = Color(0xFF1C1C1E);
+  static const card2 = Color(0xFF28282C);
+  static const card3 = Color(0xFF3A3A3C);
+  static const sep   = Color(0xFF2C2C2E);
+  static const lime    = Color(0xFFC9A84C);
+  static const limeDim = Color(0xFF2A2210);
   static const white = Color(0xFFFFFFFF);
-  static const grey1 = Color(0xFFAAAAAA);
-  static const grey2 = Color(0xFF555555);
-  static const grey3 = Color(0xFF333333);
+  static const lbl1  = Color(0xFFEEEEF0);
+  static const lbl2  = Color(0xFFAEAEB2);
+  static const lbl3  = Color(0xFF8E8E93);
+  static const lbl4  = Color(0xFF48484A);
 
   static TextStyle f({
     double size = 14,
     FontWeight weight = FontWeight.w400,
-    Color color = white,
+    Color color = lbl1,
     double letterSpacing = 0,
     double? height,
   }) => GoogleFonts.inter(
@@ -938,7 +986,7 @@ class _GusOrb extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withOpacity(opacity),
+        color: color.withValues(alpha: opacity),
       ),
       child: ClipOval(
         child: BackdropFilter(

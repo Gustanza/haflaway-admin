@@ -8,7 +8,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:haflaway/components/buttons.dart';
-import 'package:haflaway/components/custom_popup_btn.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/wsap.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
@@ -335,164 +334,405 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   }
 
   getMainBuild() {
-    return bildPopupMenu(
-      icon: Icon(Icons.exit_to_app_outlined),
-      popItems: [
-        PopClickers(
-          leading: Icon(Icons.summarize),
-          title: Text("Summary"),
-          onTap: showQuickStats,
-        ),
-        PopClickers(
-          leading: Icon(Icons.list_alt_rounded),
-          title: Text("Manage Lists"),
-          onTap: () => showLabelManager(context, widget.edata),
-        ),
-        if (widget.kardType == KardType.invitation ||
-            widget.kardType == KardType.contribution)
-          PopClickers(
-            leading: Icon(Icons.mail),
-            title: Text("Send Card"),
-            onTap: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return InvitesIssuers(
-                      event: widget.edata,
-                      kardType: widget.kardType,
-                      campaignId:
-                          widget.kardType == KardType.invitation
-                              ? invCampId
-                              : contrCampId,
-                    );
-                  },
-                ),
-              );
-              _loadAttendees();
-            },
-          ),
-        if (widget.kardType == KardType.invitation)
-          PopClickers(
-            leading: Icon(Icons.mail),
-            title: Text("Send Reminder"),
-            onTap: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return InvitesIssuers(
-                      event: widget.edata,
-                      kardType: widget.kardType,
-                      campaignId: invRemCampId,
-                    );
-                  },
-                ),
-              );
-              _loadAttendees();
-            },
-          ),
-        PopClickers(
-          leading: Icon(Icons.sms),
-          title: Text("Send Bulk SMS"),
-          onTap: () async {
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) {
-                  return AdminCampaigns(
-                    event: widget.edata,
-                    title: "Send Bulk SMS",
-                    kardType: widget.kardType,
-                  );
-                },
-              ),
-            );
-            _loadAttendees();
-          },
-        ),
+    return GestureDetector(
+      onTap: _showMainSheet,
+      child: const Icon(Icons.more_horiz_rounded, color: _T.lime, size: 22),
+    );
+  }
 
-        // PopClickers(
-        //   leading: Icon(Icons.sms),
-        //   title: Text("Rekebisha Atts"),
-        //   onTap: () async {
-        //     try {
-        //       firestore
-        //           .collection(ecol)
-        //           .doc(widget.edata.id)
-        //           .collection(atcol)
-        //           .get()
-        //           .then((snapshot) {
-        //             for (var doc in snapshot.docs) {
-        //               debugPrint("Look: ${doc['fullName'].toLowerCase()}");
-        //               doc.reference.set({
-        //                 "fullNameLower": doc['fullName'].toLowerCase(),
-        //               }, SetOptions(merge: true));
-        //             }
-        //           });
-        //     } catch (e) {
-        //       debugPrint("Shida: $e");
-        //     }
-        //   },
-        // ),
-      ],
+  void _showMainSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => modalBtmSheet(
+        bdrdm: 28,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 22),
+                    decoration: BoxDecoration(
+                      color: _T.card3,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(11),
+                      decoration: BoxDecoration(
+                        color: _T.lime.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.dashboard_rounded,
+                        color: _T.lime,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Event Tools",
+                          style: _T.f(
+                            size: 18,
+                            weight: FontWeight.w800,
+                            color: _T.white,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        Text(
+                          "Analytics & communications",
+                          style: _T.f(size: 12, color: _T.lbl3),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // ── Analytics ──
+                _sheetSectionLabel("Analytics"),
+                const SizedBox(height: 10),
+                _sheetTile(
+                  icon: Icons.bar_chart_rounded,
+                  color: const Color(0xFF5E5CE6),
+                  title: "Summary",
+                  subtitle: "Attendance stats and full breakdown",
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    showQuickStats();
+                  },
+                ),
+                const SizedBox(height: 10),
+                _sheetTile(
+                  icon: Icons.label_rounded,
+                  color: _T.lime,
+                  title: "Manage Lists",
+                  subtitle: "Create and organise guest groups",
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    showLabelManager(context, widget.edata);
+                  },
+                ),
+
+                // ── Communications ──
+                const SizedBox(height: 22),
+                _sheetSectionLabel("Communications"),
+                const SizedBox(height: 10),
+                Column(
+                  children: [
+                    if (widget.kardType == KardType.invitation ||
+                        widget.kardType == KardType.contribution) ...[
+                      _sheetTile(
+                        icon: Icons.mark_email_unread_rounded,
+                        color: const Color(0xFF5AC8FA),
+                        title: "Send Card",
+                        subtitle: widget.kardType == KardType.invitation
+                            ? "Dispatch digital invitation cards"
+                            : "Send contribution cards to guests",
+                        onTap: () async {
+                          Navigator.pop(ctx);
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => InvitesIssuers(
+                                event: widget.edata,
+                                kardType: widget.kardType,
+                                campaignId: widget.kardType ==
+                                        KardType.invitation
+                                    ? invCampId
+                                    : contrCampId,
+                              ),
+                            ),
+                          );
+                          _loadAttendees();
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    if (widget.kardType == KardType.invitation) ...[
+                      _sheetTile(
+                        icon: Icons.notifications_active_rounded,
+                        color: const Color(0xFFFF9F0A),
+                        title: "Send Reminder",
+                        subtitle: "Nudge guests who haven't responded",
+                        onTap: () async {
+                          Navigator.pop(ctx);
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => InvitesIssuers(
+                                event: widget.edata,
+                                kardType: widget.kardType,
+                                campaignId: invRemCampId,
+                              ),
+                            ),
+                          );
+                          _loadAttendees();
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    _sheetTile(
+                      icon: Icons.sms_rounded,
+                      color: const Color(0xFF30D158),
+                      title: "Send Bulk SMS",
+                      subtitle: "Text message all or filtered guests",
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => AdminCampaigns(
+                              event: widget.edata,
+                              title: "Send Bulk SMS",
+                              kardType: widget.kardType,
+                            ),
+                          ),
+                        );
+                        _loadAttendees();
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
   getMiniBuild() {
-    return bildPopupMenu(
-      icon: Icon(Icons.group_add),
-      popItems: [
-        PopClickers(
-          leading: Icon(Icons.group_add),
-          title: Text(
-            widget.kardType == KardType.invitation
-                ? "Add Invitee"
-                : widget.kardType == KardType.contribution
-                ? "Add Contributor"
-                : widget.kardType == KardType.contact
-                ? "Add Contact"
-                : "",
+    return GestureDetector(
+      onTap: _showMiniSheet,
+      child: const Icon(Icons.group_add_rounded, color: _T.lime, size: 22),
+    );
+  }
+
+  void _showMiniSheet() {
+    final entityLabel = widget.kardType == KardType.invitation
+        ? "Invitee"
+        : widget.kardType == KardType.contribution
+            ? "Contributor"
+            : "Contact";
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => modalBtmSheet(
+        bdrdm: 28,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 22),
+                    decoration: BoxDecoration(
+                      color: _T.card3,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(11),
+                      decoration: BoxDecoration(
+                        color: _T.lime.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.group_add_rounded,
+                        color: _T.lime,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Add $entityLabel",
+                          style: _T.f(
+                            size: 18,
+                            weight: FontWeight.w800,
+                            color: _T.white,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        Text(
+                          "Choose how to add guests",
+                          style: _T.f(size: 12, color: _T.lbl3),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                _sheetTile(
+                  icon: Icons.person_add_alt_1_rounded,
+                  color: _T.lime,
+                  title: "Add Manually",
+                  subtitle: "Enter guest details one by one",
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final title = widget.kardType == KardType.invitation
+                        ? "Invitation"
+                        : widget.kardType == KardType.contribution
+                            ? "Contributor"
+                            : "Contact";
+                    await navNormal(
+                      context: context,
+                      widget: CreateAttendees(
+                        event: widget.edata,
+                        title: title,
+                        kardType: widget.kardType,
+                      ),
+                    );
+                    _loadAttendees();
+                  },
+                ),
+                const SizedBox(height: 10),
+                _sheetTile(
+                  icon: Icons.upload_file_rounded,
+                  color: const Color(0xFF5AC8FA),
+                  title: "Upload Spreadsheet",
+                  subtitle: "Import guests from an Excel file",
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    importFile();
+                  },
+                ),
+                if (widget.kardType == KardType.invitation) ...[
+                  const SizedBox(height: 10),
+                  _sheetTile(
+                    icon: Icons.monetization_on_rounded,
+                    color: const Color(0xFFFF9F0A),
+                    title: "Import from Contributors",
+                    subtitle: "Pull in existing contributors as guests",
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      showSelectCard(isContactImport: false);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _sheetTile(
+                    icon: Icons.contacts_rounded,
+                    color: const Color(0xFF30D158),
+                    title: "Import from Contacts",
+                    subtitle: "Bring in saved contacts as guests",
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      showSelectCard(isContactImport: true);
+                    },
+                  ),
+                ],
+                const SizedBox(height: 4),
+              ],
+            ),
           ),
-          onTap: () async {
-            String title =
-                widget.kardType == KardType.invitation
-                    ? "Invitation"
-                    : widget.kardType == KardType.contribution
-                    ? "Contributor"
-                    : "Contact";
-            await navNormal(
-              context: context,
-              widget: CreateAttendees(
-                event: widget.edata,
-                title: title,
-                kardType: widget.kardType,
+        ),
+      ),
+    );
+  }
+
+  // ── Shared sheet helpers ─────────────────────────────────────────────────
+
+  Widget _sheetTile({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: _T.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _T.sep, width: 0.8),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
-            );
-            _loadAttendees();
-          },
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: _T.f(
+                      size: 14,
+                      weight: FontWeight.w700,
+                      color: _T.lbl1,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: _T.f(size: 12, color: _T.lbl3, height: 1.35),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: _T.lbl4,
+              size: 12,
+            ),
+          ],
         ),
-        PopClickers(
-          leading: Icon(Icons.note_add_rounded),
-          title: Text("Upload File"),
-          onTap: () {
-            importFile();
-          },
-        ),
-        if (widget.kardType == KardType.invitation) ...[
-          PopClickers(
-            leading: Icon(Icons.monetization_on_sharp),
-            title: Text("Import from Contributors"),
-            onTap: () {
-              showSelectCard(isContactImport: false);
-            },
-          ),
-          PopClickers(
-            leading: Icon(Icons.contact_phone_rounded),
-            title: Text("Import from Contacts"),
-            onTap: () {
-              showSelectCard(isContactImport: true);
-            },
-          ),
-        ],
-      ],
+      ),
+    );
+  }
+
+  Widget _sheetSectionLabel(String label) {
+    return Text(
+      label.toUpperCase(),
+      style: _T.f(
+        size: 10,
+        weight: FontWeight.w800,
+        color: _T.lbl4,
+        letterSpacing: 1.0,
+      ),
     );
   }
 
@@ -727,7 +967,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
             GestureDetector(
               onTap: () => Navigator.of(context).pop(),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: _T.card,
                   borderRadius: BorderRadius.circular(20),
@@ -736,9 +979,20 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.arrow_back_ios_new_rounded, color: _T.lime, size: 13),
+                    const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: _T.lime,
+                      size: 13,
+                    ),
                     const SizedBox(width: 5),
-                    Text('Back', style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl1)),
+                    Text(
+                      'Back',
+                      style: _T.f(
+                        size: 13,
+                        weight: FontWeight.w500,
+                        color: _T.lbl1,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -790,7 +1044,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       },
                       child: Text(
                         "Cancel",
-                        style: _T.f(size: 14, weight: FontWeight.w600, color: _T.lime),
+                        style: _T.f(
+                          size: 14,
+                          weight: FontWeight.w600,
+                          color: _T.lime,
+                        ),
                       ),
                     ),
                   ),
@@ -809,7 +1067,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         children: [
           Text(
             widget.title,
-            style: _T.f(size: 28, weight: FontWeight.w800, color: _T.white, letterSpacing: -0.8, height: 1.12),
+            style: _T.f(
+              size: 28,
+              weight: FontWeight.w800,
+              color: _T.white,
+              letterSpacing: -0.8,
+              height: 1.12,
+            ),
           ),
           const SizedBox(height: 6),
           _buildListHeader(atList.length),
@@ -943,10 +1207,21 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             color: _T.lime.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.tune_rounded, color: _T.lime, size: 18),
+                          child: const Icon(
+                            Icons.tune_rounded,
+                            color: _T.lime,
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 12),
-                        Text("Filter Guests", style: _T.f(size: 18, weight: FontWeight.w700, color: _T.lbl1)),
+                        Text(
+                          "Filter Guests",
+                          style: _T.f(
+                            size: 18,
+                            weight: FontWeight.w700,
+                            color: _T.lbl1,
+                          ),
+                        ),
                         const Spacer(),
                         if (_selectedKardFilter != null ||
                             _attendanceFilter != "All" ||
@@ -961,15 +1236,27 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                               Navigator.pop(context);
                               _loadAttendees();
                             },
-                            icon: const Icon(Icons.refresh_rounded, size: 15, color: Colors.redAccent),
+                            icon: const Icon(
+                              Icons.refresh_rounded,
+                              size: 15,
+                              color: Colors.redAccent,
+                            ),
                             label: Text(
                               "Clear",
-                              style: _T.f(size: 13, color: Colors.redAccent, weight: FontWeight.w600),
+                              style: _T.f(
+                                size: 13,
+                                color: Colors.redAccent,
+                                weight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: Icon(Icons.close_rounded, color: _T.lbl3, size: 20),
+                          icon: Icon(
+                            Icons.close_rounded,
+                            color: _T.lbl3,
+                            size: 20,
+                          ),
                         ),
                       ],
                     ),
@@ -1139,7 +1426,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               const SizedBox(width: 10),
               Text(
                 title,
-                style: _T.f(size: 13, weight: FontWeight.w700, color: _T.lbl2, letterSpacing: 0.4),
+                style: _T.f(
+                  size: 13,
+                  weight: FontWeight.w700,
+                  color: _T.lbl2,
+                  letterSpacing: 0.4,
+                ),
               ),
             ],
           ),
@@ -1240,7 +1532,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           children: [
             Icon(icon, color: color, size: 15),
             const SizedBox(width: 6),
-            Text(label, style: _T.f(size: 13, weight: FontWeight.w600, color: color)),
+            Text(
+              label,
+              style: _T.f(size: 13, weight: FontWeight.w600, color: color),
+            ),
           ],
         ),
       ),
@@ -1295,11 +1590,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
         _selectedKardFilter != null ||
         _attendanceFilter != "All" ||
         _labelFilterId != null;
-    final String entity = widget.kardType == KardType.invitation
-        ? 'Invitees'
-        : widget.kardType == KardType.contribution
-        ? 'Contributors'
-        : 'Contacts';
+    final String entity =
+        widget.kardType == KardType.invitation
+            ? 'Invitees'
+            : widget.kardType == KardType.contribution
+            ? 'Contributors'
+            : 'Contacts';
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -1315,11 +1611,19 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 color: _T.limeDim,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: _T.lime.withValues(alpha: 0.3), width: 0.6),
+                border: Border.all(
+                  color: _T.lime.withValues(alpha: 0.3),
+                  width: 0.6,
+                ),
               ),
               child: Text(
                 "Filtered",
-                style: _T.f(size: 10, weight: FontWeight.w700, color: _T.lime, letterSpacing: 0.5),
+                style: _T.f(
+                  size: 10,
+                  weight: FontWeight.w700,
+                  color: _T.lime,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
           ],
@@ -1891,13 +2195,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     _buildMappingRow(
                       icon: Icons.person_outline,
                       label: "Name",
-                      dropdown: buildDrop(sels, impname),
+                      dropdown: buildDrop(sels, impname, setAltState),
                     ),
                     const SizedBox(height: 16),
                     _buildMappingRow(
                       icon: Icons.phone_android_outlined,
                       label: "Phone",
-                      dropdown: buildDrop(sels, impphone),
+                      dropdown: buildDrop(sels, impphone, setAltState),
                     ),
 
                     if (widget.kardType == KardType.contribution ||
@@ -1919,7 +2223,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             ),
                             if (_mapAhadi) ...[
                               const SizedBox(width: 8),
-                              Expanded(child: buildDrop(sels, impahadi)),
+                              Expanded(
+                                child: buildDrop(sels, impahadi, setAltState),
+                              ),
                             ],
                           ],
                         ),
@@ -1941,7 +2247,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             ),
                             if (_mapMchango) ...[
                               const SizedBox(width: 8),
-                              Expanded(child: buildDrop(sels, impmchango)),
+                              Expanded(
+                                child: buildDrop(sels, impmchango, setAltState),
+                              ),
                             ],
                           ],
                         ),
@@ -2037,7 +2345,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     );
   }
 
-  Widget buildDrop(Map sels, TextEditingController mapcont) {
+  Widget buildDrop(
+    Map sels,
+    TextEditingController mapcont, [
+    StateSetter? altState,
+  ]) {
     // Current value from the controller
     dynamic currentKey;
     try {
@@ -2056,15 +2368,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<dynamic>(
           value: sels.containsKey(currentKey) ? currentKey : null,
-          hint: Text(
-            "Select Source",
-            style: _T.f(size: 13, color: _T.lbl4),
-          ),
+          hint: Text("Select Source", style: _T.f(size: 13, color: _T.lbl4)),
           dropdownColor: _T.card,
           icon: const Icon(Icons.expand_more_rounded, color: _T.lime, size: 20),
           isExpanded: true,
           onChanged: (val) {
-            setState(() {
+            (altState ?? setState)(() {
               mapcont.text = "$val";
             });
           },
@@ -2171,25 +2480,44 @@ class _HeroCard extends StatelessWidget {
                       color: _T.lime.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(9),
                     ),
-                    child: const Icon(Icons.account_balance_wallet_outlined, color: _T.lime, size: 15),
+                    child: const Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: _T.lime,
+                      size: 15,
+                    ),
                   ),
                   const SizedBox(width: 9),
                   Text(
                     'CONTRIBUTIONS',
-                    style: _T.f(size: 11, weight: FontWeight.w700, color: _T.lbl3, letterSpacing: 1.1),
+                    style: _T.f(
+                      size: 11,
+                      weight: FontWeight.w700,
+                      color: _T.lbl3,
+                      letterSpacing: 1.1,
+                    ),
                   ),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: _T.limeDim,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _T.lime.withValues(alpha: 0.3), width: 0.6),
+                  border: Border.all(
+                    color: _T.lime.withValues(alpha: 0.3),
+                    width: 0.6,
+                  ),
                 ),
                 child: Text(
                   '${(pct * 100).round()}%',
-                  style: _T.f(size: 13, weight: FontWeight.w800, color: _T.lime),
+                  style: _T.f(
+                    size: 13,
+                    weight: FontWeight.w800,
+                    color: _T.lime,
+                  ),
                 ),
               ),
             ],
@@ -2197,7 +2525,13 @@ class _HeroCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             formatMoney(totalPaid, currency: "TZS"),
-            style: _T.f(size: 28, weight: FontWeight.w800, color: _T.white, letterSpacing: -1.2, height: 1.0),
+            style: _T.f(
+              size: 28,
+              weight: FontWeight.w800,
+              color: _T.white,
+              letterSpacing: -1.2,
+              height: 1.0,
+            ),
           ),
           const SizedBox(height: 16),
           // Gradient progress bar
@@ -2243,22 +2577,22 @@ class _HeroCard extends StatelessWidget {
 
 class _T {
   // Backgrounds
-  static const bg    = Color(0xFF111114);
-  static const card  = Color(0xFF1C1C1E);
+  static const bg = Color(0xFF111114);
+  static const card = Color(0xFF1C1C1E);
   static const card2 = Color(0xFF28282C);
   static const card3 = Color(0xFF3A3A3C);
-  static const sep   = Color(0xFF2C2C2E);
+  static const sep = Color(0xFF2C2C2E);
 
   // Accent
-  static const lime    = Color(0xFFC9A84C);
+  static const lime = Color(0xFFC9A84C);
   static const limeDim = Color(0xFF2A2210);
 
   // Text hierarchy
   static const white = Color(0xFFFFFFFF);
-  static const lbl1  = Color(0xFFEEEEF0);
-  static const lbl2  = Color(0xFFAEAEB2);
-  static const lbl3  = Color(0xFF8E8E93);
-  static const lbl4  = Color(0xFF48484A);
+  static const lbl1 = Color(0xFFEEEEF0);
+  static const lbl2 = Color(0xFFAEAEB2);
+  static const lbl3 = Color(0xFF8E8E93);
+  static const lbl4 = Color(0xFF48484A);
 
   // Compat shorthands
   static Color get grey2 => lbl3;
@@ -2329,7 +2663,11 @@ class _PendingBanner extends StatelessWidget {
               color: _orange.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.auto_awesome_rounded, color: _orange, size: 16),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              color: _orange,
+              size: 16,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -2338,7 +2676,11 @@ class _PendingBanner extends StatelessWidget {
               children: [
                 Text(
                   "Generating Cards",
-                  style: _T.f(size: 13, weight: FontWeight.w700, color: _T.lbl1),
+                  style: _T.f(
+                    size: 13,
+                    weight: FontWeight.w700,
+                    color: _T.lbl1,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -2356,7 +2698,10 @@ class _PendingBanner extends StatelessWidget {
               decoration: BoxDecoration(
                 color: _orange.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: _orange.withValues(alpha: 0.3), width: 0.6),
+                border: Border.all(
+                  color: _orange.withValues(alpha: 0.3),
+                  width: 0.6,
+                ),
               ),
               child: Text(
                 "Refresh",

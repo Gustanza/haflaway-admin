@@ -29,24 +29,24 @@ import 'package:intl/intl.dart';
 
 class _T {
   // Backgrounds — lifted from 0x0A to give real depth layers
-  static const bg    = Color(0xFF111114); // page canvas
-  static const card  = Color(0xFF1C1C1E); // Apple systemGray6 dark surface
+  static const bg = Color(0xFF111114); // page canvas
+  static const card = Color(0xFF1C1C1E); // Apple systemGray6 dark surface
   static const card2 = Color(0xFF28282C); // elevated card
   static const card3 = Color(0xFF3A3A3C); // interactive / pressed
 
   // Borders & separators
-  static const sep   = Color(0xFF2C2C2E); // Apple separator dark
+  static const sep = Color(0xFF2C2C2E); // Apple separator dark
 
   // Accent — golden amber
-  static const lime    = Color(0xFFC9A84C);
+  static const lime = Color(0xFFC9A84C);
   static const limeDim = Color(0xFF2A2210); // warm amber dim
 
   // Text hierarchy (matches Apple HIG dark)
   static const white = Color(0xFFFFFFFF);
-  static const lbl1  = Color(0xFFEEEEF0); // primary label
-  static const lbl2  = Color(0xFFAEAEB2); // secondary label
-  static const lbl3  = Color(0xFF8E8E93); // tertiary label
-  static const lbl4  = Color(0xFF48484A); // quaternary / disabled
+  static const lbl1 = Color(0xFFEEEEF0); // primary label
+  static const lbl2 = Color(0xFFAEAEB2); // secondary label
+  static const lbl3 = Color(0xFF8E8E93); // tertiary label
+  static const lbl4 = Color(0xFF48484A); // quaternary / disabled
 
   // ── Typography ─────────────────────────────────────────────────────────────
   static TextStyle f({
@@ -55,14 +55,13 @@ class _T {
     Color color = white,
     double letterSpacing = 0,
     double? height,
-  }) =>
-      GoogleFonts.inter(
-        fontSize: size,
-        fontWeight: weight,
-        color: color,
-        letterSpacing: letterSpacing,
-        height: height,
-      );
+  }) => GoogleFonts.inter(
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -109,12 +108,27 @@ class _AdminPanelState extends State<AdminPanel> {
       hasError = false;
     });
     try {
-      final eventRef   = firestore.collection(ecol).doc(widget.eventO.id);
-      final attsRef    = firestore.collection(ecol).doc(widget.eventO.id).collection(atcol);
-      final cardsRef   = firestore.collection(ecol).doc(widget.eventO.id).collection(cardcol);
-      final msgsRef    = firestore.collection(ecol).doc(widget.eventO.id).collection(evMsgTmpCol);
-      final checkPointsRef = firestore.collection(ecol).doc(widget.eventO.id).collection(echecksub);
-      final galleryRef = firestore.collection(ecol).doc(widget.eventO.id).collection(egalsub);
+      final eventRef = firestore.collection(ecol).doc(widget.eventO.id);
+      final attsRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id)
+          .collection(atcol);
+      final cardsRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id)
+          .collection(cardcol);
+      final msgsRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id)
+          .collection(evMsgTmpCol);
+      final checkPointsRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id)
+          .collection(echecksub);
+      final galleryRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id)
+          .collection(egalsub);
 
       final result = await Future.wait([
         eventRef.get(),
@@ -125,41 +139,60 @@ class _AdminPanelState extends State<AdminPanel> {
         galleryRef.count().get(),
       ]);
 
-      final eventSnapshot    = result[0] as DocumentSnapshot<Map<String, dynamic>>;
-      final attsSnapshot     = result[1] as QuerySnapshot<Map<String, dynamic>>;
-      final crdsSnapshot     = result[2] as AggregateQuerySnapshot;
-      final msgsSnapshot     = result[3] as AggregateQuerySnapshot;
+      final eventSnapshot = result[0] as DocumentSnapshot<Map<String, dynamic>>;
+      final attsSnapshot = result[1] as QuerySnapshot<Map<String, dynamic>>;
+      final crdsSnapshot = result[2] as AggregateQuerySnapshot;
+      final msgsSnapshot = result[3] as AggregateQuerySnapshot;
       final checkPnsSnapshot = result[4] as QuerySnapshot<Map<String, dynamic>>;
-      final galSnapshot      = result[5] as AggregateQuerySnapshot;
+      final galSnapshot = result[5] as AggregateQuerySnapshot;
 
-      invsCount = attsSnapshot.docs
-          .where((t) => Attendee.fromMap(t.id, t.data()).cards.containsKey(KardType.invitation.name))
-          .length;
-      contsCount = attsSnapshot.docs
-          .where((t) => Attendee.fromMap(t.id, t.data()).cards.containsKey(KardType.contribution.name))
-          .length;
-      contactsCount = attsSnapshot.docs
-          .where((t) => Attendee.fromMap(t.id, t.data()).cards.containsKey(KardType.contact.name))
-          .length;
-      checkpoints = checkPnsSnapshot.docs.map<CheckPoint>((el) {
-        return CheckPoint.fromMap(el.id, el.data());
-      }).toList();
+      invsCount =
+          attsSnapshot.docs
+              .where(
+                (t) => Attendee.fromMap(
+                  t.id,
+                  t.data(),
+                ).cards.containsKey(KardType.invitation.name),
+              )
+              .length;
+      contsCount =
+          attsSnapshot.docs
+              .where(
+                (t) => Attendee.fromMap(
+                  t.id,
+                  t.data(),
+                ).cards.containsKey(KardType.contribution.name),
+              )
+              .length;
+      contactsCount =
+          attsSnapshot.docs
+              .where(
+                (t) => Attendee.fromMap(
+                  t.id,
+                  t.data(),
+                ).cards.containsKey(KardType.contact.name),
+              )
+              .length;
+      checkpoints =
+          checkPnsSnapshot.docs.map<CheckPoint>((el) {
+            return CheckPoint.fromMap(el.id, el.data());
+          }).toList();
 
-      event          = Event.fromMap(eventSnapshot.id, eventSnapshot.data()!);
-      cardTempsNo    = crdsSnapshot.count ?? 0;
-      evMsgTmpCount  = msgsSnapshot.count ?? 0;
-      galleryCount   = galSnapshot.count ?? 0;
-      adminsCount    = event?.adminsIds?.length ?? 0;
-      scannersCount  = event?.usersIds?.length ?? 0;
+      event = Event.fromMap(eventSnapshot.id, eventSnapshot.data()!);
+      cardTempsNo = crdsSnapshot.count ?? 0;
+      evMsgTmpCount = msgsSnapshot.count ?? 0;
+      galleryCount = galSnapshot.count ?? 0;
+      adminsCount = event?.adminsIds?.length ?? 0;
+      scannersCount = event?.usersIds?.length ?? 0;
 
       safeState(() {
         isLoading = false;
-        hasError  = false;
+        hasError = false;
       });
     } catch (e) {
       safeState(() {
         isLoading = false;
-        hasError  = true;
+        hasError = true;
       });
       debugPrint('AdminPanel error: $e');
     }
@@ -168,7 +201,9 @@ class _AdminPanelState extends State<AdminPanel> {
   String _formattedDate() {
     try {
       if (event?.startDate != null) {
-        return DateFormat('EEE, MMM d · h:mm a').format(DateTime.parse(event!.startDate!));
+        return DateFormat(
+          'EEE, MMM d · h:mm a',
+        ).format(DateTime.parse(event!.startDate!));
       }
     } catch (_) {}
     return '';
@@ -195,7 +230,9 @@ class _AdminPanelState extends State<AdminPanel> {
             children: [
               _topBar(),
               const Expanded(
-                child: Center(child: CupertinoActivityIndicator(color: _T.lime)),
+                child: Center(
+                  child: CupertinoActivityIndicator(color: _T.lime),
+                ),
               ),
             ],
           ),
@@ -230,7 +267,9 @@ class _AdminPanelState extends State<AdminPanel> {
               color: _T.lime,
               backgroundColor: _T.card2,
               child: CustomScrollView(
-                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
                 slivers: [
                   SliverToBoxAdapter(
                     child: SafeArea(
@@ -246,7 +285,9 @@ class _AdminPanelState extends State<AdminPanel> {
                   SliverToBoxAdapter(child: _toolsSection()),
                   SliverToBoxAdapter(child: _teamSection()),
                   SliverToBoxAdapter(
-                    child: SizedBox(height: MediaQuery.of(context).padding.bottom + 32),
+                    child: SizedBox(
+                      height: MediaQuery.of(context).padding.bottom + 32,
+                    ),
                   ),
                 ],
               ),
@@ -277,9 +318,20 @@ class _AdminPanelState extends State<AdminPanel> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.arrow_back_ios_new_rounded, color: _T.lime, size: 13),
+                  const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: _T.lime,
+                    size: 13,
+                  ),
                   const SizedBox(width: 5),
-                  Text('Back', style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl1)),
+                  Text(
+                    'Back',
+                    style: _T.f(
+                      size: 13,
+                      weight: FontWeight.w500,
+                      color: _T.lbl1,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -294,7 +346,11 @@ class _AdminPanelState extends State<AdminPanel> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: _T.sep, width: 0.8),
               ),
-              child: const Icon(CupertinoIcons.ellipsis, color: _T.lbl2, size: 18),
+              child: const Icon(
+                CupertinoIcons.ellipsis,
+                color: _T.lbl2,
+                size: 18,
+              ),
             ),
             color: _T.card2,
             offset: const Offset(0, 44),
@@ -302,28 +358,40 @@ class _AdminPanelState extends State<AdminPanel> {
               borderRadius: BorderRadius.circular(14),
               side: const BorderSide(color: _T.sep, width: 0.8),
             ),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 1,
-                child: Row(
-                  children: [
-                    const Icon(CupertinoIcons.pencil, color: _T.lbl2, size: 17),
-                    const SizedBox(width: 10),
-                    Text('Edit Event', style: _T.f(size: 14, color: _T.lbl1)),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 2,
-                child: Row(
-                  children: [
-                    const Icon(CupertinoIcons.settings, color: _T.lbl2, size: 17),
-                    const SizedBox(width: 10),
-                    Text('Settings', style: _T.f(size: 14, color: _T.lbl1)),
-                  ],
-                ),
-              ),
-            ],
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem(
+                    value: 1,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          CupertinoIcons.pencil,
+                          color: _T.lbl2,
+                          size: 17,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Edit Event',
+                          style: _T.f(size: 14, color: _T.lbl1),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 2,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          CupertinoIcons.settings,
+                          color: _T.lbl2,
+                          size: 17,
+                        ),
+                        const SizedBox(width: 10),
+                        Text('Settings', style: _T.f(size: 14, color: _T.lbl1)),
+                      ],
+                    ),
+                  ),
+                ],
             onSelected: (value) async {
               if (value == 1) {
                 await Navigator.of(context).push(
@@ -332,7 +400,9 @@ class _AdminPanelState extends State<AdminPanel> {
                 loadData();
               } else if (value == 2) {
                 await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => EventSettings(event: event)),
+                  MaterialPageRoute(
+                    builder: (_) => EventSettings(event: event),
+                  ),
                 );
                 loadData();
               }
@@ -347,8 +417,8 @@ class _AdminPanelState extends State<AdminPanel> {
 
   Widget _heroBlock() {
     final title = event?.title ?? widget.eventO.title ?? '';
-    final date  = _formattedDate();
-    final loc   = event?.location ?? '';
+    final date = _formattedDate();
+    final loc = event?.location ?? '';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -361,7 +431,10 @@ class _AdminPanelState extends State<AdminPanel> {
             decoration: BoxDecoration(
               color: _T.limeDim,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _T.lime.withValues(alpha: 0.35), width: 0.8),
+              border: Border.all(
+                color: _T.lime.withValues(alpha: 0.35),
+                width: 0.8,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -369,12 +442,20 @@ class _AdminPanelState extends State<AdminPanel> {
                 Container(
                   width: 6,
                   height: 6,
-                  decoration: const BoxDecoration(color: _T.lime, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: _T.lime,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   'LIVE NOW',
-                  style: _T.f(size: 10, weight: FontWeight.w800, color: _T.lime, letterSpacing: 1.2),
+                  style: _T.f(
+                    size: 10,
+                    weight: FontWeight.w800,
+                    color: _T.lime,
+                    letterSpacing: 1.2,
+                  ),
                 ),
               ],
             ),
@@ -408,7 +489,11 @@ class _AdminPanelState extends State<AdminPanel> {
                   if (date.isNotEmpty)
                     Row(
                       children: [
-                        Icon(Icons.calendar_today_outlined, size: 13, color: _T.lime),
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 13,
+                          color: _T.lime,
+                        ),
                         const SizedBox(width: 8),
                         Text(date, style: _T.f(size: 13, color: _T.lbl2)),
                       ],
@@ -421,7 +506,11 @@ class _AdminPanelState extends State<AdminPanel> {
                   if (loc.isNotEmpty)
                     Row(
                       children: [
-                        Icon(Icons.location_on_outlined, size: 13, color: _T.lime),
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 13,
+                          color: _T.lime,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -454,11 +543,12 @@ class _AdminPanelState extends State<AdminPanel> {
         try {
           await Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => Attendees(
-                edata: event!,
-                kardType: KardType.contribution,
-                title: 'Manage Contributions',
-              ),
+              builder:
+                  (_) => Attendees(
+                    edata: event!,
+                    kardType: KardType.contribution,
+                    title: 'Manage Contributions',
+                  ),
             ),
           );
           loadData();
@@ -495,25 +585,44 @@ class _AdminPanelState extends State<AdminPanel> {
                         color: _T.lime.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(9),
                       ),
-                      child: const Icon(Icons.account_balance_wallet_outlined, color: _T.lime, size: 15),
+                      child: const Icon(
+                        Icons.account_balance_wallet_outlined,
+                        color: _T.lime,
+                        size: 15,
+                      ),
                     ),
                     const SizedBox(width: 9),
                     Text(
                       'CONTRIBUTIONS',
-                      style: _T.f(size: 11, weight: FontWeight.w700, color: _T.lbl3, letterSpacing: 1.1),
+                      style: _T.f(
+                        size: 11,
+                        weight: FontWeight.w700,
+                        color: _T.lbl3,
+                        letterSpacing: 1.1,
+                      ),
                     ),
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _T.limeDim,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _T.lime.withValues(alpha: 0.3), width: 0.6),
+                    border: Border.all(
+                      color: _T.lime.withValues(alpha: 0.3),
+                      width: 0.6,
+                    ),
                   ),
                   child: Text(
                     '${(pct * 100).round()}%',
-                    style: _T.f(size: 13, weight: FontWeight.w800, color: _T.lime),
+                    style: _T.f(
+                      size: 13,
+                      weight: FontWeight.w800,
+                      color: _T.lime,
+                    ),
                   ),
                 ),
               ],
@@ -559,7 +668,11 @@ class _AdminPanelState extends State<AdminPanel> {
                   'Goal: ${formatMoney(event?.totalPledge ?? 0.0, currency: 'TZS')}',
                   style: _T.f(size: 12, color: _T.lbl3),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: _T.lbl4, size: 18),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: _T.lbl4,
+                  size: 18,
+                ),
               ],
             ),
           ],
@@ -587,7 +700,11 @@ class _AdminPanelState extends State<AdminPanel> {
                   onTap: () async {
                     await Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => Attendees(edata: event!, kardType: KardType.invitation),
+                        builder:
+                            (_) => Attendees(
+                              edata: event!,
+                              kardType: KardType.invitation,
+                            ),
                       ),
                     );
                     loadData();
@@ -603,7 +720,9 @@ class _AdminPanelState extends State<AdminPanel> {
                   icon: Icons.people_alt_outlined,
                   onTap: () async {
                     await Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => Users(eId: event?.id ?? '')),
+                      MaterialPageRoute(
+                        builder: (_) => Users(eId: event?.id ?? ''),
+                      ),
                     );
                     loadData();
                   },
@@ -641,7 +760,12 @@ class _AdminPanelState extends State<AdminPanel> {
               children: [
                 Text(
                   label,
-                  style: _T.f(size: 10, weight: FontWeight.w700, color: _T.lbl3, letterSpacing: 1.1),
+                  style: _T.f(
+                    size: 10,
+                    weight: FontWeight.w700,
+                    color: _T.lbl3,
+                    letterSpacing: 1.1,
+                  ),
                 ),
                 Container(
                   padding: const EdgeInsets.all(6),
@@ -687,42 +811,49 @@ class _AdminPanelState extends State<AdminPanel> {
               context: context,
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
-              builder: (ctx) => SizedBox(
-                height: MediaQuery.of(ctx).size.height * 0.85,
-                child: modalBtmSheet(
-                  bdrdm: 28,
-                  child: ChkpnForm(eId: event?.id ?? widget.eventO.id ?? ''),
-                ),
-              ),
+              builder:
+                  (ctx) => SizedBox(
+                    height: MediaQuery.of(ctx).size.height * 0.85,
+                    child: modalBtmSheet(
+                      bdrdm: 28,
+                      child: ChkpnForm(
+                        eId: event?.id ?? widget.eventO.id ?? '',
+                      ),
+                    ),
+                  ),
             ).then((_) => loadData());
           },
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: checkpoints.isEmpty
-              ? _emptyCheckpoints()
-              : Column(
-                  children: List.generate(checkpoints.length, (idx) {
-                    CheckPoint checkpoint = checkpoints[idx];
-                    return Padding(
-                      padding: EdgeInsets.only(bottom: idx < checkpoints.length - 1 ? 8 : 0),
-                      child: _checkpointRow(
-                        icon: Icons.meeting_room_outlined,
-                        name: '${checkpoint.name}',
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => InCheckWrapper(
-                                checkpoint: checkpoint,
-                                eId: event?.id ?? "",
+          child:
+              checkpoints.isEmpty
+                  ? _emptyCheckpoints()
+                  : Column(
+                    children: List.generate(checkpoints.length, (idx) {
+                      CheckPoint checkpoint = checkpoints[idx];
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: idx < checkpoints.length - 1 ? 8 : 0,
+                        ),
+                        child: _checkpointRow(
+                          icon: Icons.meeting_room_outlined,
+                          name: '${checkpoint.name}',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => InCheckWrapper(
+                                      checkpoint: checkpoint,
+                                      eId: event?.id ?? "",
+                                    ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  }),
-                ),
+                            );
+                          },
+                        ),
+                      );
+                    }),
+                  ),
         ),
         const SizedBox(height: 8),
       ],
@@ -783,8 +914,15 @@ class _AdminPanelState extends State<AdminPanel> {
             ),
             Container(
               padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(color: _T.card2, borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.chevron_right_rounded, color: _T.lbl3, size: 16),
+              decoration: BoxDecoration(
+                color: _T.card2,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.chevron_right_rounded,
+                color: _T.lbl3,
+                size: 16,
+              ),
             ),
           ],
         ),
@@ -819,7 +957,12 @@ class _AdminPanelState extends State<AdminPanel> {
                 onTap: () async {
                   await Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => Attendees(edata: event!, title: "Contacts", kardType: KardType.contact),
+                      builder:
+                          (_) => Attendees(
+                            edata: event!,
+                            title: "Contacts",
+                            kardType: KardType.contact,
+                          ),
                     ),
                   );
                   loadData();
@@ -835,11 +978,12 @@ class _AdminPanelState extends State<AdminPanel> {
                   try {
                     await Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => Attendees(
-                          edata: event!,
-                          kardType: KardType.contribution,
-                          title: 'Manage Contributions',
-                        ),
+                        builder:
+                            (_) => Attendees(
+                              edata: event!,
+                              kardType: KardType.contribution,
+                              title: 'Manage Contributions',
+                            ),
                       ),
                     );
                     loadData();
@@ -856,7 +1000,9 @@ class _AdminPanelState extends State<AdminPanel> {
                 isActive: true,
                 onTap: () async {
                   await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => Cards(eId: widget.eventO.id ?? '')),
+                    MaterialPageRoute(
+                      builder: (_) => Cards(eId: widget.eventO.id ?? ''),
+                    ),
                   );
                   loadData();
                 },
@@ -869,7 +1015,9 @@ class _AdminPanelState extends State<AdminPanel> {
                 isActive: true,
                 onTap: () async {
                   await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => InvEditor(eId: widget.eventO.id ?? '')),
+                    MaterialPageRoute(
+                      builder: (_) => InvEditor(eId: widget.eventO.id ?? ''),
+                    ),
                   );
                   loadData();
                 },
@@ -882,7 +1030,9 @@ class _AdminPanelState extends State<AdminPanel> {
                 isActive: true,
                 onTap: () async {
                   await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => EventGallery(event: event!)),
+                    MaterialPageRoute(
+                      builder: (_) => EventGallery(event: event!),
+                    ),
                   );
                   loadData();
                 },
@@ -954,10 +1104,15 @@ class _AdminPanelState extends State<AdminPanel> {
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: isActive ? _T.lime.withValues(alpha: 0.13) : _T.card2,
+                    color:
+                        isActive ? _T.lime.withValues(alpha: 0.13) : _T.card2,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: isActive ? _T.lime : _T.lbl4, size: 20),
+                  child: Icon(
+                    icon,
+                    color: isActive ? _T.lime : _T.lbl4,
+                    size: 20,
+                  ),
                 ),
                 const Spacer(),
                 // Big count
@@ -974,7 +1129,11 @@ class _AdminPanelState extends State<AdminPanel> {
                 const SizedBox(height: 3),
                 Text(
                   title,
-                  style: _T.f(size: 13, weight: FontWeight.w600, color: isActive ? _T.lbl1 : _T.lbl3),
+                  style: _T.f(
+                    size: 13,
+                    weight: FontWeight.w600,
+                    color: isActive ? _T.lbl1 : _T.lbl3,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -1058,17 +1217,31 @@ class _AdminPanelState extends State<AdminPanel> {
                       children: [
                         Text(
                           '$adminsCount Administrators',
-                          style: _T.f(size: 15, weight: FontWeight.w600, color: _T.lbl1),
+                          style: _T.f(
+                            size: 15,
+                            weight: FontWeight.w600,
+                            color: _T.lbl1,
+                          ),
                         ),
                         const SizedBox(height: 4),
-                        Text('$scannersCount scanners', style: _T.f(size: 12, color: _T.lbl3)),
+                        Text(
+                          '$scannersCount scanners',
+                          style: _T.f(size: 12, color: _T.lbl3),
+                        ),
                       ],
                     ),
                   ),
                   Container(
                     padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(color: _T.card2, borderRadius: BorderRadius.circular(9)),
-                    child: const Icon(Icons.chevron_right_rounded, color: _T.lbl3, size: 16),
+                    decoration: BoxDecoration(
+                      color: _T.card2,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: _T.lbl3,
+                      size: 16,
+                    ),
                   ),
                 ],
               ),
@@ -1090,19 +1263,24 @@ class _AdminPanelState extends State<AdminPanel> {
     const double ov = 10;
 
     final visibleCount = adminsCount.clamp(0, 5);
-    final overflow     = adminsCount > 5 ? adminsCount - 5 : 0;
-    final totalSlots   = visibleCount + (overflow > 0 ? 1 : 0);
-    final double w     = totalSlots == 0 ? sz : sz + (totalSlots - 1) * (sz - ov);
+    final overflow = adminsCount > 5 ? adminsCount - 5 : 0;
+    final totalSlots = visibleCount + (overflow > 0 ? 1 : 0);
+    final double w = totalSlots == 0 ? sz : sz + (totalSlots - 1) * (sz - ov);
 
     if (adminsCount == 0) {
       return Container(
-        width: sz, height: sz,
+        width: sz,
+        height: sz,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: _T.card3,
           border: Border.all(color: _T.card, width: 2.5),
         ),
-        child: const Icon(Icons.person_outline_rounded, color: _T.lbl4, size: 16),
+        child: const Icon(
+          Icons.person_outline_rounded,
+          color: _T.lbl4,
+          size: 16,
+        ),
       );
     }
 
@@ -1124,7 +1302,11 @@ class _AdminPanelState extends State<AdminPanel> {
                   border: Border.all(color: _T.card, width: 2.5),
                 ),
                 child: const Center(
-                  child: Icon(Icons.person_rounded, color: Colors.white38, size: 16),
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: Colors.white38,
+                    size: 16,
+                  ),
                 ),
               ),
             );
@@ -1143,7 +1325,11 @@ class _AdminPanelState extends State<AdminPanel> {
                 child: Center(
                   child: Text(
                     '+$overflow',
-                    style: _T.f(size: 9, weight: FontWeight.w800, color: _T.lbl2),
+                    style: _T.f(
+                      size: 9,
+                      weight: FontWeight.w800,
+                      color: _T.lbl2,
+                    ),
                   ),
                 ),
               ),
@@ -1155,7 +1341,11 @@ class _AdminPanelState extends State<AdminPanel> {
 
   // ── Section header ────────────────────────────────────────────────────────
 
-  Widget _sectionHeader(String label, {String? action, VoidCallback? onAction}) {
+  Widget _sectionHeader(
+    String label, {
+    String? action,
+    VoidCallback? onAction,
+  }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
       child: Row(
@@ -1174,7 +1364,12 @@ class _AdminPanelState extends State<AdminPanel> {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: _T.f(size: 11, weight: FontWeight.w700, color: _T.lbl3, letterSpacing: 1.3),
+                style: _T.f(
+                  size: 11,
+                  weight: FontWeight.w700,
+                  color: _T.lbl3,
+                  letterSpacing: 1.3,
+                ),
               ),
             ],
           ),
@@ -1182,15 +1377,25 @@ class _AdminPanelState extends State<AdminPanel> {
             GestureDetector(
               onTap: onAction,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: _T.limeDim,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _T.lime.withValues(alpha: 0.3), width: 0.6),
+                  border: Border.all(
+                    color: _T.lime.withValues(alpha: 0.3),
+                    width: 0.6,
+                  ),
                 ),
                 child: Text(
                   action,
-                  style: _T.f(size: 11, weight: FontWeight.w700, color: _T.lime),
+                  style: _T.f(
+                    size: 11,
+                    weight: FontWeight.w700,
+                    color: _T.lime,
+                  ),
                 ),
               ),
             ),
@@ -1222,14 +1427,26 @@ class _AdminPanelState extends State<AdminPanel> {
                           decoration: BoxDecoration(
                             color: _T.lime.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
-                            border: Border.all(color: _T.lime.withValues(alpha: 0.2), width: 0.8),
+                            border: Border.all(
+                              color: _T.lime.withValues(alpha: 0.2),
+                              width: 0.8,
+                            ),
                           ),
-                          child: const Icon(Icons.wifi_off_rounded, color: _T.lime, size: 44),
+                          child: const Icon(
+                            Icons.wifi_off_rounded,
+                            color: _T.lime,
+                            size: 44,
+                          ),
                         ),
                         const SizedBox(height: 28),
                         Text(
                           'Something went wrong',
-                          style: _T.f(size: 22, weight: FontWeight.w800, color: _T.white, letterSpacing: -0.5),
+                          style: _T.f(
+                            size: 22,
+                            weight: FontWeight.w800,
+                            color: _T.white,
+                            letterSpacing: -0.5,
+                          ),
                         ),
                         const SizedBox(height: 10),
                         Text(
@@ -1246,12 +1463,18 @@ class _AdminPanelState extends State<AdminPanel> {
                               backgroundColor: _T.lime,
                               foregroundColor: Colors.black,
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                               elevation: 0,
                             ),
                             child: Text(
                               'Retry',
-                              style: _T.f(size: 16, weight: FontWeight.w700, color: Colors.black),
+                              style: _T.f(
+                                size: 16,
+                                weight: FontWeight.w700,
+                                color: Colors.black,
+                              ),
                             ),
                           ),
                         ),
@@ -1296,14 +1519,16 @@ class _ChkpnFormState extends State<ChkpnForm> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: firestore.collection(ecol).doc(widget.eId).collection(cardcol).get(),
+      future:
+          firestore.collection(ecol).doc(widget.eId).collection(cardcol).get(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const Center();
         if (snapshot.hasError) return const Center();
 
-        final fcards = (snapshot.data as dynamic).docs
-            .map<Kard>((doc) => Kard.fromMap(doc.id, doc.data()))
-            .toList();
+        final fcards =
+            (snapshot.data as dynamic).docs
+                .map<Kard>((doc) => Kard.fromMap(doc.id, doc.data()))
+                .toList();
 
         return Form(
           key: key,
@@ -1312,7 +1537,12 @@ class _ChkpnFormState extends State<ChkpnForm> {
             children: [
               Text(
                 'New Checkpoint',
-                style: _T.f(size: 26, weight: FontWeight.w800, color: _T.white, letterSpacing: -0.6),
+                style: _T.f(
+                  size: 26,
+                  weight: FontWeight.w800,
+                  color: _T.white,
+                  letterSpacing: -0.6,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
@@ -1343,10 +1573,18 @@ class _ChkpnFormState extends State<ChkpnForm> {
                     borderRadius: BorderRadius.circular(14),
                     borderSide: const BorderSide(color: _T.lime, width: 1.5),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  prefixIcon: const Icon(Icons.edit_rounded, color: _T.lbl3, size: 17),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.edit_rounded,
+                    color: _T.lbl3,
+                    size: 17,
+                  ),
                 ),
-                validator: (v) => (v == null || v.isEmpty) ? 'Name is required' : null,
+                validator:
+                    (v) => (v == null || v.isEmpty) ? 'Name is required' : null,
                 textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: 28),
@@ -1354,19 +1592,31 @@ class _ChkpnFormState extends State<ChkpnForm> {
               if (fcards.isNotEmpty) ...[
                 Text(
                   'Accepted Card Types',
-                  style: _T.f(size: 17, weight: FontWeight.w600, color: _T.lbl1, letterSpacing: -0.2),
+                  style: _T.f(
+                    size: 17,
+                    weight: FontWeight.w600,
+                    color: _T.lbl1,
+                    letterSpacing: -0.2,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ...fcards.map((card) {
                   final sel = selCrdsIds.contains(card.id);
                   return GestureDetector(
-                    onTap: () => setState(
-                      () => sel ? selCrdsIds.remove(card.id) : selCrdsIds.add(card.id),
-                    ),
+                    onTap:
+                        () => setState(
+                          () =>
+                              sel
+                                  ? selCrdsIds.remove(card.id)
+                                  : selCrdsIds.add(card.id),
+                        ),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 160),
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: sel ? _T.limeDim : _T.card,
                         borderRadius: BorderRadius.circular(14),
@@ -1378,7 +1628,9 @@ class _ChkpnFormState extends State<ChkpnForm> {
                       child: Row(
                         children: [
                           Icon(
-                            sel ? Icons.check_circle_rounded : Icons.circle_outlined,
+                            sel
+                                ? Icons.check_circle_rounded
+                                : Icons.circle_outlined,
                             color: sel ? _T.lime : _T.lbl3,
                             size: 22,
                           ),
@@ -1404,30 +1656,41 @@ class _ChkpnFormState extends State<ChkpnForm> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          if (key.currentState?.validate() ?? false) {
-                            await crtActn(selCrdsIds: selCrdsIds);
-                          }
-                        },
+                  onPressed:
+                      isLoading
+                          ? null
+                          : () async {
+                            if (key.currentState?.validate() ?? false) {
+                              await crtActn(selCrdsIds: selCrdsIds);
+                            }
+                          },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _T.lime,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     elevation: 0,
                   ),
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2.5),
-                        )
-                      : Text(
-                          'Save Checkpoint',
-                          style: _T.f(size: 16, weight: FontWeight.w700, color: Colors.black),
-                        ),
+                  child:
+                      isLoading
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.black,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                          : Text(
+                            'Save Checkpoint',
+                            style: _T.f(
+                              size: 16,
+                              weight: FontWeight.w700,
+                              color: Colors.black,
+                            ),
+                          ),
                 ),
               ),
             ],
@@ -1456,24 +1719,33 @@ class _ChkpnFormState extends State<ChkpnForm> {
   Future<void> crtActn({required List selCrdsIds}) async {
     setState(() => isLoading = true);
     try {
-      final batch   = firestore.batch();
-      final chkpnRef = firestore
-          .collection(ecol)
-          .doc(widget.eId)
-          .collection(echecksub)
-          .doc();
-
-      final crdRefs = selCrdsIds
-          .map((id) => firestore
+      final batch = firestore.batch();
+      final chkpnRef =
+          firestore
               .collection(ecol)
               .doc(widget.eId)
-              .collection(cardcol)
-              .doc(id as String))
-          .toList();
+              .collection(echecksub)
+              .doc();
 
-      batch.set(chkpnRef, CheckPoint(id: chkpnRef.id, name: controller.text).toMap());
+      final crdRefs =
+          selCrdsIds
+              .map(
+                (id) => firestore
+                    .collection(ecol)
+                    .doc(widget.eId)
+                    .collection(cardcol)
+                    .doc(id as String),
+              )
+              .toList();
+
+      batch.set(
+        chkpnRef,
+        CheckPoint(id: chkpnRef.id, name: controller.text).toMap(),
+      );
       for (final ref in crdRefs) {
-        batch.update(ref, {crdClrnc: FieldValue.arrayUnion([chkpnRef.id])});
+        batch.update(ref, {
+          crdClrnc: FieldValue.arrayUnion([chkpnRef.id]),
+        });
       }
 
       await batch.commit();

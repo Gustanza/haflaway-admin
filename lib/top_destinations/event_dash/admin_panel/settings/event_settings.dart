@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
@@ -13,22 +14,27 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Design Tokens (Matching AdminPane)
+// Design Tokens  ·  Apple-dark, not pitch-black
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _T {
-  static const bg = Color(0xFF0A0A0A);
-  static const card = Color(0xFF141414);
-  static const lime = Color(0xFFC9A84C);
-  static const limeDim = Color(0xFF1E2800);
+  static const bg    = Color(0xFF111114);
+  static const card  = Color(0xFF1C1C1E);
+  static const card2 = Color(0xFF28282C);
+  static const card3 = Color(0xFF3A3A3C);
+  static const sep   = Color(0xFF2C2C2E);
+  static const lime    = Color(0xFFC9A84C);
+  static const limeDim = Color(0xFF2A2210);
   static const white = Color(0xFFFFFFFF);
-  static const grey1 = Color(0xFFAAAAAA);
-  static const grey2 = Color(0xFF555555);
+  static const lbl1  = Color(0xFFEEEEF0);
+  static const lbl2  = Color(0xFFAEAEB2);
+  static const lbl3  = Color(0xFF8E8E93);
+  static const lbl4  = Color(0xFF48484A);
 
   static TextStyle f({
     double size = 14,
     FontWeight weight = FontWeight.w400,
-    Color color = white,
+    Color color = lbl1,
     double letterSpacing = 0,
     double? height,
   }) => GoogleFonts.inter(
@@ -174,6 +180,8 @@ class _EventSettingsState extends State<EventSettings> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const SizedBox(height: 8),
+                          _titleBlock(),
                           const SizedBox(height: 20),
                           _sectionHeader(
                             icon: Icons.language_rounded,
@@ -217,22 +225,26 @@ class _EventSettingsState extends State<EventSettings> {
 
   Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 4),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: _T.lime,
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text('Back', style: _T.f(size: 15, weight: FontWeight.w500)),
-              ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _T.sep, width: 0.8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_back_ios_new_rounded, color: _T.lime, size: 13),
+                  const SizedBox(width: 5),
+                  Text('Back', style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl1)),
+                ],
+              ),
             ),
           ),
           const Spacer(),
@@ -241,11 +253,36 @@ class _EventSettingsState extends State<EventSettings> {
           else
             GestureDetector(
               onTap: _saveSettings,
-              child: Text(
-                'Save Settings',
-                style: _T.f(size: 15, weight: FontWeight.w600, color: _T.lime),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  color: _T.limeDim,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: _T.lime.withValues(alpha: 0.35), width: 0.8),
+                ),
+                child: Text('Save', style: _T.f(size: 13, weight: FontWeight.w700, color: _T.lime)),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _titleBlock() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Event Settings',
+            style: _T.f(size: 28, weight: FontWeight.w800, color: _T.white, letterSpacing: -0.8, height: 1.12),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Manage language, card format and reports.',
+            style: _T.f(size: 13, color: _T.lbl3, height: 1.5),
+          ),
         ],
       ),
     );
@@ -256,27 +293,30 @@ class _EventSettingsState extends State<EventSettings> {
     required String title,
     required String subtitle,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: _T.lime, size: 14),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: _T.f(
-                size: 11,
-                weight: FontWeight.w700,
-                color: _T.grey2,
-                letterSpacing: 1.2,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 3,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: _T.lime,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(subtitle, style: _T.f(size: 13, color: _T.grey1)),
-      ],
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: _T.f(size: 11, weight: FontWeight.w700, color: _T.lbl3, letterSpacing: 1.3),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -285,6 +325,7 @@ class _EventSettingsState extends State<EventSettings> {
       decoration: BoxDecoration(
         color: _T.card,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _T.sep, width: 0.8),
       ),
       child: Column(
         children: [
@@ -298,7 +339,7 @@ class _EventSettingsState extends State<EventSettings> {
           Container(
             height: 1,
             margin: const EdgeInsets.symmetric(horizontal: 16),
-            color: _T.white.withOpacity(0.05),
+            color: _T.sep,
           ),
           _buildLanguageOption(
             language: 'English',
@@ -342,7 +383,7 @@ class _EventSettingsState extends State<EventSettings> {
             else
               Icon(
                 Icons.circle_outlined,
-                color: _T.white.withOpacity(0.1),
+                color: _T.sep,
                 size: 20,
               ),
           ],
@@ -393,7 +434,7 @@ class _EventSettingsState extends State<EventSettings> {
           color: isSelected ? _T.limeDim : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? _T.lime.withOpacity(0.3) : Colors.transparent,
+            color: isSelected ? _T.lime.withValues(alpha: 0.3) : Colors.transparent,
           ),
         ),
         child: Center(
@@ -402,7 +443,7 @@ class _EventSettingsState extends State<EventSettings> {
             style: _T.f(
               size: 13,
               weight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? _T.lime : _T.grey1,
+              color: isSelected ? _T.lime : _T.lbl2,
             ),
           ),
         ),
@@ -453,7 +494,7 @@ class _EventSettingsState extends State<EventSettings> {
                     (context, index) => Container(
                       height: 1,
                       margin: const EdgeInsets.symmetric(horizontal: 16),
-                      color: _T.white.withOpacity(0.05),
+                      color: _T.sep,
                     ),
                 itemBuilder: (context, index) {
                   final report = docs[index].data() as Map<String, dynamic>;
@@ -484,7 +525,7 @@ class _EventSettingsState extends State<EventSettings> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: _T.lime.withOpacity(0.1),
+                              color: _T.lime.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(
@@ -508,7 +549,7 @@ class _EventSettingsState extends State<EventSettings> {
                                 if (dt != null)
                                   Text(
                                     timeago.format(dt),
-                                    style: _T.f(size: 12, color: _T.grey1),
+                                    style: _T.f(size: 12, color: _T.lbl2),
                                   ),
                               ],
                             ),
@@ -521,7 +562,7 @@ class _EventSettingsState extends State<EventSettings> {
                                 ),
                             icon: Icon(
                               Icons.delete_outline_rounded,
-                              color: Colors.red.withOpacity(0.7),
+                              color: Colors.redAccent.withValues(alpha: 0.8),
                               size: 18,
                             ),
                             padding: EdgeInsets.zero,
@@ -563,8 +604,8 @@ class _EventSettingsState extends State<EventSettings> {
           border: Border.all(
             color:
                 isLoading
-                    ? _T.lime.withOpacity(0.3)
-                    : _T.white.withOpacity(0.05),
+                    ? _T.lime.withValues(alpha: 0.3)
+                    : _T.sep,
           ),
         ),
         child: Row(
@@ -586,7 +627,7 @@ class _EventSettingsState extends State<EventSettings> {
             if (!isLoading)
               Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: _T.white.withOpacity(0.2),
+                color: _T.lbl4,
                 size: 14,
               ),
           ],
@@ -602,12 +643,12 @@ class _EventSettingsState extends State<EventSettings> {
       decoration: BoxDecoration(
         color: _T.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _T.white.withOpacity(0.05)),
+        border: Border.all(color: _T.sep),
       ),
       child: Center(
         child: Text(
           text,
-          style: _T.f(size: 13, color: _T.grey2, weight: FontWeight.w500),
+          style: _T.f(size: 13, color: _T.lbl3, weight: FontWeight.w500),
         ),
       ),
     );
@@ -618,11 +659,7 @@ class _GusOrb extends StatelessWidget {
   final double size;
   final Color color;
   final double opacity;
-  const _GusOrb({
-    required this.size,
-    required this.color,
-    required this.opacity,
-  });
+  const _GusOrb({required this.size, required this.color, required this.opacity});
 
   @override
   Widget build(BuildContext context) {
@@ -631,8 +668,12 @@ class _GusOrb extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [color.withOpacity(opacity), color.withOpacity(0)],
+        color: color.withValues(alpha: opacity),
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          child: const SizedBox.shrink(),
         ),
       ),
     );

@@ -23,12 +23,18 @@ import 'package:haflaway/utils/urls.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _T {
-  static const bg = Color(0xFF0A0A0A);
-  static const card = Color(0xFF141414);
-  static const card2 = Color(0xFF1A1A1A);
-  static const lime = Color(0xFFC9A84C);
-  static const white = Color(0xFFFFFFFF);
-  static const grey1 = Color(0xFFAAAAAA);
+  static const bg      = Color(0xFF111114);
+  static const card    = Color(0xFF1C1C1E);
+  static const card2   = Color(0xFF28282C);
+  static const card3   = Color(0xFF3A3A3C);
+  static const sep     = Color(0xFF2C2C2E);
+  static const lime    = Color(0xFFC9A84C);
+  static const limeDim = Color(0xFF2A2210);
+  static const lbl1    = Color(0xFFFFFFFF);
+  static const lbl2    = Color(0xFFAEAEB2);
+  static const lbl3    = Color(0xFF636366);
+  static const lbl4    = Color(0xFF48484A);
+  static const white   = Color(0xFFFFFFFF);
 
   static TextStyle f({
     double size = 14,
@@ -195,6 +201,7 @@ class _ImpPreviewState extends State<ImpPreview> {
           child: Column(
             children: [
               _topBar(),
+              _titleBlock(),
               if (widget.labelIds.isNotEmpty) _labelsBanner(),
               Expanded(
                 child:
@@ -238,24 +245,21 @@ class _ImpPreviewState extends State<ImpPreview> {
         children: [
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: _T.lime,
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Import Preview',
-                  style: _T.f(
-                    size: 15,
-                    weight: FontWeight.w500,
-                    color: _T.white,
-                  ),
-                ),
-              ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _T.sep, width: 0.8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_back_ios_new_rounded, color: _T.lime, size: 13),
+                  const SizedBox(width: 4),
+                  Text('Back', style: _T.f(size: 14, weight: FontWeight.w500, color: _T.lbl1)),
+                ],
+              ),
             ),
           ),
           const Spacer(),
@@ -268,17 +272,28 @@ class _ImpPreviewState extends State<ImpPreview> {
                     showToast(isGood: false, msg: "Nothing to import");
                   }
                 },
-                child: Text(
-                  'Import',
-                  style: _T.f(
-                    size: 15,
-                    weight: FontWeight.w500,
-                    color: _T.lime,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _T.limeDim,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _T.lime.withValues(alpha: 0.35), width: 0.8),
                   ),
+                  child: Text('Import', style: _T.f(size: 14, weight: FontWeight.w600, color: _T.lime)),
                 ),
               )
               : const CupertinoActivityIndicator(color: _T.lime),
         ],
+      ),
+    );
+  }
+
+  Widget _titleBlock() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+      child: Text(
+        "Import Preview",
+        style: _T.f(size: 28, weight: FontWeight.w800, color: _T.lbl1, letterSpacing: -0.8),
       ),
     );
   }
@@ -292,13 +307,13 @@ class _ImpPreviewState extends State<ImpPreview> {
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+          bottom: BorderSide(color: _T.sep, width: 0.8),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Assigning to lists:', style: _T.f(size: 11, color: _T.grey1)),
+          Text('Assigning to lists:', style: _T.f(size: 11, color: _T.lbl3)),
           const SizedBox(height: 6),
           Wrap(
             spacing: 6,
@@ -366,6 +381,7 @@ class _ImpPreviewState extends State<ImpPreview> {
                 decoration: BoxDecoration(
                   color: _T.card,
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: _T.sep, width: 0.8),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -411,7 +427,7 @@ class _ImpPreviewState extends State<ImpPreview> {
                                 const SizedBox(height: 4),
                                 Text(
                                   attendee.phone,
-                                  style: _T.f(size: 12, color: _T.grey1),
+                                  style: _T.f(size: 12, color: _T.lbl2),
                                 ),
                                 if (widget.kardType == KardType.contribution ||
                                     widget.kardType == KardType.contact) ...[
@@ -428,7 +444,7 @@ class _ImpPreviewState extends State<ImpPreview> {
                                               vertical: 4,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: _T.lime.withOpacity(0.08),
+                                              color: _T.limeDim,
                                               borderRadius:
                                                   BorderRadius.circular(6),
                                             ),
@@ -479,7 +495,7 @@ class _ImpPreviewState extends State<ImpPreview> {
                                               vertical: 4,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: _T.white.withOpacity(0.04),
+                                              color: _T.card2,
                                               borderRadius:
                                                   BorderRadius.circular(6),
                                             ),
@@ -489,14 +505,14 @@ class _ImpPreviewState extends State<ImpPreview> {
                                                 const Icon(
                                                   Icons.payments,
                                                   size: 12,
-                                                  color: _T.grey1,
+                                                  color: _T.lbl2,
                                                 ),
                                                 const SizedBox(width: 6),
                                                 Text(
                                                   'Contribution',
                                                   style: _T.f(
                                                     size: 11,
-                                                    color: _T.grey1,
+                                                    color: _T.lbl2,
                                                   ),
                                                 ),
                                               ],
@@ -548,7 +564,7 @@ class _ImpPreviewState extends State<ImpPreview> {
                             }
                           },
                           icon: const Icon(Clarity.close_line),
-                          color: _T.grey1,
+                          color: _T.lbl2,
                         ),
                       ),
                     ],

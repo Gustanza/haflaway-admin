@@ -16,7 +16,6 @@ import 'package:haflaway/models/card.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
-import 'package:haflaway/utils/styles.dart';
 import 'package:haflaway/utils/urls.dart';
 
 class CreateAttendees extends StatefulWidget {
@@ -216,15 +215,11 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                                   fillColor: _T.bg,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: _T.white.withOpacity(0.1),
-                                    ),
+                                    borderSide: const BorderSide(color: _T.sep),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: _T.white.withOpacity(0.1),
-                                    ),
+                                    borderSide: const BorderSide(color: _T.sep),
                                   ),
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16,
@@ -299,9 +294,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                                               color:
                                                   isSelected
                                                       ? color
-                                                      : Colors.white.withValues(
-                                                        alpha: 0.08,
-                                                      ),
+                                                      : _T.sep,
                                               width: isSelected ? 1.5 : 1,
                                             ),
                                           ),
@@ -310,7 +303,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                                             style: _T.f(
                                               size: 13,
                                               color:
-                                                  isSelected ? color : _T.grey1,
+                                                  isSelected ? color : _T.lbl2,
                                               weight:
                                                   isSelected
                                                       ? FontWeight.bold
@@ -365,34 +358,42 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         children: [
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: _T.lime,
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Back',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _T.sep, width: 0.8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_back_ios_new_rounded, color: _T.lime, size: 13),
+                  const SizedBox(width: 4),
+                  Text('Back', style: _T.f(size: 14, weight: FontWeight.w500, color: _T.lbl1)),
+                ],
+              ),
             ),
           ),
           const Spacer(),
           if (widget.attendee != null)
-            IconButton(
-              onPressed: _confirmDelete,
-              icon: const Icon(
-                Icons.delete_outline,
-                color: Colors.redAccent,
-                size: 22,
+            GestureDetector(
+              onTap: _confirmDelete,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.redAccent.withValues(alpha: 0.35), width: 0.8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.delete_outline, color: Colors.redAccent, size: 14),
+                    const SizedBox(width: 4),
+                    Text('Delete', style: _T.f(size: 14, weight: FontWeight.w500, color: Colors.redAccent)),
+                  ],
+                ),
               ),
             ),
         ],
@@ -407,12 +408,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
         widget.attendee == null
             ? "New ${widget.title}"
             : "Edit ${widget.title}",
-        style: GoogleFonts.inter(
-          fontSize: 28,
-          fontWeight: FontWeight.w800,
-          color: Colors.white,
-          letterSpacing: -0.5,
-        ),
+        style: _T.f(size: 28, weight: FontWeight.w800, color: _T.lbl1, letterSpacing: -0.8),
       ),
     );
   }
@@ -423,18 +419,20 @@ class _CreateAttendeesState extends State<CreateAttendees> {
     required String subtitle,
   }) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, color: _T.lime, size: 20),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: _T.f(size: 16, weight: FontWeight.w700, color: _T.white),
-            ),
-            Text(subtitle, style: _T.f(size: 12, color: _T.grey2)),
-          ],
+        Container(
+          width: 3,
+          height: 14,
+          decoration: BoxDecoration(
+            color: _T.lime,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title.toUpperCase(),
+          style: _T.f(size: 11, weight: FontWeight.w700, color: _T.lbl3, letterSpacing: 1.3),
         ),
       ],
     );
@@ -448,7 +446,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
       style: _T.f(
         size: 10,
         weight: FontWeight.w700,
-        color: _T.grey2,
+        color: _T.lbl3,
         letterSpacing: 1.2,
       ),
     );
@@ -471,7 +469,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
       children: [
         Text(
           label,
-          style: _T.f(size: 13, weight: FontWeight.w500, color: _T.grey1),
+          style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl2),
         ),
         const SizedBox(height: 8),
         isPhone
@@ -481,7 +479,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
               dropdownTextStyle: _T.f(size: 15, color: _T.white),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: _T.f(size: 15, color: _T.grey3),
+                hintStyle: _T.f(size: 15, color: _T.lbl4),
                 filled: true,
                 fillColor: _T.bg,
                 contentPadding: const EdgeInsets.symmetric(
@@ -490,11 +488,11 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+                  borderSide: const BorderSide(color: _T.sep),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+                  borderSide: const BorderSide(color: _T.sep),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -515,7 +513,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
               style: _T.f(size: 15, color: _T.white),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: _T.f(size: 15, color: _T.grey3),
+                hintStyle: _T.f(size: 15, color: _T.lbl4),
                 filled: true,
                 fillColor: _T.bg,
                 contentPadding: const EdgeInsets.symmetric(
@@ -525,11 +523,11 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                 suffixIcon: suffix,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+                  borderSide: const BorderSide(color: _T.sep),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: _T.white.withOpacity(0.1)),
+                  borderSide: const BorderSide(color: _T.sep),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -651,7 +649,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                   Text(
                     "This action cannot be undone.",
                     textAlign: TextAlign.center,
-                    style: _T.f(size: 14, color: _T.grey1),
+                    style: _T.f(size: 14, color: _T.lbl2),
                   ),
                   const SizedBox(height: 24),
                   Row(
@@ -730,10 +728,7 @@ class _CreateAttendeesState extends State<CreateAttendees> {
               children: [
                 Text(
                   "$msg",
-                  style: TextStyle(
-                    fontSize: fsm + 6,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: _T.f(size: 16, weight: FontWeight.bold, color: _T.lbl1),
                 ),
                 const SizedBox(height: psm * 0.75),
                 lqAssButton(
@@ -768,13 +763,18 @@ class _CreateAttendeesState extends State<CreateAttendees> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _T {
-  static const bg = Color(0xFF0A0A0A);
-  static const card = Color(0xFF141414);
-  static const lime = Color(0xFFC9A84C);
-  static const white = Color(0xFFFFFFFF);
-  static const grey1 = Color(0xFFAAAAAA);
-  static const grey2 = Color(0xFF555555);
-  static const grey3 = Color(0xFF333333);
+  static const bg      = Color(0xFF111114);
+  static const card    = Color(0xFF1C1C1E);
+  static const card2   = Color(0xFF28282C);
+  static const card3   = Color(0xFF3A3A3C);
+  static const sep     = Color(0xFF2C2C2E);
+  static const lime    = Color(0xFFC9A84C);
+  static const limeDim = Color(0xFF2A2210);
+  static const lbl1    = Color(0xFFFFFFFF);
+  static const lbl2    = Color(0xFFAEAEB2);
+  static const lbl3    = Color(0xFF636366);
+  static const lbl4    = Color(0xFF48484A);
+  static const white   = Color(0xFFFFFFFF);
 
   static TextStyle f({
     double size = 14,
@@ -805,7 +805,7 @@ class _GusOrb extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withOpacity(opacity),
+        color: color.withValues(alpha: opacity),
       ),
       child: ClipOval(
         child: BackdropFilter(
