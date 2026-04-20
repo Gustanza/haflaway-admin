@@ -15,6 +15,7 @@ import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/gen_constants.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:icons_plus/icons_plus.dart';
@@ -95,84 +96,78 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         isLoading = true;
         selectList.clear();
       });
-      
-      // Debug: Print current filter values
-      debugPrint("=== LOADING ATTENDEES ===");
-      debugPrint("Channel: $selChannel");
-      debugPrint("Status: $selStatus");
-      debugPrint("List Filter: $_labelFilterId");
-      debugPrint("Campaign ID: ${widget.campaignId}");
-      
-      String messageIndexPattern = "${selChannel}_${widget.campaignId}_${selStatus}";
-      debugPrint("Message Index Pattern: $messageIndexPattern");
-      
-      Query<Map<String, dynamic>> query;
-      
+
+      final String messageIndexPattern = "${selChannel}_${widget.campaignId}_${selStatus}";
+
       if (_labelFilterId != null) {
-        // First get all attendees from the selected list
-        debugPrint("Getting attendees from list: $_labelFilterId");
-        query = firestore
+        // Batch-fetch loop: keep pulling pages until we accumulate pageSize
+        // filtered results or exhaust the label's attendees. This fixes the
+        // bug where limit() was applied before in-memory status filtering,
+        // causing statuses like "unsent" (older createdAt) to never surface.
+        final baseQuery = firestore
             .collection(ecol)
             .doc(widget.event.id)
             .collection(atcol)
-            .where("labelIds", arrayContains: _labelFilterId);
-      } else {
-        // Get all attendees with the message status
-        debugPrint("Getting attendees with message status");
-        query = firestore
-            .collection(ecol)
-            .doc(widget.event.id)
-            .collection(atcol)
-            .where("messageIndexes", arrayContains: messageIndexPattern);
-      }
-      
-      var snapshot = await query
-          .orderBy("createdAt", descending: true)
-          .limit(pageSize)
-          .get();
-      var docs = snapshot.docs;
-      debugPrint("Found ${docs.length} documents from initial query");
-      
-      List<Attendee> filteredAttendees = [];
-      
-      if (_labelFilterId != null) {
-        // If list is selected, filter by message status in memory
-        filteredAttendees = docs.map<Attendee>((e) {
-          var attendee = Attendee.fromMap(e.id, e.data());
-          debugPrint("List Attendee: ${attendee.fullName}, MessageIndexes: ${attendee.messageIndexes}");
-          return attendee;
-        }).where((attendee) {
-          // Check if attendee has the required message index
-          return attendee.messageIndexes?.contains(messageIndexPattern) ?? false;
-        }).toList();
-        debugPrint("After message status filtering: ${filteredAttendees.length} attendees");
-      } else {
-        // No list filter, use all results
-        filteredAttendees = docs.map<Attendee>((e) {
-          var attendee = Attendee.fromMap(e.id, e.data());
-          debugPrint("Status Attendee: ${attendee.fullName}, MessageIndexes: ${attendee.messageIndexes}, LabelIds: ${attendee.labelIds}");
-          return attendee;
-        }).toList();
-      }
-      
-      if (filteredAttendees.isEmpty) {
-        return safeState(() {
-          hasMore = false;
+            .where("labelIds", arrayContains: _labelFilterId)
+            .orderBy("createdAt", descending: true);
+
+        List<Attendee> accumulated = [];
+        QueryDocumentSnapshot<Map<String, dynamic>>? batchCursor;
+        bool firestoreHasMore = true;
+
+        while (accumulated.length < pageSize && firestoreHasMore) {
+          var q = baseQuery.limit(pageSize);
+          if (batchCursor != null) q = q.startAfterDocument(batchCursor);
+
+          final snap = await q.get();
+          if (snap.docs.isEmpty) { firestoreHasMore = false; break; }
+
+          batchCursor = snap.docs.last;
+
+          final batch = snap.docs
+              .map<Attendee>((e) => Attendee.fromMap(e.id, e.data()))
+              .where((a) => a.messageIndexes?.contains(messageIndexPattern) ?? false)
+              .toList();
+
+          accumulated.addAll(batch);
+          if (snap.docs.length < pageSize) firestoreHasMore = false;
+        }
+
+        lastDocument = batchCursor;
+        safeState(() {
+          attendeeList = accumulated;
+          hasMore = firestoreHasMore;
           isLoading = false;
-          attendeeList = [];
+        });
+      } else {
+        final snap = await firestore
+            .collection(ecol)
+            .doc(widget.event.id)
+            .collection(atcol)
+            .where("messageIndexes", arrayContains: messageIndexPattern)
+            .orderBy("createdAt", descending: true)
+            .limit(pageSize)
+            .get();
+
+        if (snap.docs.isEmpty) {
+          return safeState(() {
+            hasMore = false;
+            isLoading = false;
+            attendeeList = [];
+          });
+        }
+
+        lastDocument = snap.docs.last;
+        safeState(() {
+          attendeeList = snap.docs.map<Attendee>((e) => Attendee.fromMap(e.id, e.data())).toList();
+          hasMore = snap.docs.length == pageSize;
+          isLoading = false;
         });
       }
-      
-      lastDocument = docs.last;
-      attendeeList = filteredAttendees;
-      safeState(() {
-        hasMore = true;
-        isLoading = false;
-      });
     } catch (e) {
       debugPrint("Error loading attendees: $e");
       safeState(() {
-        hasMore = true;
+        hasMore = false;
         isLoading = false;
       });
     }
@@ -184,78 +179,74 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         hasMore = true;
         isLoading = true;
       });
-      
-      String messageIndexPattern = "${selChannel}_${widget.campaignId}_${selStatus}";
-      debugPrint("=== LOADING MORE ATTENDEES ===");
-      debugPrint("Message Index Pattern: $messageIndexPattern");
-      
-      Query<Map<String, dynamic>> query;
-      
+
+      final String messageIndexPattern = "${selChannel}_${widget.campaignId}_${selStatus}";
+
       if (_labelFilterId != null) {
-        // First get more attendees from the selected list
-        debugPrint("Getting more attendees from list: $_labelFilterId");
-        query = firestore
+        final baseQuery = firestore
             .collection(ecol)
             .doc(widget.event.id)
             .collection(atcol)
-            .where("labelIds", arrayContains: _labelFilterId);
+            .where("labelIds", arrayContains: _labelFilterId)
+            .orderBy("createdAt", descending: true);
+
+        List<Attendee> accumulated = [];
+        QueryDocumentSnapshot<Map<String, dynamic>>? batchCursor = lastDocument;
+        bool firestoreHasMore = true;
+
+        while (accumulated.length < pageSize && firestoreHasMore) {
+          var q = baseQuery.limit(pageSize);
+          if (batchCursor != null) q = q.startAfterDocument(batchCursor);
+
+          final snap = await q.get();
+          if (snap.docs.isEmpty) { firestoreHasMore = false; break; }
+
+          batchCursor = snap.docs.last;
+
+          final batch = snap.docs
+              .map<Attendee>((e) => Attendee.fromMap(e.id, e.data()))
+              .where((a) => a.messageIndexes?.contains(messageIndexPattern) ?? false)
+              .toList();
+
+          accumulated.addAll(batch);
+          if (snap.docs.length < pageSize) firestoreHasMore = false;
+        }
+
+        lastDocument = batchCursor;
+        safeState(() {
+          attendeeList.addAll(accumulated);
+          hasMore = firestoreHasMore;
+          isLoading = false;
+        });
       } else {
-        // Get more attendees with the message status
-        debugPrint("Getting more attendees with message status");
-        query = firestore
+        final snap = await firestore
             .collection(ecol)
             .doc(widget.event.id)
             .collection(atcol)
-            .where("messageIndexes", arrayContains: messageIndexPattern);
-      }
-      
-      var snapshot = await query
-          .orderBy("createdAt", descending: true)
-          .startAfterDocument(lastDocument!)
-          .limit(pageSize)
-          .get();
-      var docs = snapshot.docs;
-      debugPrint("Found ${docs.length} more documents from initial query");
-      
-      List<Attendee> filteredAttendees;
-      
-      if (_labelFilterId != null) {
-        // If list is selected, filter by message status in memory
-        filteredAttendees = docs.map<Attendee>((e) {
-          var attendee = Attendee.fromMap(e.id, e.data());
-          debugPrint("More List Attendee: ${attendee.fullName}, MessageIndexes: ${attendee.messageIndexes}");
-          return attendee;
-        }).where((attendee) {
-          // Check if attendee has the required message index
-          return attendee.messageIndexes?.contains(messageIndexPattern) ?? false;
-        }).toList();
-        debugPrint("After message status filtering: ${filteredAttendees.length} more attendees");
-      } else {
-        // No list filter, use all results
-        filteredAttendees = docs.map<Attendee>((e) {
-          var attendee = Attendee.fromMap(e.id, e.data());
-          debugPrint("More Status Attendee: ${attendee.fullName}, MessageIndexes: ${attendee.messageIndexes}");
-          return attendee;
-        }).toList();
-      }
-      
-      if (filteredAttendees.isEmpty) {
-        return safeState(() {
-          hasMore = false;
+            .where("messageIndexes", arrayContains: messageIndexPattern)
+            .orderBy("createdAt", descending: true)
+            .startAfterDocument(lastDocument!)
+            .limit(pageSize)
+            .get();
+
+        if (snap.docs.isEmpty) {
+          return safeState(() {
+            hasMore = false;
+            isLoading = false;
+          });
+        }
+
+        lastDocument = snap.docs.last;
+        safeState(() {
+          attendeeList.addAll(snap.docs.map<Attendee>((e) => Attendee.fromMap(e.id, e.data())).toList());
+          hasMore = snap.docs.length == pageSize;
           isLoading = false;
         });
       }
-      
-      lastDocument = docs.last;
-      attendeeList.addAll(filteredAttendees);
-      safeState(() {
-        hasMore = true;
-        isLoading = false;
-      });
     } catch (e) {
       debugPrint("Error loading more attendees: $e");
       safeState(() {
-        hasMore = true;
+        hasMore = false;
         isLoading = false;
       });
     }
@@ -645,7 +636,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                   Text(
                     isSel
                         ? "Selections: ${selectList.length}"
-                        : "Manage Invitations",
+                        : _pageTitle(),
                     style: _T.f(size: 15, weight: FontWeight.w600),
                   ),
                 ],
@@ -1107,6 +1098,15 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         );
       },
     );
+  }
+
+  String _pageTitle() {
+    switch (widget.campaignId) {
+      case invCampId:    return "Send Invitation Cards";
+      case contrCampId:  return "Send Contribution Cards";
+      case invRemCampId: return "Send Reminders";
+      default:           return "Send Messages";
+    }
   }
 
   popper() {

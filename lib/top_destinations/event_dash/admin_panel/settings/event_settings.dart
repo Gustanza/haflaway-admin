@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/utils/globalfns.dart';
@@ -69,6 +70,7 @@ class _EventSettingsState extends State<EventSettings> {
   bool publicEvent = false;
   bool requireApproval = false;
   int reminderHoursBefore = 24;
+  bool _isPublished = false;
 
   @override
   void initState() {
@@ -81,6 +83,7 @@ class _EventSettingsState extends State<EventSettings> {
       setState(() {
         usePng = widget.event?.usepng ?? true;
         selectedLanguage = widget.event?.language ?? 'sw';
+        _isPublished = (widget.event?.status ?? 'draft').toLowerCase() == 'published';
       });
     }
   }
@@ -210,6 +213,29 @@ class _EventSettingsState extends State<EventSettings> {
                           const SizedBox(height: 12),
                           _buildReportsSection(),
                           const SizedBox(height: 32),
+
+                          _sectionHeader(
+                            icon: Icons.public_rounded,
+                            title: "VISIBILITY",
+                            subtitle: "Control who can see this event",
+                          ),
+                          const SizedBox(height: 12),
+                          _buildActionTile(
+                            icon: _isPublished ? Icons.public_off_rounded : Icons.public_rounded,
+                            title: _isPublished ? "Published  ·  Tap to Unpublish" : "Draft  ·  Tap to Publish",
+                            isLoading: false,
+                            onTap: _showPublishDialog,
+                          ),
+                          const SizedBox(height: 32),
+
+                          _sectionHeader(
+                            icon: Icons.warning_amber_rounded,
+                            title: "DANGER ZONE",
+                            subtitle: "Irreversible actions",
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDangerTile(),
+                          const SizedBox(height: 40),
                         ],
                       ),
                     ),
@@ -631,6 +657,278 @@ class _EventSettingsState extends State<EventSettings> {
                 size: 14,
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ── Publish Dialog ────────────────────────────────────────────────────────
+
+  void _showPublishDialog() {
+    if (widget.event == null) return;
+    final isPublished = _isPublished;
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (ctx) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _T.card.withValues(alpha: 0.72),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: _T.sep.withValues(alpha: 0.6), width: 0.8),
+                ),
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: _T.lime.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.public_rounded, color: _T.lime, size: 26),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      isPublished ? 'Unpublish Event?' : 'Publish Event?',
+                      style: _T.f(size: 18, weight: FontWeight.w700, color: _T.white),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      isPublished
+                          ? 'This will hide the event from end-users.'
+                          : 'This will make the event visible to all users.',
+                      textAlign: TextAlign.center,
+                      style: _T.f(size: 13, color: _T.lbl2, height: 1.5),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => Navigator.of(ctx).pop(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              decoration: BoxDecoration(
+                                color: _T.card2,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: _T.sep, width: 0.8),
+                              ),
+                              child: Center(
+                                child: Text('Cancel', style: _T.f(size: 14, weight: FontWeight.w600, color: _T.lbl2)),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () async {
+                              Navigator.of(ctx).pop();
+                              final newStatus = isPublished ? 'Draft' : 'Published';
+                              try {
+                                await firestore.collection(ecol).doc(widget.event!.id).update({'status': newStatus});
+                                if (mounted) setState(() => _isPublished = !isPublished);
+                                showToast(isGood: true, msg: isPublished ? 'Event set as Draft' : 'Event Published');
+                              } catch (e) {
+                                showToast(isGood: false, msg: 'Error: $e');
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              decoration: BoxDecoration(
+                                color: isPublished
+                                    ? const Color(0xFFFF453A).withValues(alpha: 0.15)
+                                    : _T.limeDim,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isPublished
+                                      ? const Color(0xFFFF453A).withValues(alpha: 0.4)
+                                      : _T.lime.withValues(alpha: 0.4),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  isPublished ? 'Unpublish' : 'Publish',
+                                  style: _T.f(
+                                    size: 14,
+                                    weight: FontWeight.w700,
+                                    color: isPublished ? const Color(0xFFFF453A) : _T.lime,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Delete Tile + Dialog ──────────────────────────────────────────────────
+
+  Widget _buildDangerTile() {
+    return GestureDetector(
+      onTap: _showDeleteDialog,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFF453A).withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFFF453A).withValues(alpha: 0.3), width: 0.8),
+        ),
+        child: Row(
+          children: [
+            const Icon(CupertinoIcons.delete, color: Color(0xFFFF453A), size: 20),
+            const SizedBox(width: 12),
+            Text('Delete Event', style: _T.f(size: 15, weight: FontWeight.w600, color: Color(0xFFFF453A))),
+            const Spacer(),
+            Icon(Icons.arrow_forward_ios_rounded, color: const Color(0xFFFF453A).withValues(alpha: 0.5), size: 14),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteDialog() {
+    if (widget.event == null) return;
+    final confirmCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (ctx) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+              child: StatefulBuilder(
+                builder: (ctx2, setDs) => Container(
+                  decoration: BoxDecoration(
+                    color: _T.card.withValues(alpha: 0.72),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: _T.sep.withValues(alpha: 0.6), width: 0.8),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF453A).withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(CupertinoIcons.delete, color: Color(0xFFFF453A), size: 26),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Delete Event',
+                        style: _T.f(size: 18, weight: FontWeight.w700, color: _T.white),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'This is irreversible. Type "delete" below to confirm.',
+                        textAlign: TextAlign.center,
+                        style: _T.f(size: 13, color: _T.lbl2, height: 1.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: _T.card2,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _T.sep, width: 0.8),
+                        ),
+                        child: TextField(
+                          controller: confirmCtrl,
+                          style: _T.f(size: 14, color: _T.white),
+                          onChanged: (_) => setDs(() {}),
+                          decoration: InputDecoration(
+                            hintText: 'delete',
+                            hintStyle: _T.f(size: 14, color: _T.lbl4),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => Navigator.of(ctx2).pop(),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                decoration: BoxDecoration(
+                                  color: _T.card2,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: _T.sep, width: 0.8),
+                                ),
+                                child: Center(
+                                  child: Text('Cancel', style: _T.f(size: 14, weight: FontWeight.w600, color: _T.lbl2)),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: confirmCtrl.text.trim() == 'delete'
+                                  ? () async {
+                                      Navigator.of(ctx2).pop();
+                                      try {
+                                        await firestore.collection(ecol).doc(widget.event!.id).delete();
+                                        if (mounted) Phoenix.rebirth(context);
+                                      } catch (e) {
+                                        showToast(isGood: false, msg: 'Error: $e');
+                                      }
+                                    }
+                                  : null,
+                              child: AnimatedOpacity(
+                                opacity: confirmCtrl.text.trim() == 'delete' ? 1.0 : 0.35,
+                                duration: const Duration(milliseconds: 200),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 13),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF453A).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: const Color(0xFFFF453A).withValues(alpha: 0.4), width: 0.8),
+                                  ),
+                                  child: Center(
+                                    child: Text('Delete', style: _T.f(size: 14, weight: FontWeight.w700, color: Color(0xFFFF453A))),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

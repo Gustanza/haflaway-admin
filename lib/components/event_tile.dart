@@ -1,15 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:haflaway/providers/package_provider.dart';
-import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Design tokens — same palette as the rest of the app
@@ -17,8 +12,7 @@ import 'package:provider/provider.dart';
 
 abstract class _E {
   static const card    = Color(0xFF1C1C1E);
-  static const card3   = Color(0xFF3A3A3C);
-  static const sep     = Color(0xFF2C2C2E);
+static const sep     = Color(0xFF2C2C2E);
   static const lime    = Color(0xFFC9A84C);
   static const lbl1    = Color(0xFFEEEEF0);
   static const lbl4    = Color(0xFF48484A);
@@ -62,7 +56,6 @@ class _EventTileState extends State<EventTile> {
     final month     = _monthFmt.format(parsed).toUpperCase();
     final day       = _dayFmt.format(parsed);
     final eventfDt  = formatDate(dtime: parsed);
-    final prov      = context.read<PackageProvider>();
     final status    = widget.eventData.status ?? 'Draft';
     final isPublished = status.toLowerCase() == 'published';
 
@@ -87,7 +80,7 @@ class _EventTileState extends State<EventTile> {
           ClipRRect(
             borderRadius: BorderRadius.vertical(
               top: const Radius.circular(20),
-              bottom: prov.isSuperAdmin ? Radius.zero : const Radius.circular(20),
+              bottom: const Radius.circular(20),
             ),
             child: SizedBox(
               width: double.infinity,
@@ -203,71 +196,6 @@ class _EventTileState extends State<EventTile> {
             ),
           ),
 
-          // ── Super-admin actions ──────────────────────────────────────────────
-          if (prov.isSuperAdmin)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () async => await showPublish(eventId: widget.eventData.id ?? '_'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: isPublished
-                            ? const Color(0xFF30D158).withValues(alpha: 0.12)
-                            : _E.card3.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isPublished
-                              ? const Color(0xFF30D158).withValues(alpha: 0.4)
-                              : _E.lbl4,
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6, height: 6,
-                            decoration: BoxDecoration(
-                              color: isPublished ? const Color(0xFF30D158) : _E.lbl4,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 7),
-                          Text(
-                            status.toUpperCase(),
-                            style: _E.f(
-                              size: 11,
-                              weight: FontWeight.w700,
-                              color: isPublished ? const Color(0xFF30D158) : _E.lbl4,
-                              letterSpacing: 0.6,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () async => await showDeleteConfirm(eventId: widget.eventData.id ?? '_'),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF453A).withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: const Color(0xFFFF453A).withValues(alpha: 0.35),
-                          width: 0.8,
-                        ),
-                      ),
-                      child: const Icon(CupertinoIcons.delete, color: Color(0xFFFF453A), size: 16),
-                    ),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );
@@ -307,114 +235,4 @@ class _EventTileState extends State<EventTile> {
     );
   }
 
-  // ── Dialogs (logic unchanged) ──────────────────────────────────────────────
-
-  showDeleteConfirm({eventId}) {
-    TextEditingController confirmCon = TextEditingController();
-    return showCupertinoDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return CupertinoAlertDialog(
-              title: const Text("Delete Event"),
-              content: Column(
-                children: [
-                  const Text(
-                    "This action is IRREVERSIBLE and will delete all event data. Type \"delete permanently\" to confirm.",
-                  ),
-                  const SizedBox(height: 12),
-                  CupertinoTextField(
-                    controller: confirmCon,
-                    placeholder: "delete permanently",
-                    style: const TextStyle(color: Colors.white),
-                    onChanged: (v) => setDialogState(() {}),
-                  ),
-                ],
-              ),
-              actions: [
-                CupertinoDialogAction(
-                  isDefaultAction: true,
-                  child: const Text("Cancel"),
-                  onPressed: () => popper(),
-                ),
-                CupertinoDialogAction(
-                  isDestructiveAction: true,
-                  onPressed: confirmCon.text == "delete permanently"
-                      ? () {
-                          FirebaseFirestore.instance
-                              .collection(ecol)
-                              .doc(eventId)
-                              .delete()
-                              .then((_) {
-                                showToast(isGood: true, msg: "Event Deleted");
-                                widget.onRefresh?.call();
-                              })
-                              .catchError((e) {
-                                showToast(isGood: false, msg: "$e");
-                              });
-                          popper();
-                        }
-                      : null,
-                  child: const Text("Delete"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  showPublish({eventId}) {
-    return showCupertinoDialog(
-      context: context,
-      builder: (context) {
-        return CupertinoAlertDialog(
-          title: const Text("Event Status"),
-          content: const Text(
-            "Beware that this action will impact visibility of this Event to the end-users",
-          ),
-          actions: [
-            CupertinoButton(
-              color: Colors.red,
-              borderRadius: BorderRadius.zero,
-              child: const Text("Unpublish",
-                  style: TextStyle(color: Colors.white)),
-              onPressed: () {
-                FirebaseFirestore.instance
-                    .collection(ecol)
-                    .doc(eventId)
-                    .update({"status": "Draft"})
-                    .then((_) {
-                      showToast(isGood: true, msg: "Event set as Draft");
-                      widget.onRefresh?.call();
-                    })
-                    .catchError((e) => showToast(isGood: false, msg: "$e"));
-                popper();
-              },
-            ),
-            CupertinoButton(
-              child: const Text("Publish",
-                  style: TextStyle(color: Colors.white)),
-              onPressed: () {
-                FirebaseFirestore.instance
-                    .collection(ecol)
-                    .doc(eventId)
-                    .update({"status": "Published"})
-                    .then((_) {
-                      showToast(isGood: true, msg: "Event has been published");
-                      widget.onRefresh?.call();
-                    })
-                    .catchError((e) => showToast(isGood: false, msg: "$e"));
-                popper();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  popper() => Navigator.of(context).pop();
 }

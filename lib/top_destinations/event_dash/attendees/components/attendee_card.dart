@@ -77,7 +77,7 @@ Widget buildAttendeeCard({
   final hue = (fullname.hashCode % 360).abs().toDouble();
   final avatarColor = HSLColor.fromAHSL(1, hue, 0.55, 0.60).toColor();
 
-  final int messageCount = attendee.messageIndexes?.length ?? 0;
+  final int messageCount = attendee.messages.length;
 
   return StatefulBuilder(
     builder: (context, setState) {

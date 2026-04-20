@@ -86,16 +86,7 @@ class Attendee {
   };
 
   factory Attendee.fromMap(String id, Map<String, dynamic> map) {
-    var tmpIndexes = map['messageIndexes'] ?? [];
-    List mIndexes = [];
-    try {
-      mIndexes =
-          tmpIndexes.where((item) {
-            return !item.contains("unsent");
-          }).toList();
-    } catch (e) {
-      mIndexes = tmpIndexes;
-    }
+    List mIndexes = List.from(map['messageIndexes'] ?? []);
     return Attendee(
       id: id,
       cards: map['cards'] ?? {},
