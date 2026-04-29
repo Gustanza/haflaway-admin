@@ -389,6 +389,91 @@ class _MarqueeTextState extends State<MarqueeText>
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Search empty states
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum _GusSearchMode { prompt, noResults }
+
+/// Drop-in replacement for search empty states.
+/// [GusSearchEmpty.prompt] — shown before the user has typed anything.
+/// [GusSearchEmpty.noResults] — shown when a query returns nothing.
+class GusSearchEmpty extends StatelessWidget {
+  final _GusSearchMode _mode;
+  final String? query;
+
+  const GusSearchEmpty.prompt({super.key})
+    : _mode = _GusSearchMode.prompt,
+      query = null;
+
+  const GusSearchEmpty.noResults({super.key, this.query})
+    : _mode = _GusSearchMode.noResults;
+
+  @override
+  Widget build(BuildContext context) {
+    const lime = Color(0xFFC9A84C);
+    const bg = Color(0xFF1C1C1E);
+    const sep = Color(0xFF2C2C2E);
+    const lbl1 = Color(0xFFFFFFFF);
+    const lbl3 = Color(0xFF636366);
+
+    final bool isPrompt = _mode == _GusSearchMode.prompt;
+
+    final IconData icon =
+        isPrompt ? Icons.search_rounded : Icons.manage_search_rounded;
+
+    final String title = isPrompt ? "Search" : "No results";
+
+    final String subtitle =
+        isPrompt
+            ? "Type a name to find someone"
+            : query != null && query!.isNotEmpty
+            ? "Nothing matched \"$query\""
+            : "Try a different keyword";
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: sep, width: 0.8),
+            ),
+            child: Icon(
+              icon,
+              size: 28,
+              color: isPrompt ? lime : lbl3,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: lbl1,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: lbl3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class GusLoader extends StatelessWidget {
   final String message;
   const GusLoader({super.key, this.message = "Loading..."});

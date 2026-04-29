@@ -249,8 +249,8 @@ class _CreateAttendeesState extends State<CreateAttendees> {
                                 widget.event.labels!.isNotEmpty) ...[
                               _headerSection(
                                 icon: Icons.label_outline_rounded,
-                                title: "Lists",
-                                subtitle: "Assign to guest lists",
+                                title: "Labels",
+                                subtitle: "Assign to guest labels",
                               ),
                               const SizedBox(height: 20),
                               Wrap(

@@ -19,7 +19,6 @@ import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/attendees.dart';
-import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:intl/intl.dart';
 
@@ -283,7 +282,7 @@ class _AdminPanelState extends State<AdminPanel> {
                   SliverToBoxAdapter(child: _miniStatRow()),
                   SliverToBoxAdapter(child: _checkpointsSection()),
                   SliverToBoxAdapter(child: _toolsSection()),
-                  SliverToBoxAdapter(child: _teamSection()),
+                  SliverToBoxAdapter(child: _gallerySection()),
                   SliverToBoxAdapter(
                     child: SizedBox(
                       height: MediaQuery.of(context).padding.bottom + 32,
@@ -500,7 +499,7 @@ class _AdminPanelState extends State<AdminPanel> {
                     ),
                   if (date.isNotEmpty && loc.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Divider(height: 1, thickness: 0.5, color: _T.sep),
                     ),
                   if (loc.isNotEmpty)
@@ -806,23 +805,7 @@ class _AdminPanelState extends State<AdminPanel> {
         _sectionHeader(
           'SCAN CHECKPOINTS',
           action: 'Add new',
-          onAction: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder:
-                  (ctx) => SizedBox(
-                    height: MediaQuery.of(ctx).size.height * 0.85,
-                    child: modalBtmSheet(
-                      bdrdm: 28,
-                      child: ChkpnForm(
-                        eId: event?.id ?? widget.eventO.id ?? '',
-                      ),
-                    ),
-                  ),
-            ).then((_) => loadData());
-          },
+          onAction: () => _openChkpnSheet(),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -837,8 +820,7 @@ class _AdminPanelState extends State<AdminPanel> {
                           bottom: idx < checkpoints.length - 1 ? 8 : 0,
                         ),
                         child: _checkpointRow(
-                          icon: Icons.meeting_room_outlined,
-                          name: '${checkpoint.name}',
+                          checkpoint: checkpoint,
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
@@ -850,12 +832,14 @@ class _AdminPanelState extends State<AdminPanel> {
                               ),
                             );
                           },
+                          onEdit: () => _openChkpnSheet(checkpoint: checkpoint),
+                          onDelete: () => _deleteCheckpoint(checkpoint),
                         ),
                       );
                     }),
                   ),
         ),
-        const SizedBox(height: 8),
+        // const SizedBox(height: 8),
       ],
     );
   }
@@ -881,9 +865,10 @@ class _AdminPanelState extends State<AdminPanel> {
   }
 
   Widget _checkpointRow({
-    required IconData icon,
-    required String name,
+    required CheckPoint checkpoint,
     required VoidCallback onTap,
+    required VoidCallback onEdit,
+    required VoidCallback onDelete,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -896,38 +881,201 @@ class _AdminPanelState extends State<AdminPanel> {
         ),
         child: Row(
           children: [
-            // Left accent icon container
             Container(
               padding: const EdgeInsets.all(9),
               decoration: BoxDecoration(
                 color: _T.lime.withValues(alpha: 0.11),
                 borderRadius: BorderRadius.circular(11),
               ),
-              child: Icon(icon, color: _T.lime, size: 18),
+              child: const Icon(
+                Icons.meeting_room_outlined,
+                color: _T.lime,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                name,
+                checkpoint.name,
                 style: _T.f(size: 15, weight: FontWeight.w500, color: _T.lbl1),
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: _T.card2,
-                borderRadius: BorderRadius.circular(8),
+            PopupMenuButton<String>(
+              padding: EdgeInsets.zero,
+              icon: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: _T.card2,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  CupertinoIcons.ellipsis,
+                  color: _T.lbl3,
+                  size: 15,
+                ),
               ),
-              child: const Icon(
-                Icons.chevron_right_rounded,
-                color: _T.lbl3,
-                size: 16,
+              color: _T.card2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: _T.sep, width: 0.8),
               ),
+              itemBuilder:
+                  (_) => [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          const Icon(
+                            CupertinoIcons.pencil,
+                            color: _T.lbl2,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 10),
+                          Text('Edit', style: _T.f(size: 14, color: _T.lbl1)),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          const Icon(
+                            CupertinoIcons.trash,
+                            color: Colors.red,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Delete',
+                            style: _T.f(size: 14, color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+              onSelected: (v) {
+                if (v == 'edit') onEdit();
+                if (v == 'delete') onDelete();
+              },
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _openChkpnSheet({CheckPoint? checkpoint}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (ctx) => Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _T.bg.withValues(alpha: 0.72),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(28),
+                    ),
+                    border: Border(
+                      top: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.13),
+                        width: 0.8,
+                      ),
+                      left: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.13),
+                        width: 0.8,
+                      ),
+                      right: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.13),
+                        width: 0.8,
+                      ),
+                    ),
+                  ),
+                  child: ChkpnForm(
+                    eId: event?.id ?? widget.eventO.id ?? '',
+                    checkpoint: checkpoint,
+                  ),
+                ),
+              ),
+            ),
+          ),
+    ).then((_) => loadData());
+  }
+
+  Future<void> _deleteCheckpoint(CheckPoint checkpoint) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: _T.card2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              'Delete Checkpoint',
+              style: _T.f(size: 17, weight: FontWeight.w700),
+            ),
+            content: Text(
+              'Delete "${checkpoint.name}"?\nThis cannot be undone.',
+              style: _T.f(size: 14, color: _T.lbl2, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Cancel', style: _T.f(size: 15, color: _T.lbl2)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(
+                  'Delete',
+                  style: _T.f(
+                    size: 15,
+                    weight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final eId = event?.id ?? widget.eventO.id ?? '';
+      final batch = firestore.batch();
+      batch.delete(
+        firestore
+            .collection(ecol)
+            .doc(eId)
+            .collection(echecksub)
+            .doc(checkpoint.id),
+      );
+      final cardsSnap =
+          await firestore.collection(ecol).doc(eId).collection(cardcol).get();
+      for (final doc in cardsSnap.docs) {
+        final clearAt = (doc.data()['clearAt'] as List?) ?? [];
+        if (clearAt.contains(checkpoint.id)) {
+          batch.update(doc.reference, {
+            crdClrnc: FieldValue.arrayRemove([checkpoint.id]),
+          });
+        }
+      }
+      await batch.commit();
+      showToast(isGood: true, msg: 'Checkpoint deleted');
+      loadData();
+    } catch (e) {
+      showToast(isGood: false, msg: e.toString());
+    }
   }
 
   // ── Event tools grid ──────────────────────────────────────────────────────
@@ -1022,21 +1170,6 @@ class _AdminPanelState extends State<AdminPanel> {
                   loadData();
                 },
               ),
-              _toolCard(
-                icon: Icons.photo_library_outlined,
-                count: '$galleryCount',
-                title: 'Gallery',
-                subtitle: 'Event photos',
-                isActive: true,
-                onTap: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => EventGallery(event: event!),
-                    ),
-                  );
-                  loadData();
-                },
-              ),
               /* _toolCard(
                 icon: Icons.storefront_outlined,
                 count: '—',
@@ -1073,7 +1206,7 @@ class _AdminPanelState extends State<AdminPanel> {
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        // const SizedBox(height: 8),
       ],
     );
   }
@@ -1175,28 +1308,19 @@ class _AdminPanelState extends State<AdminPanel> {
     );
   }
 
-  // ── Team section ──────────────────────────────────────────────────────────
+  // ── Gallery section ───────────────────────────────────────────────────────
 
-  Widget _teamSection() {
+  Widget _gallerySection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionHeader(
-          'MANAGEMENT TEAM',
-          action: 'Manage',
-          onAction: () async {
-            await Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => Users(eId: event?.id ?? '')),
-            );
-            loadData();
-          },
-        ),
+        _sectionHeader('GALLERY'),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: GestureDetector(
             onTap: () async {
               await Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => Users(eId: event?.id ?? '')),
+                MaterialPageRoute(builder: (_) => EventGallery(event: event!)),
               );
               loadData();
             },
@@ -1209,23 +1333,34 @@ class _AdminPanelState extends State<AdminPanel> {
               ),
               child: Row(
                 children: [
-                  _avStack(),
-                  const SizedBox(width: 16),
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      color: _T.lime.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: const Icon(
+                      Icons.photo_library_outlined,
+                      color: _T.lime,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$adminsCount Administrators',
+                          'Gallery',
                           style: _T.f(
                             size: 15,
-                            weight: FontWeight.w600,
+                            weight: FontWeight.w500,
                             color: _T.lbl1,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
-                          '$scannersCount scanners',
+                          '$galleryCount photos',
                           style: _T.f(size: 12, color: _T.lbl3),
                         ),
                       ],
@@ -1249,93 +1384,6 @@ class _AdminPanelState extends State<AdminPanel> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _avStack() {
-    const palette = [
-      (Color(0xFF3D1A0A), Color(0xFFE07040)),
-      (Color(0xFF0A1830), Color(0xFF5A8ADB)),
-      (Color(0xFF0D2018), Color(0xFF3DAA76)),
-      (Color(0xFF1E0D30), Color(0xFFBF5AF2)),
-    ];
-    const double sz = 34;
-    const double ov = 10;
-
-    final visibleCount = adminsCount.clamp(0, 5);
-    final overflow = adminsCount > 5 ? adminsCount - 5 : 0;
-    final totalSlots = visibleCount + (overflow > 0 ? 1 : 0);
-    final double w = totalSlots == 0 ? sz : sz + (totalSlots - 1) * (sz - ov);
-
-    if (adminsCount == 0) {
-      return Container(
-        width: sz,
-        height: sz,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: _T.card3,
-          border: Border.all(color: _T.card, width: 2.5),
-        ),
-        child: const Icon(
-          Icons.person_outline_rounded,
-          color: _T.lbl4,
-          size: 16,
-        ),
-      );
-    }
-
-    return SizedBox(
-      width: w,
-      height: sz,
-      child: Stack(
-        children: [
-          ...List.generate(visibleCount, (i) {
-            final p = palette[i % palette.length];
-            return Positioned(
-              left: i * (sz - ov).toDouble(),
-              child: Container(
-                width: sz,
-                height: sz,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: p.$1,
-                  border: Border.all(color: _T.card, width: 2.5),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.person_rounded,
-                    color: Colors.white38,
-                    size: 16,
-                  ),
-                ),
-              ),
-            );
-          }),
-          if (overflow > 0)
-            Positioned(
-              left: visibleCount * (sz - ov).toDouble(),
-              child: Container(
-                width: sz,
-                height: sz,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _T.card3,
-                  border: Border.all(color: _T.card, width: 2.5),
-                ),
-                child: Center(
-                  child: Text(
-                    '+$overflow',
-                    style: _T.f(
-                      size: 9,
-                      weight: FontWeight.w800,
-                      color: _T.lbl2,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
 
@@ -1503,7 +1551,8 @@ class _AdminPanelState extends State<AdminPanel> {
 
 class ChkpnForm extends StatefulWidget {
   final String eId;
-  const ChkpnForm({super.key, required this.eId});
+  final CheckPoint? checkpoint;
+  const ChkpnForm({super.key, required this.eId, this.checkpoint});
 
   @override
   State<ChkpnForm> createState() => _ChkpnFormState();
@@ -1512,9 +1561,22 @@ class ChkpnForm extends StatefulWidget {
 class _ChkpnFormState extends State<ChkpnForm> {
   List selCrdsIds = [];
   bool isLoading = false;
+  bool _selInitialized = false;
   final key = GlobalKey<FormState>();
   final firestore = FirebaseFirestore.instance;
-  final controller = TextEditingController();
+  late final TextEditingController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = TextEditingController(text: widget.checkpoint?.name ?? '');
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1522,178 +1584,211 @@ class _ChkpnFormState extends State<ChkpnForm> {
       future:
           firestore.collection(ecol).doc(widget.eId).collection(cardcol).get(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center();
-        if (snapshot.hasError) return const Center();
+        if (!snapshot.hasData || snapshot.hasError)
+          return const SizedBox(
+            height: kToolbarHeight * 3,
+            child: Center(child: CupertinoActivityIndicator(color: _T.lime)),
+          );
 
         final fcards =
             (snapshot.data as dynamic).docs
                 .map<Kard>((doc) => Kard.fromMap(doc.id, doc.data()))
                 .toList();
 
+        if (!_selInitialized && widget.checkpoint != null) {
+          _selInitialized = true;
+          selCrdsIds =
+              fcards
+                  .where((Kard c) => c.clearAt.contains(widget.checkpoint!.id))
+                  .map((Kard c) => c.id)
+                  .toList();
+        }
+
+        final isEdit = widget.checkpoint != null;
+
         return Form(
           key: key,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 28, 20, 28),
-            children: [
-              Text(
-                'New Checkpoint',
-                style: _T.f(
-                  size: 26,
-                  weight: FontWeight.w800,
-                  color: _T.white,
-                  letterSpacing: -0.6,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Name this checkpoint and select accepted card types.',
-                style: _T.f(size: 14, color: _T.lbl2, height: 1.5),
-              ),
-              const SizedBox(height: 24),
-
-              // Name field
-              TextFormField(
-                controller: controller,
-                style: _T.f(size: 15, weight: FontWeight.w400, color: _T.white),
-                cursorColor: _T.lime,
-                decoration: InputDecoration(
-                  hintText: 'e.g. Main Entrance',
-                  hintStyle: _T.f(size: 15, color: _T.lbl4),
-                  filled: true,
-                  fillColor: _T.card,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: _T.sep, width: 0.8),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: _T.sep, width: 0.8),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: _T.lime, width: 1.5),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.edit_rounded,
-                    color: _T.lbl3,
-                    size: 17,
-                  ),
-                ),
-                validator:
-                    (v) => (v == null || v.isEmpty) ? 'Name is required' : null,
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: 28),
-
-              if (fcards.isNotEmpty) ...[
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              28,
+              20,
+              MediaQuery.of(context).padding.bottom + 52,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  'Accepted Card Types',
+                  isEdit ? 'Edit Checkpoint' : 'New Checkpoint',
                   style: _T.f(
-                    size: 17,
-                    weight: FontWeight.w600,
-                    color: _T.lbl1,
-                    letterSpacing: -0.2,
+                    size: 26,
+                    weight: FontWeight.w800,
+                    color: _T.white,
+                    letterSpacing: -0.6,
                   ),
                 ),
-                const SizedBox(height: 12),
-                ...fcards.map((card) {
-                  final sel = selCrdsIds.contains(card.id);
-                  return GestureDetector(
-                    onTap:
-                        () => setState(
-                          () =>
-                              sel
-                                  ? selCrdsIds.remove(card.id)
-                                  : selCrdsIds.add(card.id),
-                        ),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: sel ? _T.limeDim : _T.card,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: sel ? _T.lime.withValues(alpha: 0.45) : _T.sep,
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            sel
-                                ? Icons.check_circle_rounded
-                                : Icons.circle_outlined,
-                            color: sel ? _T.lime : _T.lbl3,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            card.type,
-                            style: _T.f(
-                              size: 15,
-                              weight: sel ? FontWeight.w600 : FontWeight.w400,
-                              color: sel ? _T.lime : _T.lbl1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-              ] else
-                _emptyCards(),
+                const SizedBox(height: 6),
+                Text(
+                  'Name this checkpoint and select accepted card types.',
+                  style: _T.f(size: 14, color: _T.lbl2, height: 1.5),
+                ),
+                const SizedBox(height: 24),
 
-              const SizedBox(height: 32),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed:
-                      isLoading
-                          ? null
-                          : () async {
-                            if (key.currentState?.validate() ?? false) {
-                              await crtActn(selCrdsIds: selCrdsIds);
-                            }
-                          },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _T.lime,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
+                // Name field
+                TextFormField(
+                  controller: controller,
+                  style: _T.f(
+                    size: 15,
+                    weight: FontWeight.w400,
+                    color: _T.white,
+                  ),
+                  cursorColor: _T.lime,
+                  decoration: InputDecoration(
+                    hintText: 'e.g. Main Entrance',
+                    hintStyle: _T.f(size: 15, color: _T.lbl4),
+                    filled: true,
+                    fillColor: _T.card,
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: _T.sep, width: 0.8),
                     ),
-                    elevation: 0,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: _T.sep, width: 0.8),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: _T.lime, width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.edit_rounded,
+                      color: _T.lbl3,
+                      size: 17,
+                    ),
                   ),
-                  child:
-                      isLoading
-                          ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.black,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                          : Text(
-                            'Save Checkpoint',
-                            style: _T.f(
-                              size: 16,
-                              weight: FontWeight.w700,
-                              color: Colors.black,
-                            ),
-                          ),
+                  validator:
+                      (v) =>
+                          (v == null || v.isEmpty) ? 'Name is required' : null,
+                  textCapitalization: TextCapitalization.words,
                 ),
-              ),
-            ],
+                const SizedBox(height: 28),
+
+                if (fcards.isNotEmpty) ...[
+                  Text(
+                    'Accepted Card Types',
+                    style: _T.f(
+                      size: 17,
+                      weight: FontWeight.w600,
+                      color: _T.lbl1,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...fcards.map((card) {
+                    final sel = selCrdsIds.contains(card.id);
+                    return GestureDetector(
+                      onTap:
+                          () => setState(
+                            () =>
+                                sel
+                                    ? selCrdsIds.remove(card.id)
+                                    : selCrdsIds.add(card.id),
+                          ),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: sel ? _T.limeDim : _T.card,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color:
+                                sel ? _T.lime.withValues(alpha: 0.45) : _T.sep,
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              sel
+                                  ? Icons.check_circle_rounded
+                                  : Icons.circle_outlined,
+                              color: sel ? _T.lime : _T.lbl3,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              card.type,
+                              style: _T.f(
+                                size: 15,
+                                weight: sel ? FontWeight.w600 : FontWeight.w400,
+                                color: sel ? _T.lime : _T.lbl1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ] else
+                  _emptyCards(),
+
+                const SizedBox(height: 32),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed:
+                        isLoading
+                            ? null
+                            : () async {
+                              if (key.currentState?.validate() ?? false) {
+                                if (isEdit) {
+                                  await updateActn(newSelCrdsIds: selCrdsIds);
+                                } else {
+                                  await crtActn(selCrdsIds: selCrdsIds);
+                                }
+                              }
+                            },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _T.lime,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 0,
+                    ),
+                    child:
+                        isLoading
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.black,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                            : Text(
+                              isEdit ? 'Save Changes' : 'Save Checkpoint',
+                              style: _T.f(
+                                size: 16,
+                                weight: FontWeight.w700,
+                                color: Colors.black,
+                              ),
+                            ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -1752,6 +1847,53 @@ class _ChkpnFormState extends State<ChkpnForm> {
       setState(() => isLoading = false);
       if (mounted) Navigator.pop(context);
       showToast(isGood: true, msg: 'Checkpoint created successfully');
+    } catch (e) {
+      setState(() => isLoading = false);
+      showToast(isGood: false, msg: '$e');
+    }
+  }
+
+  Future<void> updateActn({required List newSelCrdsIds}) async {
+    setState(() => isLoading = true);
+    try {
+      final checkpointId = widget.checkpoint!.id;
+      final batch = firestore.batch();
+
+      batch.update(
+        firestore
+            .collection(ecol)
+            .doc(widget.eId)
+            .collection(echecksub)
+            .doc(checkpointId),
+        {'name': controller.text},
+      );
+
+      final cardsSnap =
+          await firestore
+              .collection(ecol)
+              .doc(widget.eId)
+              .collection(cardcol)
+              .get();
+
+      for (final doc in cardsSnap.docs) {
+        final clearAt = (doc.data()['clearAt'] as List?) ?? [];
+        final wasSelected = clearAt.contains(checkpointId);
+        final isSelected = newSelCrdsIds.contains(doc.id);
+        if (!wasSelected && isSelected) {
+          batch.update(doc.reference, {
+            crdClrnc: FieldValue.arrayUnion([checkpointId]),
+          });
+        } else if (wasSelected && !isSelected) {
+          batch.update(doc.reference, {
+            crdClrnc: FieldValue.arrayRemove([checkpointId]),
+          });
+        }
+      }
+
+      await batch.commit();
+      setState(() => isLoading = false);
+      if (mounted) Navigator.pop(context);
+      showToast(isGood: true, msg: 'Checkpoint updated');
     } catch (e) {
       setState(() => isLoading = false);
       showToast(isGood: false, msg: '$e');

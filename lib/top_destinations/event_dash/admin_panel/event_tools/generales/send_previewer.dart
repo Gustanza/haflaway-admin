@@ -236,7 +236,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                     Text(
                       "Total Count: ${widget.senderList.length}",
                       style: _T.f(
-                        size: 14,
+                        size: 15,
                         color: _T.white,
                         weight: FontWeight.w600,
                       ),
@@ -256,7 +256,7 @@ class SendPreviewerState extends State<SendPreviewer> {
               Expanded(
                 child: Text(
                   "Select a template for this campaign",
-                  style: _T.f(size: 13, color: _T.grey1),
+                  style: _T.f(size: 14, color: _T.grey1),
                 ),
               ),
             ],
@@ -338,7 +338,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                           Text(
                             "Template ${index + 1}",
                             style: _T.f(
-                              size: 14,
+                              size: 15,
                               weight: FontWeight.w600,
                               color: isSelected ? _T.lime : _T.white,
                             ),
@@ -649,7 +649,7 @@ class _ExpandableMessageState extends State<_ExpandableMessage> {
             maxLines: _expanded ? null : _collapsedLines,
             overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
             style: GoogleFonts.inter(
-              fontSize: 13,
+              fontSize: 14,
               color: const Color(0xFFAAAAAA),
               height: 1.55,
             ),
@@ -660,7 +660,7 @@ class _ExpandableMessageState extends State<_ExpandableMessage> {
               final tp = TextPainter(
                 text: TextSpan(
                   text: widget.text,
-                  style: GoogleFonts.inter(fontSize: 13, height: 1.55),
+                  style: GoogleFonts.inter(fontSize: 14, height: 1.55),
                 ),
                 maxLines: _collapsedLines,
                 textDirection: TextDirection.ltr,

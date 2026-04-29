@@ -345,174 +345,180 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => modalBtmSheet(
-        bdrdm: 28,
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Handle
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 22),
-                    decoration: BoxDecoration(
-                      color: _T.card3,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                // Header
-                Row(
+      builder:
+          (ctx) => modalBtmSheet(
+            bdrdm: 28,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(11),
-                      decoration: BoxDecoration(
-                        color: _T.lime.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(
-                        Icons.dashboard_rounded,
-                        color: _T.lime,
-                        size: 20,
+                    // Handle
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 22),
+                        decoration: BoxDecoration(
+                          color: _T.card3,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    // Header
+                    Row(
                       children: [
-                        Text(
-                          "Event Tools",
-                          style: _T.f(
-                            size: 18,
-                            weight: FontWeight.w800,
-                            color: _T.white,
-                            letterSpacing: -0.4,
+                        Container(
+                          padding: const EdgeInsets.all(11),
+                          decoration: BoxDecoration(
+                            color: _T.lime.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.dashboard_rounded,
+                            color: _T.lime,
+                            size: 20,
                           ),
                         ),
-                        Text(
-                          "Analytics & communications",
-                          style: _T.f(size: 12, color: _T.lbl3),
+                        const SizedBox(width: 14),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Event Tools",
+                              style: _T.f(
+                                size: 18,
+                                weight: FontWeight.w800,
+                                color: _T.white,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                            Text(
+                              "Analytics & communications",
+                              style: _T.f(size: 12, color: _T.lbl3),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                // ── Analytics ──
-                _sheetSectionLabel("Analytics"),
-                const SizedBox(height: 10),
-                _sheetTile(
-                  icon: Icons.bar_chart_rounded,
-                  color: const Color(0xFF5E5CE6),
-                  title: "Summary",
-                  subtitle: "Attendance stats and full breakdown",
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    showQuickStats();
-                  },
-                ),
-                const SizedBox(height: 10),
-                _sheetTile(
-                  icon: Icons.label_rounded,
-                  color: _T.lime,
-                  title: "Manage Lists",
-                  subtitle: "Create and organise guest groups",
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    showLabelManager(context, widget.edata);
-                  },
-                ),
-
-                // ── Communications ──
-                const SizedBox(height: 22),
-                _sheetSectionLabel("Communications"),
-                const SizedBox(height: 10),
-                Column(
-                  children: [
-                    if (widget.kardType == KardType.invitation ||
-                        widget.kardType == KardType.contribution) ...[
-                      _sheetTile(
-                        icon: Icons.mark_email_unread_rounded,
-                        color: const Color(0xFF5AC8FA),
-                        title: "Send Card",
-                        subtitle: widget.kardType == KardType.invitation
-                            ? "Dispatch digital invitation cards"
-                            : "Send contribution cards to guests",
-                        onTap: () async {
-                          Navigator.pop(ctx);
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => InvitesIssuers(
-                                event: widget.edata,
-                                kardType: widget.kardType,
-                                campaignId: widget.kardType ==
-                                        KardType.invitation
-                                    ? invCampId
-                                    : contrCampId,
-                              ),
-                            ),
-                          );
-                          _loadAttendees();
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                    if (widget.kardType == KardType.invitation) ...[
-                      _sheetTile(
-                        icon: Icons.notifications_active_rounded,
-                        color: const Color(0xFFFF9F0A),
-                        title: "Send Reminder",
-                        subtitle: "Nudge guests who haven't responded",
-                        onTap: () async {
-                          Navigator.pop(ctx);
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => InvitesIssuers(
-                                event: widget.edata,
-                                kardType: widget.kardType,
-                                campaignId: invRemCampId,
-                              ),
-                            ),
-                          );
-                          _loadAttendees();
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                    ],
+                    // ── Analytics ──
+                    _sheetSectionLabel("Analytics"),
+                    const SizedBox(height: 10),
                     _sheetTile(
-                      icon: Icons.sms_rounded,
-                      color: const Color(0xFF30D158),
-                      title: "Send Bulk SMS",
-                      subtitle: "Text message all or filtered guests",
-                      onTap: () async {
+                      icon: Icons.bar_chart_rounded,
+                      color: const Color(0xFF5E5CE6),
+                      title: "Summary",
+                      subtitle: "Attendance stats and full breakdown",
+                      onTap: () {
                         Navigator.pop(ctx);
-                        await Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => AdminCampaigns(
-                              event: widget.edata,
-                              title: "Send Bulk SMS",
-                              kardType: widget.kardType,
-                            ),
-                          ),
-                        );
-                        _loadAttendees();
+                        showQuickStats();
                       },
                     ),
+                    const SizedBox(height: 10),
+                    _sheetTile(
+                      icon: Icons.label_rounded,
+                      color: _T.lime,
+                      title: "Manage Labels",
+                      subtitle: "Create and organise guest labels",
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        showLabelManager(context, widget.edata);
+                      },
+                    ),
+
+                    // ── Communications ──
+                    const SizedBox(height: 22),
+                    _sheetSectionLabel("Communications"),
+                    const SizedBox(height: 10),
+                    Column(
+                      children: [
+                        if (widget.kardType == KardType.invitation ||
+                            widget.kardType == KardType.contribution) ...[
+                          _sheetTile(
+                            icon: Icons.mark_email_unread_rounded,
+                            color: const Color(0xFF5AC8FA),
+                            title: "Send Card(s)",
+                            subtitle:
+                                widget.kardType == KardType.invitation
+                                    ? "Dispatch digital invitation cards"
+                                    : "Send contribution cards to guests",
+                            onTap: () async {
+                              Navigator.pop(ctx);
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => InvitesIssuers(
+                                        event: widget.edata,
+                                        kardType: widget.kardType,
+                                        campaignId:
+                                            widget.kardType ==
+                                                    KardType.invitation
+                                                ? invCampId
+                                                : contrCampId,
+                                      ),
+                                ),
+                              );
+                              _loadAttendees();
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (widget.kardType == KardType.invitation) ...[
+                          _sheetTile(
+                            icon: Icons.notifications_active_rounded,
+                            color: const Color(0xFFFF9F0A),
+                            title: "Send Reminder(s)",
+                            subtitle: "Nudge guests who haven't responded",
+                            onTap: () async {
+                              Navigator.pop(ctx);
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => InvitesIssuers(
+                                        event: widget.edata,
+                                        kardType: widget.kardType,
+                                        campaignId: invRemCampId,
+                                      ),
+                                ),
+                              );
+                              _loadAttendees();
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        _sheetTile(
+                          icon: Icons.sms_rounded,
+                          color: const Color(0xFF30D158),
+                          title: "Send Bulk SMS",
+                          subtitle: "Text message all or filtered guests",
+                          onTap: () async {
+                            Navigator.pop(ctx);
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => AdminCampaigns(
+                                      event: widget.edata,
+                                      title: "Send Bulk SMS",
+                                      kardType: widget.kardType,
+                                    ),
+                              ),
+                            );
+                            _loadAttendees();
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                   ],
                 ),
-                const SizedBox(height: 4),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
     );
   }
 
@@ -524,9 +530,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   }
 
   void _showMiniSheet() {
-    final entityLabel = widget.kardType == KardType.invitation
-        ? "Invitee"
-        : widget.kardType == KardType.contribution
+    final entityLabel =
+        widget.kardType == KardType.invitation
+            ? "Invitee"
+            : widget.kardType == KardType.contribution
             ? "Contributor"
             : "Contact";
 
@@ -534,130 +541,132 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => modalBtmSheet(
-        bdrdm: 28,
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Handle
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 22),
-                    decoration: BoxDecoration(
-                      color: _T.card3,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                // Header
-                Row(
+      builder:
+          (ctx) => modalBtmSheet(
+            bdrdm: 28,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(11),
-                      decoration: BoxDecoration(
-                        color: _T.lime.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(
-                        Icons.group_add_rounded,
-                        color: _T.lime,
-                        size: 20,
+                    // Handle
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 22),
+                        decoration: BoxDecoration(
+                          color: _T.card3,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    // Header
+                    Row(
                       children: [
-                        Text(
-                          "Add $entityLabel",
-                          style: _T.f(
-                            size: 18,
-                            weight: FontWeight.w800,
-                            color: _T.white,
-                            letterSpacing: -0.4,
+                        Container(
+                          padding: const EdgeInsets.all(11),
+                          decoration: BoxDecoration(
+                            color: _T.lime.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.group_add_rounded,
+                            color: _T.lime,
+                            size: 20,
                           ),
                         ),
-                        Text(
-                          "Choose how to add guests",
-                          style: _T.f(size: 12, color: _T.lbl3),
+                        const SizedBox(width: 14),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Add $entityLabel",
+                              style: _T.f(
+                                size: 18,
+                                weight: FontWeight.w800,
+                                color: _T.white,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                            Text(
+                              "Choose how to add guests",
+                              style: _T.f(size: 12, color: _T.lbl3),
+                            ),
+                          ],
                         ),
                       ],
                     ),
+                    const SizedBox(height: 24),
+
+                    _sheetTile(
+                      icon: Icons.person_add_alt_1_rounded,
+                      color: _T.lime,
+                      title: "Add Manually",
+                      subtitle: "Enter guest details one by one",
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        final title =
+                            widget.kardType == KardType.invitation
+                                ? "Invitation"
+                                : widget.kardType == KardType.contribution
+                                ? "Contributor"
+                                : "Contact";
+                        await navNormal(
+                          context: context,
+                          widget: CreateAttendees(
+                            event: widget.edata,
+                            title: title,
+                            kardType: widget.kardType,
+                          ),
+                        );
+                        _loadAttendees();
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _sheetTile(
+                      icon: Icons.upload_file_rounded,
+                      color: const Color(0xFF5AC8FA),
+                      title: "Upload Spreadsheet",
+                      subtitle: "Import guests from an Excel file",
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        importFile();
+                      },
+                    ),
+                    if (widget.kardType == KardType.invitation) ...[
+                      const SizedBox(height: 10),
+                      _sheetTile(
+                        icon: Icons.monetization_on_rounded,
+                        color: const Color(0xFFFF9F0A),
+                        title: "Import from Contributors",
+                        subtitle: "Pull in existing contributors as guests",
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          showSelectCard(isContactImport: false);
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      _sheetTile(
+                        icon: Icons.contacts_rounded,
+                        color: const Color(0xFF30D158),
+                        title: "Import from Contacts",
+                        subtitle: "Bring in saved contacts as guests",
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          showSelectCard(isContactImport: true);
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 4),
                   ],
                 ),
-                const SizedBox(height: 24),
-
-                _sheetTile(
-                  icon: Icons.person_add_alt_1_rounded,
-                  color: _T.lime,
-                  title: "Add Manually",
-                  subtitle: "Enter guest details one by one",
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    final title = widget.kardType == KardType.invitation
-                        ? "Invitation"
-                        : widget.kardType == KardType.contribution
-                            ? "Contributor"
-                            : "Contact";
-                    await navNormal(
-                      context: context,
-                      widget: CreateAttendees(
-                        event: widget.edata,
-                        title: title,
-                        kardType: widget.kardType,
-                      ),
-                    );
-                    _loadAttendees();
-                  },
-                ),
-                const SizedBox(height: 10),
-                _sheetTile(
-                  icon: Icons.upload_file_rounded,
-                  color: const Color(0xFF5AC8FA),
-                  title: "Upload Spreadsheet",
-                  subtitle: "Import guests from an Excel file",
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    importFile();
-                  },
-                ),
-                if (widget.kardType == KardType.invitation) ...[
-                  const SizedBox(height: 10),
-                  _sheetTile(
-                    icon: Icons.monetization_on_rounded,
-                    color: const Color(0xFFFF9F0A),
-                    title: "Import from Contributors",
-                    subtitle: "Pull in existing contributors as guests",
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      showSelectCard(isContactImport: false);
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  _sheetTile(
-                    icon: Icons.contacts_rounded,
-                    color: const Color(0xFF30D158),
-                    title: "Import from Contacts",
-                    subtitle: "Bring in saved contacts as guests",
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      showSelectCard(isContactImport: true);
-                    },
-                  ),
-                ],
-                const SizedBox(height: 4),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
     );
   }
 
@@ -698,6 +707,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 children: [
                   Text(
                     title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: _T.f(
                       size: 14,
                       weight: FontWeight.w700,
@@ -707,6 +718,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: _T.f(size: 12, color: _T.lbl3, height: 1.35),
                   ),
                 ],
@@ -830,17 +843,17 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   else if ((isSearching ? searchResults : atList).isEmpty &&
                       !isLoading)
                     SliverFillRemaining(
-                      hasScrollBody: true,
-                      child: BuildNoDt(
-                        string: isSearching ? "No Results Found" : "no data",
-                        isRefreshed: () async {
-                          if (isSearching) {
-                            performSearch(searchController.text);
-                          } else {
-                            await _loadAttendees();
-                          }
-                        },
-                      ),
+                      hasScrollBody: false,
+                      child: isSearching
+                          ? searchController.text.isEmpty
+                              ? const GusSearchEmpty.prompt()
+                              : GusSearchEmpty.noResults(
+                                  query: searchController.text,
+                                )
+                          : BuildNoDt(
+                              string: "no data",
+                              isRefreshed: () async => await _loadAttendees(),
+                            ),
                     )
                   else
                     SliverPadding(
@@ -889,6 +902,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                 kardType: widget.kardType,
                                 eventId: widget.edata.id ?? "_",
                                 campaignId: campaignId,
+                                showMessageStatus: widget.kardType != KardType.contact,
                                 allLabels: widget.edata.labels ?? [],
                                 onEdit: () async {
                                   String entityTitle =
@@ -1343,14 +1357,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                           if (widget.edata.labels != null &&
                               widget.edata.labels!.isNotEmpty) ...[
                             _buildFilterSection(
-                              title: "Lists",
+                              title: "Labels",
                               icon: Icons.label_outline_rounded,
                               child: Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: [
                                   _buildFilterChip(
-                                    label: "All Lists",
+                                    label: "All Labels",
                                     isSelected: _labelFilterId == null,
                                     onTap: () {
                                       setState(() {
@@ -1712,7 +1726,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Guest Lists",
+                          "Guest Labels",
                           style: _T.f(size: 20, weight: FontWeight.bold),
                         ),
                         IconButton(
@@ -2106,7 +2120,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     if (widget.edata.labels != null &&
                         widget.edata.labels!.isNotEmpty) ...[
                       Text(
-                        "Step 1: Assign to Lists",
+                        "Step 1: Assign to Labels",
                         style: _T.f(
                           size: 14,
                           color: _T.lime,

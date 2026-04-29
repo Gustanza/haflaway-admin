@@ -61,6 +61,7 @@ Widget buildAttendeeCard({
   required List<AttendeeLabel> allLabels,
   required Function() onSelected,
   required Function(String) onStatusChange,
+  bool showMessageStatus = true,
 }) {
   final fullname = attendee.fullName;
 
@@ -91,6 +92,7 @@ Widget buildAttendeeCard({
           eventId: eventId,
           onEdit: onEdit,
           onStatusChange: onStatusChange,
+          showMessageStatus: showMessageStatus,
         ),
         child: Padding(
           padding: const EdgeInsets.only(bottom: 8),
@@ -344,6 +346,7 @@ void _showDetailPopup({
   required String eventId,
   required Function() onEdit,
   required Function(String) onStatusChange,
+  bool showMessageStatus = true,
 }) {
   final attrCrdMap = attendee.cards[kardType.name];
   final attributeCard =
@@ -371,20 +374,18 @@ void _showDetailPopup({
             borderRadius:
                 const BorderRadius.vertical(top: Radius.circular(28)),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+              filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
               child: Container(
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.75,
                 ),
                 decoration: BoxDecoration(
-                  // Layered glass: a translucent card surface on top of blur
-                  color: _C.card.withValues(alpha: 0.94),
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(28)),
-                  border: const Border(
-                    top: BorderSide(color: _C.sep, width: 0.8),
-                    left: BorderSide(color: _C.sep, width: 0.4),
-                    right: BorderSide(color: _C.sep, width: 0.4),
+                  border: Border(
+                    top: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 0.8),
+                    left: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 0.8),
+                    right: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 0.8),
                   ),
                 ),
                 child: SingleChildScrollView(
@@ -536,15 +537,16 @@ void _showDetailPopup({
                       const SizedBox(height: 24),
 
                       // ── Message status ─────────────────────────────
-                      _buildPopupSection(
-                        title: "Message Status",
-                        child: Padding(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 20),
-                          child: _buildDeliveryStatusIndicators(
-                              attendee, kardType, campaignId),
+                      if (showMessageStatus)
+                        _buildPopupSection(
+                          title: "Message Status",
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 20),
+                            child: _buildDeliveryStatusIndicators(
+                                attendee, kardType, campaignId),
+                          ),
                         ),
-                      ),
 
                       const SizedBox(height: 16),
 

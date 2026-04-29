@@ -1,18 +1,53 @@
-import 'package:haflaway/components/Ccafold.dart';
-import 'package:haflaway/components/appbar.dart';
-import 'package:haflaway/components/templates.dart' hide buildActionButton;
-import 'package:haflaway/models/checkpoint.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/components/searchAtt.dart';
-import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/scancheck.dart';
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:haflaway/utils/dimensions.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/models/attendee.dart';
-import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/card.dart';
-import 'package:haflaway/utils/colors.dart';
+import 'package:haflaway/models/checkpoint.dart';
+import 'package:haflaway/models/event.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/components/searchAtt.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart'
+    show PinPutty;
+import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/scancheck.dart';
+import 'package:haflaway/utils/dimensions.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Design Tokens  ·  Apple-dark
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _T {
+  static const bg = Color(0xFF111114);
+  static const card = Color(0xFF1C1C1E);
+  static const card2 = Color(0xFF28282C);
+  static const sep = Color(0xFF2C2C2E);
+  static const lime = Color(0xFFC9A84C);
+  static const white = Color(0xFFFFFFFF);
+  static const lbl1 = Color(0xFFEEEEF0);
+  static const lbl2 = Color(0xFFAEAEB2);
+  static const lbl3 = Color(0xFF8E8E93);
+  static const lbl4 = Color(0xFF48484A);
+
+  static TextStyle f({
+    double size = 14,
+    FontWeight weight = FontWeight.w400,
+    Color color = white,
+    double letterSpacing = 0,
+    double? height,
+  }) => GoogleFonts.inter(
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// InCheckWrapper  —  resolves accepted card types before entering InCheck
+// ─────────────────────────────────────────────────────────────────────────────
 
 class InCheckWrapper extends StatelessWidget {
   final String eId;
@@ -22,6 +57,72 @@ class InCheckWrapper extends StatelessWidget {
     required this.checkpoint,
     required this.eId,
   });
+
+  Widget _shell(BuildContext context, Widget body) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: _T.bg,
+        body: Stack(
+          children: [
+            const Positioned(
+              top: -80,
+              right: -80,
+              child: _GusOrb(size: 280, color: _T.lime, opacity: 0.10),
+            ),
+            Column(
+              children: [
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _T.card,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: _T.sep, width: 0.8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: _T.lime,
+                                size: 13,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Back',
+                                style: _T.f(
+                                  size: 13,
+                                  weight: FontWeight.w500,
+                                  color: _T.lbl1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: psm),
+                Expanded(child: body),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,11 +145,11 @@ class InCheckWrapper extends StatelessWidget {
                   return Kard.fromMap(cdc.id, cdc.data());
                 }).toList();
             if (acptcrds.isEmpty) {
-              return buildGlassEmptyState();
+              return _shell(context, const _EmptyCheckpoints());
             }
             acIds = cdcs.map((cdc) => cdc.id).toList();
           } else {
-            return buildGlassEmptyState();
+            return _shell(context, const _EmptyCheckpoints());
           }
           return InCheck(
             eId: eId,
@@ -57,14 +158,21 @@ class InCheckWrapper extends StatelessWidget {
             acIds: acIds,
           );
         } else if (snapshots.hasError) {
-          return buildErrorView();
+          return _shell(context, const _ErrorState());
         } else {
-          return buildShimmerLoader();
+          return _shell(
+            context,
+            const Center(child: CupertinoActivityIndicator(color: _T.lime)),
+          );
         }
       },
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// InCheck
+// ─────────────────────────────────────────────────────────────────────────────
 
 class InCheck extends StatefulWidget {
   final String eId;
@@ -84,27 +192,179 @@ class InCheck extends StatefulWidget {
 }
 
 class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
-  bool isLoading = false;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
-  final DateFormat dformtr = DateFormat('d\'th\', MMMM, yyyy');
+  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: widget.acptcrds.length,
-      child: Scaffold(
-        backgroundColor: scaback,
-        appBar: appBar(
-          title: "Checkins",
-          leading: appBarActionButton(
-            icon: Icons.arrow_back,
-            onTap: () {
-              Navigator.of(context).pop();
-            },
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: DefaultTabController(
+        length: widget.acptcrds.length,
+        child: Scaffold(
+          backgroundColor: _T.bg,
+          body: Stack(
+            children: [
+              const Positioned(
+                top: -80,
+                right: -80,
+                child: _GusOrb(size: 280, color: _T.lime, opacity: 0.10),
+              ),
+              const Positioned(
+                bottom: -40,
+                left: -80,
+                child: _GusOrb(size: 220, color: _T.lime, opacity: 0.06),
+              ),
+
+              // Main column
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SafeArea(
+                    bottom: false,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [_topBar(), _titleBlock()],
+                    ),
+                  ),
+                  _tabHeader(),
+                  Expanded(
+                    child: TabBarView(
+                      children: List.generate(widget.acptcrds.length, (i) {
+                        return _buildAttendees(lcrdId: widget.acptcrds[i].id);
+                      }),
+                    ),
+                  ),
+                ],
+              ),
+
+              // FABs — bottom-right, clear of system bar
+              Positioned(
+                right: 20,
+                bottom: MediaQuery.of(context).padding.bottom + 24,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // PIN entry — secondary
+                    GestureDetector(
+                      onTap: () async {
+                        await showDialog(
+                          context: context,
+                          builder:
+                              (context) => PinPutty(
+                                eId: widget.eId,
+                                chckpntId: widget.checkpoint.id,
+                              ),
+                        );
+                      },
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: _T.card2,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: _T.sep, width: 0.8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.pin_rounded,
+                          color: _T.lbl2,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // QR scanner — primary
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder:
+                                (context) => Scanner(
+                                  acIds: widget.acIds,
+                                  eId: widget.eId,
+                                  chckpntId: widget.checkpoint.id,
+                                ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: _T.lime,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: _T.lime.withValues(alpha: 0.40),
+                              blurRadius: 18,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.qr_code_scanner_rounded,
+                          color: Colors.black,
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          actions: appBarActionButton(
-            icon: Icons.search,
+        ),
+      ),
+    );
+  }
+
+  // ── Top bar ───────────────────────────────────────────────────────────────
+
+  Widget _topBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _T.sep, width: 0.8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: _T.lime,
+                    size: 13,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Back',
+                    style: _T.f(
+                      size: 13,
+                      weight: FontWeight.w500,
+                      color: _T.lbl1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
             onTap: () {
               showSearch(
                 context: context,
@@ -115,85 +375,89 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
                 ),
               );
             },
-          ),
-        ),
-        floatingActionButton: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            buildFloatingBtn(
-              mini: true,
-              heroTag: "mini",
-              iconData: Icons.pin,
-              onPressed: () async {
-                await showDialog(
-                  context: context,
-                  builder: (context) {
-                    return PinPutty(
-                      eId: widget.eId,
-                      chckpntId: widget.checkpoint.id,
-                    );
-                  },
-                );
-              },
-            ),
-            SizedBox(height: psm * 0.5),
-            buildFloatingBtn(
-              mini: false,
-              heroTag: "major",
-              iconData: Icons.qr_code,
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return Scanner(
-                        acIds: widget.acIds,
-                        eId: widget.eId,
-                        chckpntId: widget.checkpoint.id,
-                      );
-                    },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _T.sep, width: 0.8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.search_rounded, color: _T.lime, size: 14),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Search',
+                    style: _T.f(
+                      size: 13,
+                      weight: FontWeight.w500,
+                      color: _T.lbl1,
+                    ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
-          ],
-        ),
-        body: Ccafold(
-          child: Column(
-            children: [
-              TabBar(
-                dividerHeight: 0.00001,
-                isScrollable: true,
-                labelColor: Colors.white,
-                indicatorColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                labelStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontWeight: FontWeight.normal,
-                ),
-                tabAlignment: TabAlignment.start,
-                padding: const EdgeInsets.symmetric(horizontal: 0),
-                tabs: List.generate(widget.acptcrds.length, (index) {
-                  return Tab(child: Text(widget.acptcrds[index].type));
-                }),
-              ),
-              Expanded(
-                child: TabBarView(
-                  children: List.generate(widget.acptcrds.length, (index) {
-                    return buildAttendees(lcrdId: widget.acptcrds[index].id);
-                  }),
-                ),
-              ),
-            ],
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget buildAttendees({required String lcrdId}) {
+  // ── Title block ───────────────────────────────────────────────────────────
+
+  Widget _titleBlock() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Check-ins',
+            style: _T.f(
+              size: 28,
+              weight: FontWeight.w800,
+              color: _T.white,
+              letterSpacing: -0.8,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 3),
+          if (widget.checkpoint.name.isNotEmpty)
+            Text(widget.checkpoint.name, style: _T.f(size: 14, color: _T.lbl3)),
+        ],
+      ),
+    );
+  }
+
+  // ── Tab header ────────────────────────────────────────────────────────────
+
+  Widget _tabHeader() {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: _T.sep, width: 0.8)),
+      ),
+      child: TabBar(
+        dividerHeight: 0,
+        isScrollable: true,
+        labelColor: _T.lime,
+        unselectedLabelColor: _T.lbl3,
+        indicatorColor: _T.lime,
+        indicatorWeight: 2.5,
+        labelStyle: _T.f(size: 13, weight: FontWeight.w600, color: _T.lime),
+        unselectedLabelStyle: _T.f(size: 13, color: _T.lbl3),
+        tabAlignment: TabAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        tabs: List.generate(widget.acptcrds.length, (i) {
+          return Tab(child: Text(widget.acptcrds[i].type));
+        }),
+      ),
+    );
+  }
+
+  // ── Attendees tab content ─────────────────────────────────────────────────
+
+  Widget _buildAttendees({required String lcrdId}) {
     return StreamBuilder(
       stream:
           firestore
@@ -213,13 +477,10 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
               }).toList();
 
           if (atList.isEmpty) {
-            return buildNoDataView("No attendees found for this card type");
+            return _buildNoData("No attendees found for this card type");
           }
 
-          // Attendees who have at least one status checked in
           List<Attendee> attendeesWithCheckins = [];
-
-          // Total count of all checked-in statuses across all attendees
           int totalCheckedInStatuses = 0;
 
           for (var attendee in atList) {
@@ -229,17 +490,13 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
             for (var status in attendee.checkinStatus) {
               bool isCheckedIn =
                   status['checkpoints'][widget.checkpoint.id] ?? false;
-
               if (isCheckedIn) {
                 hasCheckedInStatus = true;
                 checkedStatusCount++;
               }
             }
 
-            if (hasCheckedInStatus) {
-              attendeesWithCheckins.add(attendee);
-            }
-
+            if (hasCheckedInStatus) attendeesWithCheckins.add(attendee);
             totalCheckedInStatuses += checkedStatusCount;
           }
 
@@ -248,14 +505,11 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
                 attendeesWithCheckins,
                 totalCheckedInStatuses,
               )
-              : buildNoDataView("No checked-in attendees for this card type");
+              : _buildNoData("No checked-in attendees for this card type");
         }
 
-        if (snapshot.hasError) {
-          return buildErrorView();
-        } else {
-          return buildListShimmer();
-        }
+        if (snapshot.hasError) return const _ErrorState();
+        return const Center(child: CupertinoActivityIndicator(color: _T.lime));
       },
     );
   }
@@ -268,70 +522,80 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
       physics: const BouncingScrollPhysics(),
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.all(psm),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
           sliver: SliverToBoxAdapter(
             child: _buildStatsCard(attendees.length, totalCheckedInStatuses),
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: psm),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              var attendee = attendees[index];
-              return _buildAttendeeCard(attendee, index);
-            }, childCount: attendees.length),
+            delegate: SliverChildBuilderDelegate(
+              (context, i) => _buildAttendeeCard(attendees[i]),
+              childCount: attendees.length,
+            ),
           ),
         ),
-        const SliverPadding(padding: EdgeInsets.only(bottom: psm * 2)),
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
     );
   }
 
+  // ── Stats card ────────────────────────────────────────────────────────────
+
   Widget _buildStatsCard(int attendeeCount, int totalCheckedInStatuses) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: lqassgrad,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: lqassbdrColor, width: 0.5),
+        color: _T.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _T.sep, width: 0.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.people, color: Colors.white),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: _T.lime.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.bar_chart_rounded,
+                  color: _T.lime,
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: 10),
               Text(
-                "Check-in Stats",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                'CHECK-IN STATS',
+                style: _T.f(
+                  size: 11,
+                  weight: FontWeight.w700,
+                  color: _T.lbl3,
+                  letterSpacing: 1.1,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           Row(
             children: [
               Expanded(
-                child: _buildStatItem(
-                  "Cards",
+                child: _statItem(
+                  'Cards',
                   attendeeCount.toString(),
-                  Icons.credit_card,
+                  Icons.credit_card_outlined,
                 ),
               ),
-              Container(
-                height: 40,
-                width: 1,
-                color: Colors.white.withOpacity(0.3),
-              ),
+              Container(width: 1, height: 44, color: _T.sep),
               Expanded(
-                child: _buildStatItem(
-                  "Check-ins",
+                child: _statItem(
+                  'Check-ins',
                   totalCheckedInStatuses.toString(),
-                  Icons.check_circle,
+                  Icons.check_circle_outline_rounded,
                 ),
               ),
             ],
@@ -341,199 +605,365 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon) {
+  Widget _statItem(String label, String value, IconData icon) {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 16),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
+        Icon(icon, color: _T.lbl3, size: 16),
+        const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
+          style: _T.f(
+            size: 30,
+            weight: FontWeight.w800,
+            color: _T.white,
+            letterSpacing: -1.2,
+            height: 1.0,
           ),
         ),
+        const SizedBox(height: 3),
+        Text(label, style: _T.f(size: 12, color: _T.lbl3)),
       ],
     );
   }
 
-  Widget _buildAttendeeCard(Attendee attendee, int index) {
-    var statuses = attendee.checkinStatus;
-    int checkedInCount = getCheckedInCount(statuses);
-    double progress = statuses.isEmpty ? 0 : checkedInCount / statuses.length;
+  // ── Attendee card ─────────────────────────────────────────────────────────
+
+  Widget _buildAttendeeCard(Attendee attendee) {
+    final statuses = attendee.checkinStatus;
+    final checkedInCount = getCheckedInCount(statuses);
+    final progress = statuses.isEmpty ? 0.0 : checkedInCount / statuses.length;
+    final statusColor = _getProgressColor(progress);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        gradient: lqassgrad,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: lqassbdrColor, width: 0.5),
+        color: _T.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _T.sep, width: 0.8),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: CircleAvatar(
-                backgroundColor: _getProgressColor(progress).withOpacity(0.2),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      value: progress,
-                      backgroundColor: Colors.grey.withOpacity(0.2),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        _getProgressColor(progress),
+      child: Column(
+        children: [
+          // Header row
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        value: progress,
+                        backgroundColor: _T.sep,
+                        valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                        strokeWidth: 3,
                       ),
-                      strokeWidth: 2.5,
-                    ),
-                    Text(
-                      checkedInCount.toString(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: _getProgressColor(progress),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              title: Text(
-                attendee.fullName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 4),
-                  Text(
-                    "$checkedInCount/${statuses.length} slots checked in",
-                    style: TextStyle(
-                      color: _getProgressColor(progress),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: Colors.grey.withOpacity(0.2),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        _getProgressColor(progress),
-                      ),
-                      minHeight: 4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                gradient: lqassgrad,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(12),
-                  bottomRight: Radius.circular(12),
-                ),
-              ),
-              child: Column(
-                children: List.generate(statuses.length, (index) {
-                  var status = statuses[index];
-                  bool isCheckedIn =
-                      status['checkpoints'][widget.checkpoint.id] ?? false;
-                  return ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color:
-                            isCheckedIn
-                                ? Colors.green.withOpacity(0.1)
-                                : Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        isCheckedIn ? Icons.check_circle : Icons.cancel,
-                        color: isCheckedIn ? Colors.green : Colors.red,
-                        size: 18,
-                      ),
-                    ),
-                    title: Text(
-                      status['attendee_name'] ?? "Guest",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                      ),
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            isCheckedIn
-                                ? Colors.green.withOpacity(0.1)
-                                : Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        isCheckedIn ? "Checked in" : "Not checked",
-                        style: TextStyle(
-                          color: isCheckedIn ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
+                      Text(
+                        checkedInCount.toString(),
+                        style: _T.f(
+                          size: 13,
+                          weight: FontWeight.w800,
+                          color: statusColor,
                         ),
                       ),
-                    ),
-                  );
-                }),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        attendee.fullName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _T.f(
+                          size: 15,
+                          weight: FontWeight.w600,
+                          color: _T.lbl1,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '$checkedInCount/${statuses.length} slots checked in',
+                        style: _T.f(size: 12, color: statusColor),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Status rows
+          if (statuses.isNotEmpty) ...[
+            const Divider(height: 1, thickness: 0.8, color: _T.sep),
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(18),
+                bottomRight: Radius.circular(18),
+              ),
+              child: Container(
+                color: _T.card2,
+                child: Column(
+                  children: List.generate(statuses.length, (i) {
+                    final status = statuses[i];
+                    final isIn =
+                        status['checkpoints'][widget.checkpoint.id] ?? false;
+                    return _statusRow(
+                      name: status['attendee_name'] ?? 'Guest',
+                      isCheckedIn: isIn,
+                      isLast: i == statuses.length - 1,
+                    );
+                  }),
+                ),
               ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }
 
-  Color _getProgressColor(double progress) {
-    if (progress >= 1) {
-      return Colors.green;
-    } else if (progress >= 0.5) {
-      return Colors.orange;
-    } else {
-      return Colors.red;
-    }
+  Widget _statusRow({
+    required String name,
+    required bool isCheckedIn,
+    required bool isLast,
+  }) {
+    final rowColor =
+        isCheckedIn
+            ? const Color(0xFF30D158) // system green
+            : const Color(0xFFFF453A); // system red
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: rowColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  isCheckedIn
+                      ? Icons.check_circle_rounded
+                      : Icons.cancel_rounded,
+                  color: rowColor,
+                  size: 14,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _T.f(
+                    size: 13,
+                    weight: FontWeight.w500,
+                    color: _T.lbl1,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: rowColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  isCheckedIn ? 'Checked in' : 'Not checked',
+                  style: _T.f(
+                    size: 11,
+                    weight: FontWeight.w600,
+                    color: rowColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (!isLast)
+          const Divider(
+            height: 1,
+            thickness: 0.5,
+            color: _T.sep,
+            indent: 14,
+            endIndent: 14,
+          ),
+      ],
+    );
   }
 
-  // Helper method to count checked-in statuses for an attendee
+  // ── No-data inline state ──────────────────────────────────────────────────
+
+  Widget _buildNoData(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: _T.card,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: _T.sep, width: 0.8),
+            ),
+            child: const Icon(
+              Icons.person_off_outlined,
+              size: 28,
+              color: _T.lbl4,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            message,
+            style: _T.f(size: 14, color: _T.lbl3),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  Color _getProgressColor(double progress) {
+    if (progress >= 1) return const Color(0xFF30D158);
+    if (progress >= 0.5) return const Color(0xFFFF9F0A);
+    return const Color(0xFFFF453A);
+  }
+
   int getCheckedInCount(List<dynamic> statuses) {
     int count = 0;
     for (var status in statuses) {
-      bool isChecked = status['checkpoints'][widget.checkpoint.id] ?? false;
-      if (isChecked) {
-        count++;
-      }
+      if (status['checkpoints'][widget.checkpoint.id] ?? false) count++;
     }
     return count;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared empty / error states
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _EmptyCheckpoints extends StatelessWidget {
+  const _EmptyCheckpoints();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: _T.card,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _T.sep, width: 0.8),
+            ),
+            child: const Icon(
+              Icons.qr_code_scanner_rounded,
+              size: 32,
+              color: _T.lbl4,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No checkpoints available',
+            style: _T.f(size: 16, weight: FontWeight.w600, color: _T.lbl1),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Assign card types to this checkpoint first',
+            style: _T.f(size: 13, color: _T.lbl3),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: _T.lime.withValues(alpha: 0.10),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: _T.lime.withValues(alpha: 0.20),
+                width: 0.8,
+              ),
+            ),
+            child: const Icon(Icons.wifi_off_rounded, color: _T.lime, size: 36),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Something went wrong',
+            style: _T.f(
+              size: 17,
+              weight: FontWeight.w700,
+              color: _T.white,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text('Could not load data', style: _T.f(size: 13, color: _T.lbl3)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ambient orb
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GusOrb extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double opacity;
+
+  const _GusOrb({required this.size, required this.color, this.opacity = 0.05});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withValues(alpha: opacity),
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          child: const SizedBox.shrink(),
+        ),
+      ),
+    );
   }
 }

@@ -65,7 +65,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     super.initState();
     channelCon.text = shannnels[selChannel] ?? "";
     statusCon.text = shtates[selStatus] ?? "";
-    listCon.text = "All Lists";
+    listCon.text = "All Labels";
     _loadAttendees();
     _scrollController.addListener(_scrollListener);
   }
@@ -97,7 +97,8 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         selectList.clear();
       });
 
-      final String messageIndexPattern = "${selChannel}_${widget.campaignId}_${selStatus}";
+      final String messageIndexPattern =
+          "${selChannel}_${widget.campaignId}_${selStatus}";
 
       if (_labelFilterId != null) {
         // Batch-fetch loop: keep pulling pages until we accumulate pageSize
@@ -120,14 +121,22 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           if (batchCursor != null) q = q.startAfterDocument(batchCursor);
 
           final snap = await q.get();
-          if (snap.docs.isEmpty) { firestoreHasMore = false; break; }
+          if (snap.docs.isEmpty) {
+            firestoreHasMore = false;
+            break;
+          }
 
           batchCursor = snap.docs.last;
 
-          final batch = snap.docs
-              .map<Attendee>((e) => Attendee.fromMap(e.id, e.data()))
-              .where((a) => a.messageIndexes?.contains(messageIndexPattern) ?? false)
-              .toList();
+          final batch =
+              snap.docs
+                  .map<Attendee>((e) => Attendee.fromMap(e.id, e.data()))
+                  .where(
+                    (a) =>
+                        a.messageIndexes?.contains(messageIndexPattern) ??
+                        false,
+                  )
+                  .toList();
 
           accumulated.addAll(batch);
           if (snap.docs.length < pageSize) firestoreHasMore = false;
@@ -140,14 +149,15 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           isLoading = false;
         });
       } else {
-        final snap = await firestore
-            .collection(ecol)
-            .doc(widget.event.id)
-            .collection(atcol)
-            .where("messageIndexes", arrayContains: messageIndexPattern)
-            .orderBy("createdAt", descending: true)
-            .limit(pageSize)
-            .get();
+        final snap =
+            await firestore
+                .collection(ecol)
+                .doc(widget.event.id)
+                .collection(atcol)
+                .where("messageIndexes", arrayContains: messageIndexPattern)
+                .orderBy("createdAt", descending: true)
+                .limit(pageSize)
+                .get();
 
         if (snap.docs.isEmpty) {
           return safeState(() {
@@ -159,7 +169,10 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
 
         lastDocument = snap.docs.last;
         safeState(() {
-          attendeeList = snap.docs.map<Attendee>((e) => Attendee.fromMap(e.id, e.data())).toList();
+          attendeeList =
+              snap.docs
+                  .map<Attendee>((e) => Attendee.fromMap(e.id, e.data()))
+                  .toList();
           hasMore = snap.docs.length == pageSize;
           isLoading = false;
         });
@@ -180,7 +193,8 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         isLoading = true;
       });
 
-      final String messageIndexPattern = "${selChannel}_${widget.campaignId}_${selStatus}";
+      final String messageIndexPattern =
+          "${selChannel}_${widget.campaignId}_${selStatus}";
 
       if (_labelFilterId != null) {
         final baseQuery = firestore
@@ -199,14 +213,22 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           if (batchCursor != null) q = q.startAfterDocument(batchCursor);
 
           final snap = await q.get();
-          if (snap.docs.isEmpty) { firestoreHasMore = false; break; }
+          if (snap.docs.isEmpty) {
+            firestoreHasMore = false;
+            break;
+          }
 
           batchCursor = snap.docs.last;
 
-          final batch = snap.docs
-              .map<Attendee>((e) => Attendee.fromMap(e.id, e.data()))
-              .where((a) => a.messageIndexes?.contains(messageIndexPattern) ?? false)
-              .toList();
+          final batch =
+              snap.docs
+                  .map<Attendee>((e) => Attendee.fromMap(e.id, e.data()))
+                  .where(
+                    (a) =>
+                        a.messageIndexes?.contains(messageIndexPattern) ??
+                        false,
+                  )
+                  .toList();
 
           accumulated.addAll(batch);
           if (snap.docs.length < pageSize) firestoreHasMore = false;
@@ -219,15 +241,16 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
           isLoading = false;
         });
       } else {
-        final snap = await firestore
-            .collection(ecol)
-            .doc(widget.event.id)
-            .collection(atcol)
-            .where("messageIndexes", arrayContains: messageIndexPattern)
-            .orderBy("createdAt", descending: true)
-            .startAfterDocument(lastDocument!)
-            .limit(pageSize)
-            .get();
+        final snap =
+            await firestore
+                .collection(ecol)
+                .doc(widget.event.id)
+                .collection(atcol)
+                .where("messageIndexes", arrayContains: messageIndexPattern)
+                .orderBy("createdAt", descending: true)
+                .startAfterDocument(lastDocument!)
+                .limit(pageSize)
+                .get();
 
         if (snap.docs.isEmpty) {
           return safeState(() {
@@ -238,7 +261,11 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
 
         lastDocument = snap.docs.last;
         safeState(() {
-          attendeeList.addAll(snap.docs.map<Attendee>((e) => Attendee.fromMap(e.id, e.data())).toList());
+          attendeeList.addAll(
+            snap.docs
+                .map<Attendee>((e) => Attendee.fromMap(e.id, e.data()))
+                .toList(),
+          );
           hasMore = snap.docs.length == pageSize;
           isLoading = false;
         });
@@ -303,6 +330,25 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   pushToSend({String? prefix, bool? isWhatsApp}) async {
     if (selectList.isEmpty)
       return showToast(isGood: false, msg: "Select Recipients");
+    // Skip the resend check entirely when viewing unsent — these people
+    // haven't received anything, so the warning would be incorrect.
+    if (selStatus == "unsent") {
+      bool? didDispatch = await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) {
+            return SendPreviewer(
+              isWhatsApp: isWhatsApp ?? false,
+              event: widget.event,
+              kardType: widget.kardType,
+              senderList: selectList,
+              campaignId: widget.campaignId,
+            );
+          },
+        ),
+      );
+      if (didDispatch ?? false) stallAndRefresh();
+      return;
+    }
     int replen =
         selectList.where((selItem) {
           var pattern = "${prefix}_${widget.campaignId}";
@@ -484,19 +530,19 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                                   .isEmpty &&
                               !isLoading)
                             Expanded(
-                              child: BuildNoDt(
-                                string:
-                                    isSearching
-                                        ? "No Results Found"
-                                        : "No Data",
-                                isRefreshed: () async {
-                                  if (isSearching) {
-                                    performSearch(searchController.text);
-                                  } else {
-                                    await _loadAttendees();
-                                  }
-                                },
-                              ),
+                              child:
+                                  isSearching
+                                      ? searchController.text.isEmpty
+                                          ? const GusSearchEmpty.prompt()
+                                          : GusSearchEmpty.noResults(
+                                            query: searchController.text,
+                                          )
+                                      : BuildNoDt(
+                                        string: "No Data",
+                                        isRefreshed: () async {
+                                          await _loadAttendees();
+                                        },
+                                      ),
                             )
                           else
                             Expanded(
@@ -532,6 +578,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     return ListView.builder(
       itemCount: attendeesList.length + 1,
       controller: _scrollController,
+      padding: const EdgeInsets.only(top: 12),
       itemBuilder: (context, indx) {
         if (indx == attendeesList.length) {
           if (isLoading) {
@@ -634,9 +681,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    isSel
-                        ? "Selections: ${selectList.length}"
-                        : _pageTitle(),
+                    isSel ? "Selections: ${selectList.length}" : _pageTitle(),
                     style: _T.f(size: 15, weight: FontWeight.w600),
                   ),
                 ],
@@ -654,7 +699,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               ),
             ),
           if (!isSearching) const Spacer(),
-          if (isSel)
+          if (isSel && !isSearching)
             GestureDetector(
               onTap: () {
                 if (selectList.length < attendeeList.length) {
@@ -698,7 +743,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
               ),
             ] else
               Padding(
-                padding: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.only(left: 12),
                 child: TextButton(
                   onPressed: () {
                     safeState(() {
@@ -828,10 +873,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
       backgroundColor: Colors.transparent,
       context: context,
       builder: (context) {
-        return modalBtmSheet(
-          bdrdm: 28,
-          child: _buildListSelectionSheet(),
-        );
+        return modalBtmSheet(bdrdm: 28, child: _buildListSelectionSheet());
       },
     );
   }
@@ -913,7 +955,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
 
   Widget _buildListSelectionSheet() {
     final labels = widget.event.labels ?? [];
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -940,7 +982,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                 onTap: () {
                   safeState(() {
                     _labelFilterId = null;
-                    listCon.text = "All Lists";
+                    listCon.text = "All Labels";
                     _loadAttendees();
                   });
                   popper();
@@ -949,22 +991,31 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: _labelFilterId == null
-                        ? _T.lime.withOpacity(0.1)
-                        : _T.white.withOpacity(0.05),
+                    color:
+                        _labelFilterId == null
+                            ? _T.lime.withOpacity(0.1)
+                            : _T.white.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: _labelFilterId == null ? _T.lime : _T.white.withOpacity(0.05),
+                      color:
+                          _labelFilterId == null
+                              ? _T.lime
+                              : _T.white.withOpacity(0.05),
                     ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _T.f(
-                        size: 16,
-                        color: _labelFilterId == null ? _T.lime : _T.white,
-                        weight: _labelFilterId == null ? FontWeight.w700 : FontWeight.w500,
-                      ).toText("All Lists"),
+                      _T
+                          .f(
+                            size: 16,
+                            color: _labelFilterId == null ? _T.lime : _T.white,
+                            weight:
+                                _labelFilterId == null
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                          )
+                          .toText("All Labels"),
                       if (_labelFilterId == null)
                         const Icon(
                           Icons.check_circle_rounded,
@@ -976,58 +1027,76 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                 ),
               ),
               // Individual label options
-              ...labels.map((label) => GestureDetector(
-                onTap: () {
-                  safeState(() {
-                    _labelFilterId = _labelFilterId == label.id ? null : label.id;
-                    listCon.text = _labelFilterId == null ? "All Lists" : label.name;
-                    _loadAttendees();
-                  });
-                  popper();
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: _labelFilterId == label.id
-                        ? _T.lime.withOpacity(0.1)
-                        : _T.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: _labelFilterId == label.id ? _T.lime : _T.white.withOpacity(0.05),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: Color(label.colorValue),
-                              shape: BoxShape.circle,
-                            ),
+              ...labels
+                  .map(
+                    (label) => GestureDetector(
+                      onTap: () {
+                        safeState(() {
+                          _labelFilterId =
+                              _labelFilterId == label.id ? null : label.id;
+                          listCon.text =
+                              _labelFilterId == null ? "All Labels" : label.name;
+                          _loadAttendees();
+                        });
+                        popper();
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color:
+                              _labelFilterId == label.id
+                                  ? _T.lime.withOpacity(0.1)
+                                  : _T.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color:
+                                _labelFilterId == label.id
+                                    ? _T.lime
+                                    : _T.white.withOpacity(0.05),
                           ),
-                          const SizedBox(width: 12),
-                          _T.f(
-                            size: 16,
-                            color: _labelFilterId == label.id ? _T.lime : _T.white,
-                            weight: _labelFilterId == label.id ? FontWeight.w700 : FontWeight.w500,
-                          ).toText(label.name),
-                        ],
-                      ),
-                      if (_labelFilterId == label.id)
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          color: _T.lime,
-                          size: 20,
                         ),
-                    ],
-                  ),
-                ),
-              )).toList(),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: Color(label.colorValue),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                _T
+                                    .f(
+                                      size: 16,
+                                      color:
+                                          _labelFilterId == label.id
+                                              ? _T.lime
+                                              : _T.white,
+                                      weight:
+                                          _labelFilterId == label.id
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
+                                    )
+                                    .toText(label.name),
+                              ],
+                            ),
+                            if (_labelFilterId == label.id)
+                              const Icon(
+                                Icons.check_circle_rounded,
+                                color: _T.lime,
+                                size: 20,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
             ],
           ),
         ),
@@ -1102,10 +1171,14 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
 
   String _pageTitle() {
     switch (widget.campaignId) {
-      case invCampId:    return "Send Invitation Cards";
-      case contrCampId:  return "Send Contribution Cards";
-      case invRemCampId: return "Send Reminders";
-      default:           return "Send Messages";
+      case invCampId:
+        return "Send Invitation Cards";
+      case contrCampId:
+        return "Send Contribution Cards";
+      case invRemCampId:
+        return "Send Reminders";
+      default:
+        return "Send Messages";
     }
   }
 
@@ -1118,49 +1191,59 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeOutBack,
-      bottom: isSel ? 20 : -140,
-      left: 16,
-      right: 16,
-      child: glassDialog(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                // Use Expanded for the left side to let it be flexible
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "${selectList.length} Selected",
-                      style: _T.f(size: 14, weight: FontWeight.w700),
-                    ),
-                    Text(
-                      "Ready to dispatch",
-                      maxLines: 1, // Ensure it doesn't wrap
-                      overflow: TextOverflow.ellipsis,
-                      style: _T.f(size: 11, color: _T.grey2),
-                    ),
-                  ],
+      bottom: isSel ? (MediaQuery.of(context).padding.bottom + 24) : -140,
+      left: 36,
+      right: 36,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(bmd),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(bmd),
+              border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "${selectList.length} Selected",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _T.f(size: 14, weight: FontWeight.w700),
+                      ),
+                      Text(
+                        "Ready to dispatch",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _T.f(size: 11, color: _T.grey2),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8), // Minimal spacing
-              if (selChannel == "sms")
-                _buildActionButton(
-                  icon: Icons.sms_rounded,
-                  label: "Send SMS",
-                  onTap: () => pushToSend(prefix: "sms", isWhatsApp: false),
-                  color: Colors.blue,
-                ),
-              if (selChannel == "whatsapp")
-                _buildActionButton(
-                  icon: Bootstrap.whatsapp,
-                  label: "Send WhatsApp",
-                  onTap: () => pushToSend(prefix: "whatsapp", isWhatsApp: true),
-                  color: Colors.green,
-                ),
-            ],
+                const SizedBox(width: 12),
+                if (selChannel == "sms")
+                  _buildActionButton(
+                    icon: Icons.sms_rounded,
+                    label: "Send SMS",
+                    onTap: () => pushToSend(prefix: "sms", isWhatsApp: false),
+                    color: Colors.blue,
+                  ),
+                if (selChannel == "whatsapp")
+                  _buildActionButton(
+                    icon: Bootstrap.whatsapp,
+                    label: "Send WhatsApp",
+                    onTap:
+                        () => pushToSend(prefix: "whatsapp", isWhatsApp: true),
+                    color: Colors.green,
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1209,11 +1292,9 @@ class _RefreshLoadingDialog extends StatefulWidget {
 
 class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
     with TickerProviderStateMixin {
-  late AnimationController _pulseController;
   late AnimationController _rotateController;
   late AnimationController _progressController;
   late AnimationController _scaleController;
-  late Animation<double> _pulseAnimation;
   late Animation<double> _rotateAnimation;
   late Animation<double> _progressAnimation;
   late Animation<double> _scaleAnimation;
@@ -1224,12 +1305,6 @@ class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
   @override
   void initState() {
     super.initState();
-
-    // Pulse animation for the icon
-    _pulseController = AnimationController(
-      duration: Duration(milliseconds: 1200),
-      vsync: this,
-    )..repeat(reverse: true);
 
     // Rotation animation
     _rotateController = AnimationController(
@@ -1247,10 +1322,6 @@ class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
     _scaleController = AnimationController(
       duration: Duration(milliseconds: 600),
       vsync: this,
-    );
-
-    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.15).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
     _rotateAnimation = Tween<double>(
@@ -1303,7 +1374,6 @@ class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
 
   @override
   void dispose() {
-    _pulseController.dispose();
     _rotateController.dispose();
     _progressController.dispose();
     _scaleController.dispose();
@@ -1312,143 +1382,131 @@ class _RefreshLoadingDialogState extends State<_RefreshLoadingDialog>
 
   @override
   Widget build(BuildContext context) {
+    const lime = Color(0xFFC9A84C);
+    const limeDim = Color(0xFF2A2210);
+    const card2 = Color(0xFF28282C);
+    const lbl1 = Color(0xFFFFFFFF);
+    const lbl3 = Color(0xFF636366);
+
     return Dialog(
       elevation: 0,
       backgroundColor: Colors.transparent,
-      child: glassDialog(
-        child: Container(
-          padding: EdgeInsets.all(psm * 2),
-          decoration: BoxDecoration(
-            gradient: secscagrad,
-            borderRadius: BorderRadius.circular(bmd),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Animated Icon Container
-              AnimatedBuilder(
-                animation: Listenable.merge([
-                  _pulseAnimation,
-                  _rotateAnimation,
-                  _scaleAnimation,
-                ]),
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale:
-                        _isComplete
-                            ? _scaleAnimation.value
-                            : _pulseAnimation.value,
-                    child: Container(
-                      width: 100,
-                      height: 100,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 48),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1C1C1E).withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: lqassbdrColor, width: bdrWidthGen),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icon
+                AnimatedBuilder(
+                  animation: Listenable.merge([
+                    _rotateAnimation,
+                    _scaleAnimation,
+                  ]),
+                  builder: (context, _) {
+                    return Container(
+                      width: 64,
+                      height: 64,
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient:
-                            _isComplete
-                                ? LinearGradient(
-                                  colors: [
-                                    Colors.green.withOpacity(0.3),
-                                    Colors.greenAccent.withOpacity(0.2),
-                                  ],
-                                )
-                                : primaryGrad,
-                        border: Border.all(color: lqassbdrColor, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (_isComplete ? Colors.green : primaryColor)
-                                .withOpacity(0.3),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child:
-                            _isComplete
-                                ? Icon(
-                                  Icons.check_circle_rounded,
-                                  color: Colors.greenAccent,
-                                  size: 50,
-                                )
-                                : Transform.rotate(
-                                  angle: _rotateAnimation.value * 2 * 3.14159,
-                                  child: Icon(
-                                    Icons.refresh_rounded,
-                                    color: primaryWhite,
-                                    size: 45,
-                                  ),
-                                ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-
-              SizedBox(height: psm * 2),
-
-              // Title
-              Text(
-                _isComplete ? "Data Refreshed!" : "Saving Data...",
-                style: TextStyle(
-                  fontSize: fsm + 4,
-                  fontWeight: FontWeight.bold,
-                  color: primaryWhite,
-                  letterSpacing: 0.5,
-                ),
-              ),
-
-              SizedBox(height: psm),
-
-              // Progress Bar
-              if (!_isComplete) ...[
-                Container(
-                  width: 200,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(3),
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                  child: AnimatedBuilder(
-                    animation: _progressAnimation,
-                    builder: (context, child) {
-                      return Align(
-                        alignment: Alignment.centerLeft,
-                        child: Container(
-                          width: 200 * _progressAnimation.value,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(3),
-                            gradient: primaryGrad,
-                            boxShadow: [
-                              BoxShadow(
-                                color: primaryColor.withOpacity(0.5),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
+                        color: _isComplete
+                            ? Colors.green.withValues(alpha: 0.12)
+                            : limeDim,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _isComplete
+                              ? Colors.green.withValues(alpha: 0.35)
+                              : lime.withValues(alpha: 0.35),
+                          width: 0.8,
                         ),
-                      );
-                    },
+                      ),
+                      child: _isComplete
+                          ? const Icon(
+                              Icons.check_rounded,
+                              color: Colors.green,
+                              size: 28,
+                            )
+                          : Transform.rotate(
+                              angle: _rotateAnimation.value * 2 * 3.14159,
+                              child: const Icon(
+                                Icons.sync_rounded,
+                                color: lime,
+                                size: 28,
+                              ),
+                            ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // Title
+                Text(
+                  _isComplete ? "All synced" : "Syncing",
+                  style: GoogleFonts.inter(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: lbl1,
+                    letterSpacing: -0.3,
                   ),
                 ),
-                SizedBox(height: psm * 0.5),
+                const SizedBox(height: 4),
                 Text(
-                  "Wait for $_countdown seconds...",
-                  style: TextStyle(
-                    fontSize: fsm - 1,
-                    color: mWhite,
-                    fontStyle: FontStyle.italic,
+                  _isComplete
+                      ? "Updates are ready"
+                      : "Fetching latest updates...",
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: lbl3,
                   ),
                 ),
-              ] else ...[
-                Text(
-                  "New data downloaded successfully",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: fsm, color: mWhite),
-                ),
+
+                if (!_isComplete) ...[
+                  const SizedBox(height: 24),
+                  // Progress track
+                  Container(
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: card2,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    child: AnimatedBuilder(
+                      animation: _progressAnimation,
+                      builder: (context, _) {
+                        return FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: _progressAnimation.value,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: lime,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    "$_countdown s",
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: lbl3,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
