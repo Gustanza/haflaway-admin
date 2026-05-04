@@ -879,7 +879,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             final campaignId =
                                 widget.kardType == KardType.invitation
                                     ? invCampId
-                                    : contrCampId;
+                                    : contrCampId; 
 
                             return TweenAnimationBuilder<double>(
                               key: ValueKey('anim_${attendee.id}'),
@@ -2277,7 +2277,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       _buildMappingRow(
                         icon: Icons.card_membership_outlined,
                         label: "Card Type",
-                        dropdown: buildDrop(synCrdmap, impcard),
+                        dropdown: buildDrop(synCrdmap, impcard, setAltState),
                       ),
                     ],
 

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:haflaway/hfhttp/clientelle.dart';
 import 'package:haflaway/models/mchango.dart';
@@ -17,6 +17,36 @@ import 'package:haflaway/models/event.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/urls.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared widgets
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GusOrb extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double opacity;
+
+  const _GusOrb({required this.size, required this.color, this.opacity = 0.05});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withValues(alpha: opacity),
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          child: const SizedBox.shrink(),
+        ),
+      ),
+    );
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Design Tokens
@@ -197,42 +227,57 @@ class _ImpPreviewState extends State<ImpPreview> {
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: _T.bg,
-        body: SafeArea(
-          child: Column(
-            children: [
-              _topBar(),
-              _titleBlock(),
-              if (widget.labelIds.isNotEmpty) _labelsBanner(),
-              Expanded(
-                child:
-                    widget.templateCardId == "contact"
-                        ? bady()
-                        : FutureBuilder(
-                          future:
-                              firestore
-                                  .collection(ecol)
-                                  .doc(widget.event.id)
-                                  .collection(cardcol)
-                                  .doc(widget.templateCardId)
-                                  .get(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              var source = (snapshot.data as dynamic).data();
-                              if (source != null) {
-                                return bady();
-                              } else {
-                                return buildErr();
-                              }
-                            } else if (snapshot.hasError) {
-                              return buildErr();
-                            } else {
-                              return buildLoader();
-                            }
-                          },
-                        ),
+        body: Stack(
+          children: [
+            const Positioned(
+              top: -80,
+              right: -80,
+              child: _GusOrb(size: 320, color: _T.lime, opacity: 0.11),
+            ),
+            const Positioned(
+              bottom: -40,
+              left: -80,
+              child: _GusOrb(size: 260, color: _T.lime, opacity: 0.06),
+            ),
+            SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _topBar(),
+                  _titleBlock(),
+                  if (widget.labelIds.isNotEmpty) _labelsBanner(),
+                  Expanded(
+                    child:
+                        widget.templateCardId == "contact"
+                            ? bady()
+                            : FutureBuilder(
+                              future:
+                                  firestore
+                                      .collection(ecol)
+                                      .doc(widget.event.id)
+                                      .collection(cardcol)
+                                      .doc(widget.templateCardId)
+                                      .get(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  var source = (snapshot.data as dynamic).data();
+                                  if (source != null) {
+                                    return bady();
+                                  } else {
+                                    return buildErr();
+                                  }
+                                } else if (snapshot.hasError) {
+                                  return buildErr();
+                                } else {
+                                  return buildLoader();
+                                }
+                              },
+                            ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -240,13 +285,13 @@ class _ImpPreviewState extends State<ImpPreview> {
 
   Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 4),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
                 color: _T.card,
                 borderRadius: BorderRadius.circular(20),
@@ -256,8 +301,8 @@ class _ImpPreviewState extends State<ImpPreview> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.arrow_back_ios_new_rounded, color: _T.lime, size: 13),
-                  const SizedBox(width: 4),
-                  Text('Back', style: _T.f(size: 14, weight: FontWeight.w500, color: _T.lbl1)),
+                  const SizedBox(width: 5),
+                  Text('Back', style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl1)),
                 ],
               ),
             ),
@@ -273,13 +318,13 @@ class _ImpPreviewState extends State<ImpPreview> {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
                     color: _T.limeDim,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: _T.lime.withValues(alpha: 0.35), width: 0.8),
                   ),
-                  child: Text('Import', style: _T.f(size: 14, weight: FontWeight.w600, color: _T.lime)),
+                  child: Text('Import', style: _T.f(size: 13, weight: FontWeight.w600, color: _T.lime)),
                 ),
               )
               : const CupertinoActivityIndicator(color: _T.lime),
@@ -290,10 +335,20 @@ class _ImpPreviewState extends State<ImpPreview> {
 
   Widget _titleBlock() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-      child: Text(
-        "Import Preview",
-        style: _T.f(size: 28, weight: FontWeight.w800, color: _T.lbl1, letterSpacing: -0.8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Import Preview",
+            style: _T.f(size: 28, weight: FontWeight.w800, color: _T.white, letterSpacing: -0.8, height: 1.12),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "${attendees.length} guest${attendees.length == 1 ? '' : 's'} to import",
+            style: _T.f(size: 14, weight: FontWeight.w500, color: _T.lbl3),
+          ),
+        ],
       ),
     );
   }
@@ -362,17 +417,9 @@ class _ImpPreviewState extends State<ImpPreview> {
       width: double.maxFinite,
       color: _T.bg,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(left: 16, right: 16),
+        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 32),
         child: Column(
           children: [
-            Container(
-              width: double.maxFinite,
-              padding: const EdgeInsets.only(top: 16, left: 8, bottom: 10),
-              child: Text(
-                "Total Count: ${atList.length}",
-                style: _T.f(size: 18, weight: FontWeight.bold),
-              ),
-            ),
             ...List.generate(atList.length, (index) {
               var attendee = atList[index];
               var fullname = attendee.fullName;

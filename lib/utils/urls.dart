@@ -1,3 +1,5 @@
+const googleMapsApiKey = 'AIzaSyBviSg2uaE2ycr40FzWCkKWu6DfQaX0BcE';
+
 const hfweb = "https://haflaway.com";
 final bmsendrl = Uri.parse("https://apisms.beem.africa/v1/send");
 const rendercarl = "https://rendercard-frbu33fema-uc.a.run.app";
