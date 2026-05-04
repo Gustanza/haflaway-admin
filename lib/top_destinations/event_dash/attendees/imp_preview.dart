@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:haflaway/hfhttp/clientelle.dart';
 import 'package:haflaway/models/mchango.dart';
@@ -32,7 +33,7 @@ class _T {
   static const limeDim = Color(0xFF2A2210);
   static const lbl1    = Color(0xFFFFFFFF);
   static const lbl2    = Color(0xFFAEAEB2);
-  static const lbl3    = Color(0xFF636366);
+  static const lbl3    = Color(0xFF8E8E93);
   static const lbl4    = Color(0xFF48484A);
   static const white   = Color(0xFFFFFFFF);
 
@@ -105,7 +106,6 @@ class _ImpPreviewState extends State<ImpPreview> {
     }
     attendees =
         (widget.atList ?? []).map((a) {
-          // Merge any pre-selected labels onto the attendee copy
           if (widget.labelIds.isNotEmpty) {
             final merged = {...?a.labelIds, ...widget.labelIds}.toList();
             a.labelIds = merged;
@@ -128,13 +128,11 @@ class _ImpPreviewState extends State<ImpPreview> {
           hasError = false;
         });
       }
-      //
       int atnidx = widget.mapp!['fullName']!;
       int atphnidx = widget.mapp!['phone']!;
       int? atahadiidx = widget.mapp!['ahadi'];
       int? atmchangoidx = widget.mapp!['mchango'];
-      //
-      //
+
       var bytes = widget.xcelBytes;
       excel = xcl.Excel.decodeBytes(bytes!);
       var tblKey = excel?.tables.keys.firstOrNull;
@@ -197,42 +195,58 @@ class _ImpPreviewState extends State<ImpPreview> {
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: _T.bg,
-        body: SafeArea(
-          child: Column(
-            children: [
-              _topBar(),
-              _titleBlock(),
-              if (widget.labelIds.isNotEmpty) _labelsBanner(),
-              Expanded(
-                child:
-                    widget.templateCardId == "contact"
-                        ? bady()
-                        : FutureBuilder(
-                          future:
-                              firestore
-                                  .collection(ecol)
-                                  .doc(widget.event.id)
-                                  .collection(cardcol)
-                                  .doc(widget.templateCardId)
-                                  .get(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              var source = (snapshot.data as dynamic).data();
-                              if (source != null) {
-                                return bady();
-                              } else {
-                                return buildErr();
-                              }
-                            } else if (snapshot.hasError) {
-                              return buildErr();
-                            } else {
-                              return buildLoader();
-                            }
-                          },
-                        ),
+        body: Stack(
+          children: [
+            const Positioned(
+              top: -80,
+              right: -80,
+              child: _GusOrb(size: 320, color: _T.lime, opacity: 0.11),
+            ),
+            const Positioned(
+              bottom: -40,
+              left: -80,
+              child: _GusOrb(size: 260, color: _T.lime, opacity: 0.06),
+            ),
+            SafeArea(
+              bottom: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _topBar(),
+                  _titleBlock(),
+                  if (widget.labelIds.isNotEmpty) _labelsBanner(),
+                  Expanded(
+                    child:
+                        widget.templateCardId == "contact"
+                            ? bady()
+                            : FutureBuilder(
+                              future:
+                                  firestore
+                                      .collection(ecol)
+                                      .doc(widget.event.id)
+                                      .collection(cardcol)
+                                      .doc(widget.templateCardId)
+                                      .get(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  var source = (snapshot.data as dynamic).data();
+                                  if (source != null) {
+                                    return bady();
+                                  } else {
+                                    return buildErr();
+                                  }
+                                } else if (snapshot.hasError) {
+                                  return buildErr();
+                                } else {
+                                  return buildLoader();
+                                }
+                              },
+                            ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -240,13 +254,13 @@ class _ImpPreviewState extends State<ImpPreview> {
 
   Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 4),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
                 color: _T.card,
                 borderRadius: BorderRadius.circular(20),
@@ -255,9 +269,16 @@ class _ImpPreviewState extends State<ImpPreview> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.arrow_back_ios_new_rounded, color: _T.lime, size: 13),
-                  const SizedBox(width: 4),
-                  Text('Back', style: _T.f(size: 14, weight: FontWeight.w500, color: _T.lbl1)),
+                  const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: _T.lime,
+                    size: 13,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Back',
+                    style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl1),
+                  ),
                 ],
               ),
             ),
@@ -273,27 +294,62 @@ class _ImpPreviewState extends State<ImpPreview> {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: _T.limeDim,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _T.lime.withValues(alpha: 0.35), width: 0.8),
+                    border: Border.all(
+                      color: _T.lime.withValues(alpha: 0.35),
+                      width: 0.8,
+                    ),
                   ),
-                  child: Text('Import', style: _T.f(size: 14, weight: FontWeight.w600, color: _T.lime)),
+                  child: Text(
+                    'Import',
+                    style: _T.f(
+                      size: 13,
+                      weight: FontWeight.w600,
+                      color: _T.lime,
+                    ),
+                  ),
                 ),
               )
-              : const CupertinoActivityIndicator(color: _T.lime),
+              : const Padding(
+                padding: EdgeInsets.only(right: 4),
+                child: CupertinoActivityIndicator(color: _T.lime),
+              ),
         ],
       ),
     );
   }
 
   Widget _titleBlock() {
+    final count = attendees.length;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-      child: Text(
-        "Import Preview",
-        style: _T.f(size: 28, weight: FontWeight.w800, color: _T.lbl1, letterSpacing: -0.8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Import Preview",
+            style: _T.f(
+              size: 28,
+              weight: FontWeight.w800,
+              color: _T.white,
+              letterSpacing: -0.8,
+              height: 1.12,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            isLoading
+                ? "Loading…"
+                : "$count guest${count == 1 ? '' : 's'} ready to import",
+            style: _T.f(size: 14, weight: FontWeight.w500, color: _T.lbl3),
+          ),
+        ],
       ),
     );
   }
@@ -303,42 +359,74 @@ class _ImpPreviewState extends State<ImpPreview> {
     final selected =
         labels.where((l) => widget.labelIds.contains(l.id)).toList();
     if (selected.isEmpty) return const SizedBox.shrink();
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: _T.sep, width: 0.8),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: _T.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _T.sep, width: 0.8),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Assigning to lists:', style: _T.f(size: 11, color: _T.lbl3)),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children:
-                selected.map((label) {
-                  final c = Color(label.colorValue);
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _T.lime.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.label_rounded, color: _T.lime, size: 16),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Assigning to Lists",
+                    style: _T.f(
+                      size: 13,
+                      weight: FontWeight.w700,
+                      color: _T.lbl1,
                     ),
-                    decoration: BoxDecoration(
-                      color: c.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: c.withValues(alpha: 0.6)),
-                    ),
-                    child: Text(
-                      label.name,
-                      style: _T.f(size: 12, color: c, weight: FontWeight.w600),
-                    ),
-                  );
-                }).toList(),
-          ),
-        ],
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children:
+                        selected.map((label) {
+                          final c = Color(label.colorValue);
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: c.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: c.withValues(alpha: 0.6),
+                              ),
+                            ),
+                            child: Text(
+                              label.name,
+                              style: _T.f(
+                                size: 12,
+                                color: c,
+                                weight: FontWeight.w600,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -356,225 +444,227 @@ class _ImpPreviewState extends State<ImpPreview> {
     return buildAtList(atList: attendees);
   }
 
-  buildAtList({required List<Attendee> atList}) {
-    return Container(
-      height: double.maxFinite,
-      width: double.maxFinite,
-      color: _T.bg,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.only(left: 16, right: 16),
-        child: Column(
-          children: [
-            Container(
-              width: double.maxFinite,
-              padding: const EdgeInsets.only(top: 16, left: 8, bottom: 10),
-              child: Text(
-                "Total Count: ${atList.length}",
-                style: _T.f(size: 18, weight: FontWeight.bold),
-              ),
+  Widget buildAtList({required List<Attendee> atList}) {
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+      itemCount: atList.length,
+      itemBuilder: (context, index) {
+        final attendee = atList[index];
+        final fullname = attendee.fullName;
+        return TweenAnimationBuilder<double>(
+          key: ValueKey('prev_${attendee.phone}_$index'),
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: Duration(
+            milliseconds: 300 + (index.clamp(0, 12) * 40),
+          ),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) => Opacity(
+            opacity: value,
+            child: Transform.translate(
+              offset: Offset(0, 14 * (1 - value)),
+              child: child,
             ),
-            ...List.generate(atList.length, (index) {
-              var attendee = atList[index];
-              var fullname = attendee.fullName;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: _T.card,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _T.sep, width: 0.8),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  child: Stack(
+          ),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: _T.card,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _T.sep, width: 0.8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Stack(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: _T.card2,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            alignment: Alignment.center,
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                "${index + 1}",
-                                style: _T.f(size: 14, weight: FontWeight.w700),
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: _T.card2,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            "${index + 1}",
+                            style: _T.f(size: 13, weight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              fullname,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: _T.f(
+                                size: 15,
+                                weight: FontWeight.w700,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  fullname,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: _T.f(
-                                    size: 15,
-                                    weight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  attendee.phone,
-                                  style: _T.f(size: 12, color: _T.lbl2),
-                                ),
-                                if (widget.kardType == KardType.contribution ||
-                                    widget.kardType == KardType.contact) ...[
-                                  const SizedBox(height: 12),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
+                            const SizedBox(height: 4),
+                            Text(
+                              attendee.phone,
+                              style: _T.f(size: 12, color: _T.lbl2),
+                            ),
+                            if (widget.kardType == KardType.contribution ||
+                                widget.kardType == KardType.contact) ...[
+                              const SizedBox(height: 12),
+                              Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
                                     children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: _T.limeDim,
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.favorite,
+                                              size: 12,
+                                              color: _T.lime,
                                             ),
-                                            decoration: BoxDecoration(
-                                              color: _T.limeDim,
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                const Icon(
-                                                  Icons.favorite,
-                                                  size: 12,
-                                                  color: _T.lime,
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  'Pledge',
-                                                  style: _T.f(
-                                                    size: 11,
-                                                    color: _T.lime,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              (attendee.pledgedAmount ?? 0) == 0
-                                                  ? '-'
-                                                  : formatMoney(
-                                                    currency: "TZS",
-                                                    attendee.pledgedAmount,
-                                                    decimals: 0,
-                                                  ),
-                                              textAlign: TextAlign.right,
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'Pledge',
                                               style: _T.f(
-                                                size: 13,
-                                                weight: FontWeight.w600,
+                                                size: 11,
+                                                color: _T.lime,
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: _T.card2,
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                const Icon(
-                                                  Icons.payments,
-                                                  size: 12,
-                                                  color: _T.lbl2,
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  'Contribution',
-                                                  style: _T.f(
-                                                    size: 11,
-                                                    color: _T.lbl2,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          (attendee.pledgedAmount ?? 0) == 0
+                                              ? '-'
+                                              : formatMoney(
+                                                currency: "TZS",
+                                                attendee.pledgedAmount,
+                                                decimals: 0,
+                                              ),
+                                          textAlign: TextAlign.right,
+                                          style: _T.f(
+                                            size: 13,
+                                            weight: FontWeight.w600,
                                           ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              (attendee.paidAmount ?? 0) == 0
-                                                  ? '-'
-                                                  : formatMoney(
-                                                    currency: "TZS",
-                                                    attendee.paidAmount,
-                                                    decimals: 0,
-                                                  ),
-                                              textAlign: TextAlign.right,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: _T.card2,
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.payments,
+                                              size: 12,
+                                              color: _T.lbl2,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'Contribution',
                                               style: _T.f(
-                                                size: 13,
-                                                weight: FontWeight.w600,
-                                                color: _T.white,
+                                                size: 11,
+                                                color: _T.lbl2,
                                               ),
                                             ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          (attendee.paidAmount ?? 0) == 0
+                                              ? '-'
+                                              : formatMoney(
+                                                currency: "TZS",
+                                                attendee.paidAmount,
+                                                decimals: 0,
+                                              ),
+                                          textAlign: TextAlign.right,
+                                          style: _T.f(
+                                            size: 13,
+                                            weight: FontWeight.w600,
+                                            color: _T.white,
                                           ),
-                                        ],
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 32,
-                            minHeight: 32,
-                          ),
-                          iconSize: 18,
-                          onPressed: () {
-                            if (mounted) {
-                              setState(() {
-                                attendees.removeAt(index);
-                              });
-                            }
-                          },
-                          icon: const Icon(Clarity.close_line),
-                          color: _T.lbl2,
+                              ),
+                            ],
+                          ],
                         ),
                       ),
+                      const SizedBox(width: 32),
                     ],
                   ),
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: GestureDetector(
+                      onTap: () {
+                        if (mounted) {
+                          setState(() {
+                            attendees.removeAt(index);
+                          });
+                        }
+                      },
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: _T.card2,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Clarity.close_line,
+                          color: _T.lbl3,
+                          size: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -584,7 +674,6 @@ class _ImpPreviewState extends State<ImpPreview> {
     });
 
     HttpService client = HttpService();
-    // Create a copy to iterate while modifying the original list
     List<Attendee> attendeesCpy = List.from(attendees);
 
     for (var i = 0; i < attendeesCpy.length; i += 2) {
@@ -621,7 +710,6 @@ class _ImpPreviewState extends State<ImpPreview> {
           for (var res in results) {
             if (res['status']) {
               var atId = res['attendeeId'];
-              // Find attendee in batch to get paidAmount
               var attendee = batch.firstWhere(
                 (a) => a.id == atId,
                 orElse: () => batch[0],
@@ -686,5 +774,33 @@ class _ImpPreviewState extends State<ImpPreview> {
 
   popper() {
     Navigator.of(context).pop();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GusOrb extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double opacity;
+
+  const _GusOrb({required this.size, required this.color, this.opacity = 0.05});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withValues(alpha: opacity),
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          child: const SizedBox.shrink(),
+        ),
+      ),
+    );
   }
 }

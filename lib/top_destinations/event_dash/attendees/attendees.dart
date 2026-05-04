@@ -2275,7 +2275,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       _buildMappingRow(
                         icon: Icons.card_membership_outlined,
                         label: "Card Type",
-                        dropdown: buildDrop(synCrdmap, impcard),
+                        dropdown: buildDrop(synCrdmap, impcard, setAltState),
                       ),
                     ],
 

@@ -218,8 +218,10 @@ class _MyAccountScreenState extends State<_MyAccountScreen> {
                           child: _statCard(
                             icon: Icons.account_balance_wallet_outlined,
                             label: 'BALANCE',
-                            value:
-                                '${(widget.userr.balance?.toInt() ?? 0)}',
+                            value: formatMoney(
+                              widget.userr.balance ?? 0,
+                              decimals: 0,
+                            ),
                             sub: 'TZS',
                           ),
                         ),
@@ -553,17 +555,20 @@ class _MyAccountScreenState extends State<_MyAccountScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            value,
-            style: _T.f(
-              size: 34,
-              weight: FontWeight.w800,
-              color: _T.white,
-              letterSpacing: -1.2,
-              height: 1.0,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: _T.f(
+                size: 24,
+                weight: FontWeight.w800,
+                color: _T.white,
+                letterSpacing: -1.2,
+                height: 1.0,
+              ),
+              maxLines: 1,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           Text(sub, style: _T.f(size: 12, color: _T.lbl3)),
