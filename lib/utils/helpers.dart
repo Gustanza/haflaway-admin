@@ -3,18 +3,33 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 String transformNumber(String input) {
-  // Remove spaces and dashes
-  input = input.replaceAll(' ', '').replaceAll('-', '');
+  // Strip invisible/non-printable characters (BOM, zero-width spaces, etc.)
+  input = input.replaceAll(RegExp(r'[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]'), '');
 
-  // Replace leading 0 with 255
-  if (input.startsWith('0')) {
-    input = '255${input.substring(1)}';
-  }
-
-  // Remove decimal point and everything after it
+  // Remove decimal part before stripping non-digits (Excel float: 255754980535.0)
   if (input.contains('.')) {
     input = input.split('.')[0];
   }
+
+  // Preserve leading + so we can detect country codes, then strip everything non-digit
+  bool hadPlus = input.trimLeft().startsWith('+');
+  input = input.replaceAll(RegExp(r'[^\d]'), '');
+
+  if (input.isEmpty) return '';
+
+  // Normalize to E.164 digits (no +)
+  if (input.startsWith('255')) {
+    // already correct
+  } else if (hadPlus) {
+    // foreign country code — leave digits as-is (e.g. 254... 256...)
+  } else if (input.startsWith('0') && input.length >= 10) {
+    input = '255${input.substring(1)}';
+  } else if ((input.startsWith('7') || input.startsWith('6')) && input.length == 9) {
+    input = '255$input';
+  }
+
+  // Sanity check: must be all digits and reasonable length (9–15)
+  if (!RegExp(r'^\d{9,15}$').hasMatch(input)) return '';
 
   return input;
 }

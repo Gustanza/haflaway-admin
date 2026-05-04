@@ -8,7 +8,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:haflaway/components/buttons.dart';
-import 'package:haflaway/components/custom_popup_btn.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/generales/wsap.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
@@ -27,7 +26,6 @@ import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/errorstrs.dart';
-import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/helpers.dart';
@@ -336,164 +334,418 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   }
 
   getMainBuild() {
-    return bildPopupMenu(
-      icon: Icon(Icons.exit_to_app_outlined),
-      popItems: [
-        PopClickers(
-          leading: Icon(Icons.summarize),
-          title: Text("Summary"),
-          onTap: showQuickStats,
-        ),
-        PopClickers(
-          leading: Icon(Icons.list_alt_rounded),
-          title: Text("Manage Lists"),
-          onTap: () => showLabelManager(context, widget.edata),
-        ),
-        if (widget.kardType == KardType.invitation ||
-            widget.kardType == KardType.contribution)
-          PopClickers(
-            leading: Icon(Icons.mail),
-            title: Text("Send Card"),
-            onTap: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return InvitesIssuers(
-                      event: widget.edata,
-                      kardType: widget.kardType,
-                      campaignId:
-                          widget.kardType == KardType.invitation
-                              ? invCampId
-                              : contrCampId,
-                    );
-                  },
-                ),
-              );
-              _loadAttendees();
-            },
-          ),
-        if (widget.kardType == KardType.invitation)
-          PopClickers(
-            leading: Icon(Icons.mail),
-            title: Text("Send Reminder"),
-            onTap: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return InvitesIssuers(
-                      event: widget.edata,
-                      kardType: widget.kardType,
-                      campaignId: invRemCampId,
-                    );
-                  },
-                ),
-              );
-              _loadAttendees();
-            },
-          ),
-        PopClickers(
-          leading: Icon(Icons.sms),
-          title: Text("Send Bulk SMS"),
-          onTap: () async {
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) {
-                  return AdminCampaigns(
-                    event: widget.edata,
-                    title: "Send Bulk SMS",
-                    kardType: widget.kardType,
-                  );
-                },
-              ),
-            );
-            _loadAttendees();
-          },
-        ),
+    return GestureDetector(
+      onTap: _showMainSheet,
+      child: const Icon(Icons.more_horiz_rounded, color: _T.lime, size: 22),
+    );
+  }
 
-        // PopClickers(
-        //   leading: Icon(Icons.sms),
-        //   title: Text("Rekebisha Atts"),
-        //   onTap: () async {
-        //     try {
-        //       firestore
-        //           .collection(ecol)
-        //           .doc(widget.edata.id)
-        //           .collection(atcol)
-        //           .get()
-        //           .then((snapshot) {
-        //             for (var doc in snapshot.docs) {
-        //               debugPrint("Look: ${doc['fullName'].toLowerCase()}");
-        //               doc.reference.set({
-        //                 "fullNameLower": doc['fullName'].toLowerCase(),
-        //               }, SetOptions(merge: true));
-        //             }
-        //           });
-        //     } catch (e) {
-        //       debugPrint("Shida: $e");
-        //     }
-        //   },
-        // ),
-      ],
+  void _showMainSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder:
+          (ctx) => modalBtmSheet(
+            bdrdm: 28,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 22),
+                        decoration: BoxDecoration(
+                          color: _T.card3,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(11),
+                          decoration: BoxDecoration(
+                            color: _T.lime.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.dashboard_rounded,
+                            color: _T.lime,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Event Tools",
+                              style: _T.f(
+                                size: 18,
+                                weight: FontWeight.w800,
+                                color: _T.white,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                            Text(
+                              "Analytics & communications",
+                              style: _T.f(size: 12, color: _T.lbl3),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // ── Analytics ──
+                    _sheetSectionLabel("Analytics"),
+                    const SizedBox(height: 10),
+                    _sheetTile(
+                      icon: Icons.bar_chart_rounded,
+                      color: const Color(0xFF5E5CE6),
+                      title: "Summary",
+                      subtitle: "Attendance stats and full breakdown",
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        showQuickStats();
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _sheetTile(
+                      icon: Icons.label_rounded,
+                      color: _T.lime,
+                      title: "Manage Labels",
+                      subtitle: "Create and organise guest labels",
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        showLabelManager(context, widget.edata);
+                      },
+                    ),
+
+                    // ── Communications ──
+                    const SizedBox(height: 22),
+                    _sheetSectionLabel("Communications"),
+                    const SizedBox(height: 10),
+                    Column(
+                      children: [
+                        if (widget.kardType == KardType.invitation ||
+                            widget.kardType == KardType.contribution) ...[
+                          _sheetTile(
+                            icon: Icons.mark_email_unread_rounded,
+                            color: const Color(0xFF5AC8FA),
+                            title: "Send Card(s)",
+                            subtitle:
+                                widget.kardType == KardType.invitation
+                                    ? "Dispatch digital invitation cards"
+                                    : "Send contribution cards to guests",
+                            onTap: () async {
+                              Navigator.pop(ctx);
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => InvitesIssuers(
+                                        event: widget.edata,
+                                        kardType: widget.kardType,
+                                        campaignId:
+                                            widget.kardType ==
+                                                    KardType.invitation
+                                                ? invCampId
+                                                : contrCampId,
+                                      ),
+                                ),
+                              );
+                              _loadAttendees();
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (widget.kardType == KardType.invitation) ...[
+                          _sheetTile(
+                            icon: Icons.notifications_active_rounded,
+                            color: const Color(0xFFFF9F0A),
+                            title: "Send Reminder(s)",
+                            subtitle: "Nudge guests who haven't responded",
+                            onTap: () async {
+                              Navigator.pop(ctx);
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => InvitesIssuers(
+                                        event: widget.edata,
+                                        kardType: widget.kardType,
+                                        campaignId: invRemCampId,
+                                      ),
+                                ),
+                              );
+                              _loadAttendees();
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        _sheetTile(
+                          icon: Icons.sms_rounded,
+                          color: const Color(0xFF30D158),
+                          title: "Send Bulk SMS",
+                          subtitle: "Text message all or filtered guests",
+                          onTap: () async {
+                            Navigator.pop(ctx);
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => AdminCampaigns(
+                                      event: widget.edata,
+                                      title: "Send Bulk SMS",
+                                      kardType: widget.kardType,
+                                    ),
+                              ),
+                            );
+                            _loadAttendees();
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                ),
+              ),
+            ),
+          ),
     );
   }
 
   getMiniBuild() {
-    return bildPopupMenu(
-      icon: Icon(Icons.group_add),
-      popItems: [
-        PopClickers(
-          leading: Icon(Icons.group_add),
-          title: Text(
-            widget.kardType == KardType.invitation
-                ? "Add Invitee"
-                : widget.kardType == KardType.contribution
-                ? "Add Contributor"
-                : widget.kardType == KardType.contact
-                ? "Add Contact"
-                : "",
-          ),
-          onTap: () async {
-            String title =
-                widget.kardType == KardType.invitation
-                    ? "Invitation"
-                    : widget.kardType == KardType.contribution
-                    ? "Contributor"
-                    : "Contact";
-            await navNormal(
-              context: context,
-              widget: CreateAttendees(
-                event: widget.edata,
-                title: title,
-                kardType: widget.kardType,
+    return GestureDetector(
+      onTap: _showMiniSheet,
+      child: const Icon(Icons.group_add_rounded, color: _T.lime, size: 22),
+    );
+  }
+
+  void _showMiniSheet() {
+    final entityLabel =
+        widget.kardType == KardType.invitation
+            ? "Invitee"
+            : widget.kardType == KardType.contribution
+            ? "Contributor"
+            : "Contact";
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder:
+          (ctx) => modalBtmSheet(
+            bdrdm: 28,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 22),
+                        decoration: BoxDecoration(
+                          color: _T.card3,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(11),
+                          decoration: BoxDecoration(
+                            color: _T.lime.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.group_add_rounded,
+                            color: _T.lime,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Add $entityLabel",
+                              style: _T.f(
+                                size: 18,
+                                weight: FontWeight.w800,
+                                color: _T.white,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                            Text(
+                              "Choose how to add guests",
+                              style: _T.f(size: 12, color: _T.lbl3),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    _sheetTile(
+                      icon: Icons.person_add_alt_1_rounded,
+                      color: _T.lime,
+                      title: "Add Manually",
+                      subtitle: "Enter guest details one by one",
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        final title =
+                            widget.kardType == KardType.invitation
+                                ? "Invitation"
+                                : widget.kardType == KardType.contribution
+                                ? "Contributor"
+                                : "Contact";
+                        await navNormal(
+                          context: context,
+                          widget: CreateAttendees(
+                            event: widget.edata,
+                            title: title,
+                            kardType: widget.kardType,
+                          ),
+                        );
+                        _loadAttendees();
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _sheetTile(
+                      icon: Icons.upload_file_rounded,
+                      color: const Color(0xFF5AC8FA),
+                      title: "Upload Spreadsheet",
+                      subtitle: "Import guests from an Excel file",
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        importFile();
+                      },
+                    ),
+                    if (widget.kardType == KardType.invitation) ...[
+                      const SizedBox(height: 10),
+                      _sheetTile(
+                        icon: Icons.monetization_on_rounded,
+                        color: const Color(0xFFFF9F0A),
+                        title: "Import from Contributors",
+                        subtitle: "Pull in existing contributors as guests",
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          showSelectCard(isContactImport: false);
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      _sheetTile(
+                        icon: Icons.contacts_rounded,
+                        color: const Color(0xFF30D158),
+                        title: "Import from Contacts",
+                        subtitle: "Bring in saved contacts as guests",
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          showSelectCard(isContactImport: true);
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                  ],
+                ),
               ),
-            );
-            _loadAttendees();
-          },
-        ),
-        PopClickers(
-          leading: Icon(Icons.note_add_rounded),
-          title: Text("Upload File"),
-          onTap: () {
-            importFile();
-          },
-        ),
-        if (widget.kardType == KardType.invitation) ...[
-          PopClickers(
-            leading: Icon(Icons.monetization_on_sharp),
-            title: Text("Import from Contributors"),
-            onTap: () {
-              showSelectCard(isContactImport: false);
-            },
+            ),
           ),
-          PopClickers(
-            leading: Icon(Icons.contact_phone_rounded),
-            title: Text("Import from Contacts"),
-            onTap: () {
-              showSelectCard(isContactImport: true);
-            },
-          ),
-        ],
-      ],
+    );
+  }
+
+  // ── Shared sheet helpers ─────────────────────────────────────────────────
+
+  Widget _sheetTile({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: _T.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _T.sep, width: 0.8),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: _T.f(
+                      size: 14,
+                      weight: FontWeight.w700,
+                      color: _T.lbl1,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: _T.f(size: 12, color: _T.lbl3, height: 1.35),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: _T.lbl4,
+              size: 12,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sheetSectionLabel(String label) {
+    return Text(
+      label.toUpperCase(),
+      style: _T.f(
+        size: 10,
+        weight: FontWeight.w800,
+        color: _T.lbl4,
+        letterSpacing: 1.0,
+      ),
     );
   }
 
@@ -509,14 +761,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           children: [
             // Ambient Orbs
             const Positioned(
-              top: -100,
-              right: -100,
-              child: _GusOrb(size: 300, color: _T.lime, opacity: 0.08),
+              top: -80,
+              right: -80,
+              child: _GusOrb(size: 320, color: _T.lime, opacity: 0.11),
             ),
             const Positioned(
-              bottom: -50,
-              left: -100,
-              child: _GusOrb(size: 250, color: _T.lime, opacity: 0.05),
+              bottom: -40,
+              left: -80,
+              child: _GusOrb(size: 260, color: _T.lime, opacity: 0.06),
             ),
 
             RefreshIndicator(
@@ -524,7 +776,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 await _loadAttendees();
               },
               color: _T.lime,
-              backgroundColor: _T.card,
+              backgroundColor: _T.card2,
               child: CustomScrollView(
                 controller: scrollController,
                 physics: const BouncingScrollPhysics(
@@ -591,17 +843,18 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   else if ((isSearching ? searchResults : atList).isEmpty &&
                       !isLoading)
                     SliverFillRemaining(
-                      hasScrollBody: true,
-                      child: BuildNoDt(
-                        string: isSearching ? "No Results Found" : "no data",
-                        isRefreshed: () async {
-                          if (isSearching) {
-                            performSearch(searchController.text);
-                          } else {
-                            await _loadAttendees();
-                          }
-                        },
-                      ),
+                      hasScrollBody: false,
+                      child:
+                          isSearching
+                              ? searchController.text.isEmpty
+                                  ? const GusSearchEmpty.prompt()
+                                  : GusSearchEmpty.noResults(
+                                    query: searchController.text,
+                                  )
+                              : BuildNoDt(
+                                string: "no data",
+                                isRefreshed: () async => await _loadAttendees(),
+                              ),
                     )
                   else
                     SliverPadding(
@@ -650,6 +903,8 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                                 kardType: widget.kardType,
                                 eventId: widget.edata.id ?? "_",
                                 campaignId: campaignId,
+                                showMessageStatus:
+                                    widget.kardType != KardType.contact,
                                 allLabels: widget.edata.labels ?? [],
                                 onEdit: () async {
                                   String entityTitle =
@@ -721,30 +976,41 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
 
   Widget _topBar(bool inSelectMode) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 4),
       child: Row(
         children: [
           if (!isSearching)
             GestureDetector(
               onTap: () => Navigator.of(context).pop(),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: _T.lime,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Back',
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: _T.card,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: _T.sep, width: 0.8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: _T.lime,
+                      size: 13,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 5),
+                    Text(
+                      'Back',
+                      style: _T.f(
+                        size: 13,
+                        weight: FontWeight.w500,
+                        color: _T.lbl1,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           if (isSearching)
@@ -794,9 +1060,10 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       },
                       child: Text(
                         "Cancel",
-                        style: GoogleFonts.inter(
+                        style: _T.f(
+                          size: 14,
+                          weight: FontWeight.w600,
                           color: _T.lime,
-                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -810,20 +1077,21 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
 
   Widget _titleBlock() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             widget.title,
-            style: GoogleFonts.inter(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: -0.5,
+            style: _T.f(
+              size: 28,
+              weight: FontWeight.w800,
+              color: _T.white,
+              letterSpacing: -0.8,
+              height: 1.12,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           _buildListHeader(atList.length),
         ],
       ),
@@ -843,16 +1111,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: _T.card2,
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _T.sep, width: 0.8),
             ),
             child: Text(
               "End of list",
-              style: GoogleFonts.inter(
-                color: Colors.white.withValues(alpha: 0.35),
-                fontSize: 13,
-                fontStyle: FontStyle.italic,
-              ),
+              style: _T.f(size: 13, color: _T.lbl4, height: 1.0),
             ),
           ),
         ),
@@ -863,57 +1128,61 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
 
   // Build elegant filter button for app bar
   Widget _buildFilterButton() {
-    // Count active filters
     int activeFiltersCount = 0;
     if (_selectedKardFilter != null) activeFiltersCount++;
     if (_attendanceFilter != "All") activeFiltersCount++;
     if (_labelFilterId != null) activeFiltersCount++;
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => _showFilterBottomSheet(context),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: EdgeInsets.all(8),
-              child: Icon(
-                Icons.tune,
-                color: Colors.white.withValues(alpha: 0.9),
-                size: 24,
+    final bool hasFilters = activeFiltersCount > 0;
+
+    return GestureDetector(
+      onTap: () => _showFilterBottomSheet(context),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: hasFilters ? _T.limeDim : _T.card,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: hasFilters ? _T.lime.withValues(alpha: 0.4) : _T.sep,
+                width: 0.8,
               ),
             ),
+            child: Icon(
+              Icons.tune_rounded,
+              color: hasFilters ? _T.lime : _T.lbl2,
+              size: 20,
+            ),
           ),
-        ),
-        // Active filter indicator badge
-        if (activeFiltersCount > 0)
-          Positioned(
-            top: 4,
-            right: 4,
-            child: Container(
-              padding: EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.redAccent,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
-              ),
-              constraints: BoxConstraints(minWidth: 16, minHeight: 16),
-              child: Center(
-                child: Text(
-                  "$activeFiltersCount",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    height: 1,
+          if (hasFilters)
+            Positioned(
+              top: -4,
+              right: -4,
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: _T.lime,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _T.bg, width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
+                    "$activeFiltersCount",
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      height: 1,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -935,28 +1204,39 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 children: [
                   // Handle bar
                   Container(
-                    margin: EdgeInsets.only(top: 12, bottom: 8),
-                    width: 40,
+                    margin: const EdgeInsets.only(top: 12, bottom: 8),
+                    width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.3),
+                      color: _T.card3,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                   // Header
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(20, 12, 12, 12),
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.tune_rounded,
-                          color: Teme.lime,
-                          size: 24,
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _T.lime.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.tune_rounded,
+                            color: _T.lime,
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Text(
                           "Filter Guests",
-                          style: Teme.f(size: 20, weight: FontWeight.bold),
+                          style: _T.f(
+                            size: 18,
+                            weight: FontWeight.w700,
+                            color: _T.lbl1,
+                          ),
                         ),
                         const Spacer(),
                         if (_selectedKardFilter != null ||
@@ -974,12 +1254,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             },
                             icon: const Icon(
                               Icons.refresh_rounded,
-                              size: 18,
+                              size: 15,
                               color: Colors.redAccent,
                             ),
                             label: Text(
                               "Clear",
-                              style: Teme.f(
+                              style: _T.f(
+                                size: 13,
                                 color: Colors.redAccent,
                                 weight: FontWeight.w600,
                               ),
@@ -989,17 +1270,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                           onPressed: () => Navigator.pop(context),
                           icon: Icon(
                             Icons.close_rounded,
-                            color: Teme.grey1,
-                            size: 24,
+                            color: _T.lbl3,
+                            size: 20,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Divider(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    height: 1,
-                  ),
+                  Divider(height: 1, thickness: 0.5, color: _T.sep),
                   // Filter sections
                   Flexible(
                     child: SingleChildScrollView(
@@ -1081,14 +1359,14 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                           if (widget.edata.labels != null &&
                               widget.edata.labels!.isNotEmpty) ...[
                             _buildFilterSection(
-                              title: "Lists",
+                              title: "Labels",
                               icon: Icons.label_outline_rounded,
                               child: Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: [
                                   _buildFilterChip(
-                                    label: "All Lists",
+                                    label: "All Labels",
                                     isSelected: _labelFilterId == null,
                                     onTap: () {
                                       setState(() {
@@ -1141,32 +1419,39 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   }) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 24),
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: _T.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5),
+        border: Border.all(color: _T.sep, width: 0.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: Teme.lime.withOpacity(0.9)),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: _T.lime.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 14, color: _T.lime),
+              ),
               const SizedBox(width: 10),
               Text(
                 title,
-                style: Teme.f(
-                  size: 14,
+                style: _T.f(
+                  size: 13,
                   weight: FontWeight.w700,
-                  color: Teme.lime.withOpacity(0.9),
-                  letterSpacing: 0.5,
+                  color: _T.lbl2,
+                  letterSpacing: 0.4,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           child,
         ],
       ),
@@ -1179,23 +1464,18 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     required VoidCallback onTap,
     Color? color,
   }) {
+    final accentColor = color ?? _T.lime;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
         decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? (color?.withOpacity(0.15) ?? Teme.lime.withOpacity(0.15))
-                  : Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(30),
+          color: isSelected ? accentColor.withValues(alpha: 0.14) : _T.card2,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color:
-                isSelected
-                    ? (color ?? Teme.lime)
-                    : Colors.white.withOpacity(0.1),
-            width: isSelected ? 1.5 : 1,
+            color: isSelected ? accentColor.withValues(alpha: 0.7) : _T.sep,
+            width: isSelected ? 1.2 : 0.8,
           ),
         ),
         child: Row(
@@ -1203,27 +1483,23 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           children: [
             if (color != null) ...[
               Container(
-                width: 8,
-                height: 8,
+                width: 7,
+                height: 7,
                 decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 7),
             ],
             Text(
               label,
-              style: Teme.f(
+              style: _T.f(
                 size: 12,
-                weight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? Teme.white : Teme.grey1,
+                weight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? _T.white : _T.lbl2,
               ),
             ),
             if (isSelected) ...[
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.check_circle_rounded,
-                size: 14,
-                color: Teme.white,
-              ),
+              const SizedBox(width: 6),
+              Icon(Icons.check_circle_rounded, size: 13, color: accentColor),
             ],
           ],
         ),
@@ -1239,24 +1515,15 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.15),
-                width: 0.5,
-              ),
-            ),
-            child: Icon(icon, color: Colors.white, size: 18),
-          ),
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: _T.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _T.sep, width: 0.8),
         ),
+        child: Icon(icon, color: _T.lbl2, size: 18),
       ),
     );
   }
@@ -1269,36 +1536,23 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: color.withValues(alpha: 0.5),
-                width: 0.8,
-              ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.4), width: 0.8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 15),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: _T.f(size: 13, weight: FontWeight.w600, color: color),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: color, size: 16),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );
@@ -1327,80 +1581,64 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
 
   Widget _buildFrostedFAB({required Widget child, bool isMini = false}) {
     final double size = isMini ? 48.0 : 56.0;
+    final double radius = size / 2;
     return Container(
+      width: size,
+      height: size,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size / 2),
+        color: _T.card2,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: _T.sep, width: 0.8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(size / 2),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4),
-              borderRadius: BorderRadius.circular(size / 2),
-              border: Border.all(color: _T.lime.withOpacity(0.2), width: 0.5),
-            ),
-            child: child,
-          ),
-        ),
-      ),
+      child: child,
     );
   }
 
   Widget _buildListHeader(int count) {
-    bool hasActiveFilters =
+    final bool hasActiveFilters =
         _selectedKardFilter != null ||
         _attendanceFilter != "All" ||
         _labelFilterId != null;
+    final String entity =
+        widget.kardType == KardType.invitation
+            ? 'Invitees'
+            : widget.kardType == KardType.contribution
+            ? 'Contributors'
+            : 'Contacts';
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
           Text(
-            "${count} ${widget.kardType == KardType.invitation
-                ? 'Invitees'
-                : widget.kardType == KardType.contribution
-                ? 'Contributors'
-                : 'Contacts'}",
-            style: _T.f(
-              size: 14,
-              weight: FontWeight.w500,
-              color: Colors.white.withOpacity(0.5),
-              letterSpacing: 0.3,
-            ),
+            "$count $entity",
+            style: _T.f(size: 14, weight: FontWeight.w500, color: _T.lbl3),
           ),
           if (hasActiveFilters) ...[
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.3),
-                shape: BoxShape.circle,
-              ),
-            ),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
+                color: _T.limeDim,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _T.lime.withValues(alpha: 0.3),
+                  width: 0.6,
+                ),
               ),
               child: Text(
                 "Filtered",
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withValues(alpha: 0.45),
-                  fontWeight: FontWeight.w500,
+                style: _T.f(
+                  size: 10,
+                  weight: FontWeight.w700,
+                  color: _T.lime,
+                  letterSpacing: 0.5,
                 ),
               ),
             ),
@@ -1490,12 +1728,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Guest Lists",
+                          "Guest Labels",
                           style: _T.f(size: 20, weight: FontWeight.bold),
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close, color: _T.grey2),
+                          icon: Icon(Icons.close, color: _T.lbl3),
                         ),
                       ],
                     ),
@@ -1692,7 +1930,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: _T.sep,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1729,7 +1967,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: _T.sep,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1858,7 +2096,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                         height: 4,
                         margin: const EdgeInsets.only(bottom: 24),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: _T.sep,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -1884,7 +2122,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     if (widget.edata.labels != null &&
                         widget.edata.labels!.isNotEmpty) ...[
                       Text(
-                        "Step 1: Assign to Lists",
+                        "Step 1: Assign to Labels",
                         style: _T.f(
                           size: 14,
                           color: _T.lime,
@@ -1973,13 +2211,13 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     _buildMappingRow(
                       icon: Icons.person_outline,
                       label: "Name",
-                      dropdown: buildDrop(sels, impname),
+                      dropdown: buildDrop(sels, impname, setAltState),
                     ),
                     const SizedBox(height: 16),
                     _buildMappingRow(
                       icon: Icons.phone_android_outlined,
                       label: "Phone",
-                      dropdown: buildDrop(sels, impphone),
+                      dropdown: buildDrop(sels, impphone, setAltState),
                     ),
 
                     if (widget.kardType == KardType.contribution ||
@@ -2001,7 +2239,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             ),
                             if (_mapAhadi) ...[
                               const SizedBox(width: 8),
-                              Expanded(child: buildDrop(sels, impahadi)),
+                              Expanded(
+                                child: buildDrop(sels, impahadi, setAltState),
+                              ),
                             ],
                           ],
                         ),
@@ -2023,7 +2263,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                             ),
                             if (_mapMchango) ...[
                               const SizedBox(width: 8),
-                              Expanded(child: buildDrop(sels, impmchango)),
+                              Expanded(
+                                child: buildDrop(sels, impmchango, setAltState),
+                              ),
                             ],
                           ],
                         ),
@@ -2119,7 +2361,11 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
     );
   }
 
-  Widget buildDrop(Map sels, TextEditingController mapcont) {
+  Widget buildDrop(
+    Map sels,
+    TextEditingController mapcont, [
+    StateSetter? altState,
+  ]) {
     // Current value from the controller
     dynamic currentKey;
     try {
@@ -2133,20 +2379,17 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: _T.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: _T.sep),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<dynamic>(
           value: sels.containsKey(currentKey) ? currentKey : null,
-          hint: Text(
-            "Select Source",
-            style: _T.f(size: 13, color: Colors.white.withValues(alpha: 0.4)),
-          ),
+          hint: Text("Select Source", style: _T.f(size: 13, color: _T.lbl4)),
           dropdownColor: _T.card,
           icon: const Icon(Icons.expand_more_rounded, color: _T.lime, size: 20),
           isExpanded: true,
           onChanged: (val) {
-            setState(() {
+            (altState ?? setState)(() {
               mapcont.text = "$val";
             });
           },
@@ -2225,12 +2468,19 @@ class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 24, top: 12),
-      padding: const EdgeInsets.all(18),
+      margin: const EdgeInsets.only(bottom: 20, top: 8),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: _T.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1F1F1F), width: 0.5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _T.sep, width: 0.8),
+        boxShadow: [
+          BoxShadow(
+            color: _T.lime.withValues(alpha: 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2238,52 +2488,98 @@ class _HeroCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'CONTRIBUTIONS',
-                style: _T.f(
-                  size: 10,
-                  weight: FontWeight.w700,
-                  color: _T.grey2,
-                  letterSpacing: 1.2,
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: _T.lime.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: _T.lime,
+                      size: 15,
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  Text(
+                    'CONTRIBUTIONS',
+                    style: _T.f(
+                      size: 11,
+                      weight: FontWeight.w700,
+                      color: _T.lbl3,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                '${(pct * 100).round()}%',
-                style: _T.f(size: 15, weight: FontWeight.w700, color: _T.lime),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: _T.limeDim,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _T.lime.withValues(alpha: 0.3),
+                    width: 0.6,
+                  ),
+                ),
+                child: Text(
+                  '${(pct * 100).round()}%',
+                  style: _T.f(
+                    size: 13,
+                    weight: FontWeight.w800,
+                    color: _T.lime,
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Text(
             formatMoney(totalPaid, currency: "TZS"),
             style: _T.f(
-              size: 24,
+              size: 28,
               weight: FontWeight.w800,
               color: _T.white,
-              letterSpacing: -1.0,
+              letterSpacing: -1.2,
               height: 1.0,
             ),
           ),
-          const SizedBox(height: 14),
-          // Progress bar
+          const SizedBox(height: 16),
+          // Gradient progress bar
           ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: pct,
-              minHeight: 4,
-              backgroundColor: const Color(0xFF333333),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                Color(0xFFC9A84C),
-              ),
+            borderRadius: BorderRadius.circular(6),
+            child: Stack(
+              children: [
+                Container(height: 6, color: _T.card3),
+                FractionallySizedBox(
+                  widthFactor: pct.clamp(0.0, 1.0),
+                  child: Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [_T.lime.withValues(alpha: 0.7), _T.lime],
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Goal: ${formatMoney(totalPledged, currency: "TZS")}',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: const Color(0xFF555555),
-            ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Goal: ${formatMoney(totalPledged, currency: "TZS")}',
+                style: _T.f(size: 12, color: _T.lbl3),
+              ),
+            ],
           ),
         ],
       ),
@@ -2292,15 +2588,30 @@ class _HeroCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Design Tokens (Apple / Obsidian Hybrid)
+// Design Tokens  ·  Apple-dark, matching admin_pane.dart
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _T {
-  static const bg = Color(0xFF0A0A0A);
-  static const card = Color(0xFF141414);
+  // Backgrounds
+  static const bg = Color(0xFF111114);
+  static const card = Color(0xFF1C1C1E);
+  static const card2 = Color(0xFF28282C);
+  static const card3 = Color(0xFF3A3A3C);
+  static const sep = Color(0xFF2C2C2E);
+
+  // Accent
   static const lime = Color(0xFFC9A84C);
+  static const limeDim = Color(0xFF2A2210);
+
+  // Text hierarchy
   static const white = Color(0xFFFFFFFF);
-  static const grey2 = Color(0xFF555555);
+  static const lbl1 = Color(0xFFEEEEF0);
+  static const lbl2 = Color(0xFFAEAEB2);
+  static const lbl3 = Color(0xFF8E8E93);
+  static const lbl4 = Color(0xFF48484A);
+
+  // Compat shorthands
+  static Color get grey2 => lbl3;
 
   static TextStyle f({
     double size = 14,
@@ -2333,7 +2644,7 @@ class _GusOrb extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withOpacity(opacity),
+        color: color.withValues(alpha: opacity),
       ),
       child: ClipOval(
         child: BackdropFilter(
@@ -2349,27 +2660,29 @@ class _PendingBanner extends StatelessWidget {
   final Future<void> Function() onRefresh;
   const _PendingBanner({required this.onRefresh});
 
+  static const _orange = Color(0xFFFF9500); // Apple system orange
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
+        color: _orange.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.withOpacity(0.2), width: 1),
+        border: Border.all(color: _orange.withValues(alpha: 0.25), width: 0.8),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.2),
-              shape: BoxShape.circle,
+              color: _orange.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
               Icons.auto_awesome_rounded,
-              color: Colors.orange,
-              size: 18,
+              color: _orange,
+              size: 16,
             ),
           ),
           const SizedBox(width: 12),
@@ -2379,38 +2692,36 @@ class _PendingBanner extends StatelessWidget {
               children: [
                 Text(
                   "Generating Cards",
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                  style: _T.f(
+                    size: 13,
+                    weight: FontWeight.w700,
+                    color: _T.lbl1,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  "Some guest cards are still being processed. Refresh in a moment to see them.",
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.6),
-                  ),
+                  "Some cards are still processing. Refresh in a moment.",
+                  style: _T.f(size: 11, color: _T.lbl3, height: 1.4),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          TextButton(
-            onPressed: onRefresh,
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.orange.withOpacity(0.2),
-              shape: RoundedRectangleBorder(
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: onRefresh,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: _orange.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: _orange.withValues(alpha: 0.3),
+                  width: 0.6,
+                ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            child: Text(
-              "Refresh",
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Colors.orange,
+              child: Text(
+                "Refresh",
+                style: _T.f(size: 12, weight: FontWeight.w700, color: _orange),
               ),
             ),
           ),

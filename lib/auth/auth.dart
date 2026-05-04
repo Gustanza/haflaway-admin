@@ -11,6 +11,38 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Design Tokens  ·  Apple-dark, not pitch-black
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _T {
+  static const bg    = Color(0xFF111114);
+  static const card  = Color(0xFF1C1C1E);
+  static const card2 = Color(0xFF28282C);
+  static const sep   = Color(0xFF2C2C2E);
+  static const lime    = Color(0xFFC9A84C);
+  static const limeDim = Color(0xFF2A2210);
+  static const white = Color(0xFFFFFFFF);
+  static const lbl1  = Color(0xFFEEEEF0);
+  static const lbl2  = Color(0xFFAEAEB2);
+  static const lbl3  = Color(0xFF8E8E93);
+  static const lbl4  = Color(0xFF48484A);
+
+  static TextStyle f({
+    double size = 14,
+    FontWeight weight = FontWeight.w400,
+    Color color = lbl1,
+    double letterSpacing = 0,
+    double? height,
+  }) => GoogleFonts.inter(
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
+}
+
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -27,21 +59,21 @@ class _LoginState extends State<Login> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: const Color(0xFF0A0A0A),
+        backgroundColor: _T.bg,
         body: Stack(
           children: [
             // Ambient Orbs
             const Positioned(
               top: -100,
               left: -60,
-              child: _GusOrb(size: 300, color: Color(0xFFC9A84C), opacity: 0.1),
+              child: _GusOrb(size: 300, color: _T.lime, opacity: 0.1),
             ),
             const Positioned(
               bottom: -50,
               right: -80,
               child: _GusOrb(
                 size: 250,
-                color: Color(0xFFC9A84C),
+                color: _T.lime,
                 opacity: 0.05,
               ),
             ),
@@ -55,34 +87,11 @@ class _LoginState extends State<Login> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Logo/App Title placeholder if needed
-                      Text(
-                        'HAFLAWAY',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFFC9A84C),
-                          letterSpacing: 4,
-                        ),
-                      ),
+                      Text('HAFLAWAY', style: _T.f(size: 12, weight: FontWeight.w900, color: _T.lime, letterSpacing: 4)),
                       const SizedBox(height: 12),
-                      Text(
-                        'Sign In',
-                        style: GoogleFonts.inter(
-                          fontSize: 40,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -1,
-                          height: 1.1,
-                        ),
-                      ),
+                      Text('Sign In', style: _T.f(size: 40, weight: FontWeight.w800, color: _T.white, letterSpacing: -1, height: 1.1)),
                       const SizedBox(height: 8),
-                      Text(
-                        'Access your event management portal',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.5),
-                        ),
-                      ),
+                      Text('Access your event management portal', style: _T.f(size: 14, color: _T.lbl3)),
                       const SizedBox(height: 48),
 
                       _buildLoginField(
@@ -115,17 +124,38 @@ class _LoginState extends State<Login> {
                           },
                           child: Text(
                             'Forgot Password?',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFFC9A84C).withOpacity(0.8),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: _T.f(size: 13, weight: FontWeight.w600, color: _T.lime),
                           ),
                         ),
                       ),
 
                       const SizedBox(height: 32),
                       _buildLoginButton(),
+                      const SizedBox(height: 24),
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Don't have an account? ",
+                              style: _T.f(size: 13, color: _T.lbl3),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const Msajili(isSelfRegistration: true),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'Register',
+                                style: _T.f(size: 13, weight: FontWeight.w700, color: _T.lime),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -151,11 +181,7 @@ class _LoginState extends State<Login> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: Colors.white.withOpacity(0.7),
-          ),
+          style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl2),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -165,35 +191,33 @@ class _LoginState extends State<Login> {
           textCapitalization: capitalization,
           onTap: () {},
           onTapOutside: (e) => FocusScope.of(context).unfocus(),
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+          style: _T.f(size: 15, color: _T.white),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.15)),
+            hintStyle: TextStyle(color: _T.lbl4),
             prefixIcon: Icon(
               icon,
               size: 20,
-              color: const Color(0xFFC9A84C).withOpacity(0.5),
+              color: _T.lbl3,
             ),
             filled: true,
-            fillColor: const Color(
-              0xFF141414,
-            ), // Slightly lighter for contrast on Login
+            fillColor: _T.card,
             contentPadding: const EdgeInsets.symmetric(
               vertical: 18,
               horizontal: 16,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+              borderSide: BorderSide(color: _T.sep),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+              borderSide: BorderSide(color: _T.sep),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(
-                color: Color(0xFFC9A84C),
+                color: _T.lime,
                 width: 1.5,
               ),
             ),
@@ -208,8 +232,8 @@ class _LoginState extends State<Login> {
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFC9A84C),
-          foregroundColor: const Color(0xFF0A0A0A),
+          backgroundColor: _T.lime,
+          foregroundColor: _T.bg,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -250,10 +274,7 @@ class _LoginState extends State<Login> {
                 )
                 : Text(
                   'Sign In',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: _T.f(size: 16, weight: FontWeight.w800, color: Colors.black),
                 ),
       ),
     );
@@ -291,7 +312,8 @@ class _LoginState extends State<Login> {
 
 class Msajili extends StatefulWidget {
   final Userr? userr;
-  const Msajili({super.key, this.userr});
+  final bool isSelfRegistration;
+  const Msajili({super.key, this.userr, this.isSelfRegistration = false});
 
   @override
   State<Msajili> createState() => _MsajiliState();
@@ -323,6 +345,7 @@ class _MsajiliState extends State<Msajili> {
 
   @override
   void initState() {
+    if (widget.isSelfRegistration) selClrnc = 2;
     bindData();
     super.initState();
   }
@@ -346,7 +369,7 @@ class _MsajiliState extends State<Msajili> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: const Color(0xFF0A0A0A),
+        backgroundColor: _T.bg,
         body: Stack(
           children: [
             // Ambient Orbs
@@ -355,7 +378,7 @@ class _MsajiliState extends State<Msajili> {
               right: -60,
               child: _GusOrb(
                 size: 300,
-                color: Color(0xFFC9A84C),
+                color: _T.lime,
                 opacity: 0.08,
               ),
             ),
@@ -364,7 +387,7 @@ class _MsajiliState extends State<Msajili> {
               left: -80,
               child: _GusOrb(
                 size: 250,
-                color: Color(0xFFC9A84C),
+                color: _T.lime,
                 opacity: 0.05,
               ),
             ),
@@ -383,10 +406,10 @@ class _MsajiliState extends State<Msajili> {
                     ),
                     SliverToBoxAdapter(
                       child: _heroTitle(
-                        isEdit ? 'Edit Profile' : 'Register User',
+                        isEdit ? 'Edit Profile' : (widget.isSelfRegistration ? 'Create Account' : 'Register User'),
                         isEdit
                             ? 'Update security clearance and details'
-                            : 'Create a new account for your organization',
+                            : (widget.isSelfRegistration ? 'Join Haflaway and get started' : 'Create a new account for your organization'),
                       ),
                     ),
                     SliverPadding(
@@ -437,12 +460,14 @@ class _MsajiliState extends State<Msajili> {
                             ),
                           ],
 
-                          const SizedBox(height: 24),
-                          // Section 3: Clearance
-                          _buildPremiumSection(
-                            label: 'AUTHORIZATION',
-                            children: [_buildPremiumDropdown()],
-                          ),
+                          if (!widget.isSelfRegistration) ...[
+                            const SizedBox(height: 24),
+                            // Section 3: Clearance
+                            _buildPremiumSection(
+                              label: 'AUTHORIZATION',
+                              children: [_buildPremiumDropdown()],
+                            ),
+                          ],
 
                           const SizedBox(height: 24),
                           // Section 4: Contact
@@ -469,29 +494,26 @@ class _MsajiliState extends State<Msajili> {
 
   Widget _topBar(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 4),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => popper(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: Color(0xFFC9A84C),
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'App Users',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _T.sep, width: 0.8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_back_ios_new_rounded, color: _T.lime, size: 13),
+                  const SizedBox(width: 5),
+                  Text('Back', style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl1)),
+                ],
+              ),
             ),
           ),
         ],
@@ -505,25 +527,9 @@ class _MsajiliState extends State<Msajili> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: -0.5,
-              height: 1.1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: Colors.white.withOpacity(0.5),
-              fontWeight: FontWeight.w400,
-            ),
-          ),
+          Text(title, style: _T.f(size: 28, weight: FontWeight.w800, color: _T.white, letterSpacing: -0.8, height: 1.12)),
+          const SizedBox(height: 6),
+          Text(subtitle, style: _T.f(size: 13, color: _T.lbl3, height: 1.5)),
         ],
       ),
     );
@@ -536,9 +542,9 @@ class _MsajiliState extends State<Msajili> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
+        color: _T.card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.04)),
+        border: Border.all(color: _T.sep, width: 0.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -549,20 +555,12 @@ class _MsajiliState extends State<Msajili> {
                 width: 3,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFC9A84C),
+                  color: _T.lime,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white.withOpacity(0.4),
-                  letterSpacing: 1.5,
-                ),
-              ),
+              Text(label, style: _T.f(size: 10, weight: FontWeight.w800, color: _T.lbl3, letterSpacing: 1.3)),
             ],
           ),
           const SizedBox(height: 20),
@@ -585,11 +583,7 @@ class _MsajiliState extends State<Msajili> {
       children: [
         Text(
           lbl,
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: Colors.white.withOpacity(0.7),
-          ),
+          style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl2),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -599,40 +593,40 @@ class _MsajiliState extends State<Msajili> {
           textCapitalization: capitalization,
           onTap: () {},
           onTapOutside: (e) => FocusScope.of(context).unfocus(),
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+          style: _T.f(size: 15, color: _T.white),
           validator: (v) => v!.isEmpty ? "This field is required" : null,
           decoration: InputDecoration(
             hintText: "Enter $lbl",
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.15)),
+            hintStyle: TextStyle(color: _T.lbl4),
             prefixIcon: Icon(
               icon,
               size: 20,
-              color: const Color(0xFFC9A84C).withOpacity(0.5),
+              color: _T.lbl3,
             ),
             filled: true,
-            fillColor: const Color(0xFF0A0A0A),
+            fillColor: _T.bg,
             contentPadding: const EdgeInsets.symmetric(
               vertical: 16,
               horizontal: 16,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+              borderSide: BorderSide(color: _T.sep),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+              borderSide: BorderSide(color: _T.sep),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: Color(0xFFC9A84C),
+                color: _T.lime,
                 width: 1.5,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.red.withOpacity(0.5)),
+              borderSide: BorderSide(color: Colors.redAccent.withValues(alpha: 0.6)),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -650,48 +644,44 @@ class _MsajiliState extends State<Msajili> {
       children: [
         Text(
           "Clearance Level",
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: Colors.white.withOpacity(0.7),
-          ),
+          style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl2),
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<int>(
           value: selClrnc,
-          dropdownColor: const Color(0xFF141414),
+          dropdownColor: _T.card2,
           icon: const Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: Color(0xFFC9A84C),
+            color: _T.lime,
             size: 20,
           ),
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+          style: _T.f(size: 15, color: _T.white),
           decoration: InputDecoration(
             hintText: "Select Level",
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.15)),
+            hintStyle: TextStyle(color: _T.lbl4),
             prefixIcon: Icon(
               Icons.verified_user_outlined,
               size: 20,
-              color: const Color(0xFFC9A84C).withOpacity(0.5),
+              color: _T.lbl3,
             ),
             filled: true,
-            fillColor: const Color(0xFF0A0A0A),
+            fillColor: _T.bg,
             contentPadding: const EdgeInsets.symmetric(
               vertical: 16,
               horizontal: 16,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+              borderSide: BorderSide(color: _T.sep),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+              borderSide: BorderSide(color: _T.sep),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: Color(0xFFC9A84C),
+                color: _T.lime,
                 width: 1.5,
               ),
             ),
@@ -725,30 +715,26 @@ class _MsajiliState extends State<Msajili> {
       children: [
         Text(
           "Phone Number",
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: Colors.white.withOpacity(0.7),
-          ),
+          style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl2),
         ),
         const SizedBox(height: 8),
         IntlPhoneField(
           controller: phoneCon,
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
-          dropdownTextStyle: GoogleFonts.inter(color: Colors.white),
+          style: _T.f(size: 15, color: _T.white),
+          dropdownTextStyle: _T.f(color: _T.white),
           decoration: InputDecoration(
             hintText: 'Phone Number',
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.15)),
+            hintStyle: TextStyle(color: _T.lbl4),
             filled: true,
-            fillColor: const Color(0xFF0A0A0A),
+            fillColor: _T.bg,
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+              borderSide: BorderSide(color: _T.sep),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: Color(0xFFC9A84C),
+                color: _T.lime,
                 width: 1.5,
               ),
             ),
@@ -771,8 +757,8 @@ class _MsajiliState extends State<Msajili> {
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFC9A84C),
-          foregroundColor: const Color(0xFF0A0A0A),
+          backgroundColor: _T.lime,
+          foregroundColor: _T.bg,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -799,10 +785,7 @@ class _MsajiliState extends State<Msajili> {
                     const SizedBox(width: 8),
                     Text(
                       isEdit ? "Save Changes" : "Create Account",
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: _T.f(size: 16, weight: FontWeight.w700, color: Colors.black),
                     ),
                   ],
                 ),
@@ -814,10 +797,21 @@ class _MsajiliState extends State<Msajili> {
     bool isValid = key.currentState?.validate() ?? false;
     if (isValid && izVally()) {
       try {
-        safeState(() {
-          nalodi = true;
-        });
-        if (widget.userr == null) {
+        safeState(() => nalodi = true);
+        if (widget.isSelfRegistration) {
+          UserCredential creds = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            email: baruapepeCon.text.trim(),
+            password: nenoSiriCon.text.trim(),
+          );
+          await createDeits(userId: creds.user?.uid);
+          safeState(() => nalodi = false);
+          if (mounted) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const NavHost()),
+              (route) => false,
+            );
+          }
+        } else if (widget.userr == null) {
           // Prevention of admin logout: Use a secondary Firebase App
           FirebaseApp tempApp;
           try {
@@ -840,17 +834,15 @@ class _MsajiliState extends State<Msajili> {
 
           // Delete the temporary app
           await tempApp.delete();
+          safeState(() => nalodi = false);
+          popper();
         } else {
           await saveEdits(userId: widget.userr?.id ?? "");
+          safeState(() => nalodi = false);
+          popper();
         }
-        safeState(() {
-          nalodi = false;
-        });
-        popper();
       } catch (shida) {
-        safeState(() {
-          nalodi = false;
-        });
+        safeState(() => nalodi = false);
         mjumbe(shida.toString());
       }
     }
@@ -944,7 +936,7 @@ class _GusOrb extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withOpacity(opacity),
+        color: color.withValues(alpha: opacity),
       ),
       child: ClipOval(
         child: BackdropFilter(
@@ -972,14 +964,14 @@ class _KuresetNenoSiriState extends State<KuresetNenoSiri> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: const Color(0xFF0A0A0A),
+        backgroundColor: _T.bg,
         body: Stack(
           children: [
             // Ambient Orbs
             const Positioned(
               top: -100,
               right: -60,
-              child: _GusOrb(size: 300, color: Color(0xFFC9A84C), opacity: 0.1),
+              child: _GusOrb(size: 300, color: _T.lime, opacity: 0.1),
             ),
 
             SafeArea(
@@ -993,23 +985,9 @@ class _KuresetNenoSiriState extends State<KuresetNenoSiri> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 20),
-                          Text(
-                            'Reset Access',
-                            style: GoogleFonts.inter(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: -1,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Enter your email to receive recovery instructions',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.5),
-                            ),
-                          ),
+                          Text('Reset Access', style: _T.f(size: 28, weight: FontWeight.w800, color: _T.white, letterSpacing: -0.8, height: 1.12)),
+                          const SizedBox(height: 6),
+                          Text('Enter your email to receive recovery instructions', style: _T.f(size: 14, color: _T.lbl3, height: 1.5)),
                           const SizedBox(height: 48),
 
                           _buildResetField(),
@@ -1031,28 +1009,26 @@ class _KuresetNenoSiriState extends State<KuresetNenoSiri> {
 
   Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 4),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: Color(0xFFC9A84C),
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Back',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _T.sep, width: 0.8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_back_ios_new_rounded, color: _T.lime, size: 13),
+                  const SizedBox(width: 5),
+                  Text('Back', style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl1)),
+                ],
+              ),
             ),
           ),
         ],
@@ -1066,43 +1042,39 @@ class _KuresetNenoSiriState extends State<KuresetNenoSiri> {
       children: [
         Text(
           "Email Address",
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: Colors.white.withOpacity(0.7),
-          ),
+          style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl2),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: baruaPepeCon,
           keyboardType: TextInputType.emailAddress,
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+          style: _T.f(size: 15, color: _T.white),
           decoration: InputDecoration(
             hintText: 'name@example.com',
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.15)),
+            hintStyle: TextStyle(color: _T.lbl4),
             prefixIcon: Icon(
               Icons.alternate_email_rounded,
               size: 20,
-              color: const Color(0xFFC9A84C).withOpacity(0.5),
+              color: _T.lbl3,
             ),
             filled: true,
-            fillColor: const Color(0xFF141414),
+            fillColor: _T.card,
             contentPadding: const EdgeInsets.symmetric(
               vertical: 18,
               horizontal: 16,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+              borderSide: BorderSide(color: _T.sep),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+              borderSide: BorderSide(color: _T.sep),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(
-                color: Color(0xFFC9A84C),
+                color: _T.lime,
                 width: 1.5,
               ),
             ),
@@ -1117,8 +1089,8 @@ class _KuresetNenoSiriState extends State<KuresetNenoSiri> {
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFC9A84C),
-          foregroundColor: const Color(0xFF0A0A0A),
+          backgroundColor: _T.lime,
+          foregroundColor: _T.bg,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -1160,10 +1132,7 @@ class _KuresetNenoSiriState extends State<KuresetNenoSiri> {
                 )
                 : Text(
                   'Send Instructions',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: _T.f(size: 16, weight: FontWeight.w800, color: Colors.black),
                 ),
       ),
     );

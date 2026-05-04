@@ -1,11 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:haflaway/components/buttons.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/resolver.dart';
 import 'package:haflaway/utils/colors.dart';
-import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/dimensions.dart';
-import 'package:haflaway/utils/styles.dart';
 import 'package:pinput/pinput.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -166,68 +164,145 @@ class PinPutty extends StatelessWidget {
   Widget build(BuildContext context) {
     GlobalKey<FormState> gkey = GlobalKey<FormState>();
     TextEditingController controller = TextEditingController();
-    return Center(
+
+    // ── local tokens ──────────────────────────────────────────────────────
+    const bg = Color(0xFF111114);
+    const lime = Color(0xFFC9A84C);
+    const card2 = Color(0xFF28282C);
+    const limeDim = Color(0xFF2A2210);
+    const white = Color(0xFFFFFFFF);
+    const lbl1 = Color(0xFFEEEEF0);
+    const lbl3 = Color(0xFF8E8E93);
+
+    TextStyle f({
+      double size = 14,
+      FontWeight weight = FontWeight.w400,
+      Color color = white,
+      double letterSpacing = 0,
+    }) => GoogleFonts.inter(
+      fontSize: size,
+      fontWeight: weight,
+      color: color,
+      letterSpacing: letterSpacing,
+    );
+
+    final defaultCell = PinTheme(
+      height: 56,
+      width: 56,
+      textStyle: f(size: 22, weight: FontWeight.w800, color: lbl1),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: card2.withValues(alpha: 0.70),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.10),
+          width: 0.8,
+        ),
+      ),
+    );
+
+    final focusedCell = PinTheme(
+      height: 56,
+      width: 56,
+      textStyle: f(size: 22, weight: FontWeight.w800, color: lime),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: limeDim.withValues(alpha: 0.85),
+        border: Border.all(color: lime, width: 1.5),
+      ),
+    );
+
+    final submittedCell = PinTheme(
+      height: 56,
+      width: 56,
+      textStyle: f(size: 22, weight: FontWeight.w800, color: lbl1),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: card2.withValues(alpha: 0.90),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.20),
+          width: 0.8,
+        ),
+      ),
+    );
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       child: Form(
         key: gkey,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: psm * 2),
-          child: ClipRRect(
-            borderRadius: BorderRadiusGeometry.circular(bmd),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Material(
-                color: lqassgradBaseColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(bmd),
-                  side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 36, sigmaY: 36),
+            child: Material(
+              type: MaterialType.transparency,
+              child: Container(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+              decoration: BoxDecoration(
+                color: bg.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.13),
+                  width: 1.0,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: psm,
-                    vertical: psm * 2,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        "Enter Access Code",
-                        style: TextStyle(
-                          fontSize: fsm + 4,
-                          fontWeight: FontWeight.bold,
+              ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Icon badge
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: lime.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: lime.withValues(alpha: 0.28),
+                          width: 0.8,
                         ),
                       ),
-                      SizedBox(height: psm),
-                      Pinput(
-                        length: 4,
-                        controller: controller,
-                        keyboardType: TextInputType.text,
-                        defaultPinTheme: PinTheme(
-                          height: kToolbarHeight,
-                          width: kToolbarHeight,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(bxsm),
-                            color: lqassgradBaseColor,
-                            border: Border.all(
-                              color: lqassbdrColor,
-                              width: bdrWidthGen,
-                            ),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null) {
-                            return "Key-in Figures";
-                          } else if (value.length < 4) {
-                            return "Key-in All Figures";
-                          } else {
-                            return null;
-                          }
-                        },
+                      child: const Icon(Icons.pin_rounded, color: lime, size: 24),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "Enter Access Code",
+                      style: f(
+                        size: 20,
+                        weight: FontWeight.w800,
+                        color: white,
+                        letterSpacing: -0.4,
                       ),
-                      SizedBox(height: psm * 1.4),
-                      lqAssButton(
-                        label: "Continue",
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "Enter your 4-digit check-in code",
+                      style: f(size: 13, color: lbl3),
+                    ),
+                    const SizedBox(height: 28),
+                    Pinput(
+                      length: 4,
+                      controller: controller,
+                      keyboardType: TextInputType.text,
+                      defaultPinTheme: defaultCell,
+                      focusedPinTheme: focusedCell,
+                      submittedPinTheme: submittedCell,
+                      validator: (value) {
+                        if (value == null) {
+                          return "Key-in Figures";
+                        } else if (value.length < 4) {
+                          return "Key-in All Figures";
+                        } else {
+                          return null;
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 28),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
                         onPressed: () {
-                          bool isGreen = gkey.currentState?.validate() ?? false;
+                          bool isGreen =
+                              gkey.currentState?.validate() ?? false;
                           if (isGreen) {
                             String attId = controller.text;
                             Navigator.of(context).pop();
@@ -248,9 +323,26 @@ class PinPutty extends StatelessWidget {
                             debugPrint("Come out here");
                           }
                         },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: lime,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          "Continue",
+                          style: f(
+                            size: 15,
+                            weight: FontWeight.w700,
+                            color: Colors.black,
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -260,3 +352,4 @@ class PinPutty extends StatelessWidget {
     );
   }
 }
+

@@ -83,14 +83,19 @@ class SendPreviewerState extends State<SendPreviewer> {
             children: [
               // Ambient Orbs
               const Positioned(
-                top: -100,
-                right: -100,
-                child: _GusOrb(size: 300, color: _T.lime, opacity: 0.08),
+                top: -120,
+                right: -120,
+                child: _GusOrb(size: 360, color: Color(0xFFC9A84C), opacity: 0.10),
               ),
               const Positioned(
-                bottom: -50,
-                left: -100,
-                child: _GusOrb(size: 250, color: _T.lime, opacity: 0.05),
+                bottom: -80,
+                left: -120,
+                child: _GusOrb(size: 300, color: Color(0xFF8B6010), opacity: 0.09),
+              ),
+              const Positioned(
+                top: 300,
+                right: -80,
+                child: _GusOrb(size: 200, color: Color(0xFFE8C070), opacity: 0.06),
               ),
 
               SafeArea(
@@ -196,7 +201,7 @@ class SendPreviewerState extends State<SendPreviewer> {
       decoration: BoxDecoration(
         color: _T.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _T.white.withOpacity(0.05)),
+        border: Border.all(color: _T.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,7 +211,7 @@ class SendPreviewerState extends State<SendPreviewer> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _T.lime.withOpacity(0.1),
+                  color: _T.lime.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -231,7 +236,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                     Text(
                       "Total Count: ${widget.senderList.length}",
                       style: _T.f(
-                        size: 14,
+                        size: 15,
                         color: _T.white,
                         weight: FontWeight.w600,
                       ),
@@ -242,7 +247,7 @@ class SendPreviewerState extends State<SendPreviewer> {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(height: 1, color: _T.white.withOpacity(0.05)),
+          Divider(height: 1, color: _T.white.withValues(alpha: 0.05)),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -251,7 +256,7 @@ class SendPreviewerState extends State<SendPreviewer> {
               Expanded(
                 child: Text(
                   "Select a template for this campaign",
-                  style: _T.f(size: 13, color: _T.grey1),
+                  style: _T.f(size: 14, color: _T.grey1),
                 ),
               ),
             ],
@@ -262,10 +267,6 @@ class SendPreviewerState extends State<SendPreviewer> {
   }
 
   Widget buildTemplates(List<WsapTemplate> temps) {
-    List<TextEditingController> conts = List.generate(temps.length, (idx) {
-      return TextEditingController(text: temps[idx].content);
-    });
-
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: temps.length + 1,
@@ -294,10 +295,10 @@ class SendPreviewerState extends State<SendPreviewer> {
               borderRadius: BorderRadius.circular(16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isSelected ? _T.lime.withOpacity(0.03) : _T.card,
+                  color: isSelected ? _T.lime.withValues(alpha: 0.03) : _T.card,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isSelected ? _T.lime : _T.white.withOpacity(0.05),
+                    color: isSelected ? _T.lime : _T.white.withValues(alpha: 0.05),
                     width: isSelected ? 1.0 : 0.5,
                   ),
                 ),
@@ -313,8 +314,8 @@ class SendPreviewerState extends State<SendPreviewer> {
                       decoration: BoxDecoration(
                         color:
                             isSelected
-                                ? _T.lime.withOpacity(0.08)
-                                : _T.white.withOpacity(0.02),
+                                ? _T.lime.withValues(alpha: 0.08)
+                                : _T.white.withValues(alpha: 0.02),
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(16),
                           topRight: Radius.circular(16),
@@ -337,7 +338,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                           Text(
                             "Template ${index + 1}",
                             style: _T.f(
-                              size: 14,
+                              size: 15,
                               weight: FontWeight.w600,
                               color: isSelected ? _T.lime : _T.white,
                             ),
@@ -369,11 +370,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                     // Content preview
                     Padding(
                       padding: const EdgeInsets.all(12),
-                      child: buildField(
-                        cont: conts[index],
-                        isReadOnly: true,
-                        showCursor: false,
-                      ),
+                      child: _ExpandableMessage(text: temps[index].content),
                     ),
                   ],
                 ),
@@ -409,7 +406,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: _T.lime.withOpacity(0.3),
+                        color: _T.lime.withValues(alpha: 0.3),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                       ),
@@ -466,7 +463,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -571,7 +568,7 @@ class SendPreviewerState extends State<SendPreviewer> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _T.lime.withOpacity(0.1),
+                    color: _T.lime.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -620,16 +617,90 @@ class SendPreviewerState extends State<SendPreviewer> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Expandable message preview
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ExpandableMessage extends StatefulWidget {
+  final String text;
+  const _ExpandableMessage({required this.text});
+
+  @override
+  State<_ExpandableMessage> createState() => _ExpandableMessageState();
+}
+
+class _ExpandableMessageState extends State<_ExpandableMessage> {
+  bool _expanded = false;
+  static const int _collapsedLines = 3;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _T.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _T.white.withValues(alpha: 0.06), width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.text,
+            maxLines: _expanded ? null : _collapsedLines,
+            overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xFFAAAAAA),
+              height: 1.55,
+            ),
+          ),
+          // Only show toggle if text actually overflows
+          LayoutBuilder(
+            builder: (ctx, constraints) {
+              final tp = TextPainter(
+                text: TextSpan(
+                  text: widget.text,
+                  style: GoogleFonts.inter(fontSize: 14, height: 1.55),
+                ),
+                maxLines: _collapsedLines,
+                textDirection: TextDirection.ltr,
+              )..layout(maxWidth: constraints.maxWidth);
+
+              if (!tp.didExceedMaxLines) return const SizedBox.shrink();
+
+              return GestureDetector(
+                onTap: () => setState(() => _expanded = !_expanded),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    _expanded ? 'Read less' : 'Read more',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFC9A84C),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Design Tokens & Shared Widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _T {
-  static const bg = Color(0xFF0A0A0A);
-  static const card = Color(0xFF141414);
+  static const bg = Color(0xFF070B14);
+  static const card = Color(0xFF100E09);
   static const lime = Color(0xFFC9A84C);
   static const white = Color(0xFFFFFFFF);
   static const grey1 = Color(0xFFAAAAAA);
-  static const grey2 = Color(0xFF555555);
+  static const grey2 = Color(0xFF666655);
 
   static TextStyle f({
     double size = 14,
@@ -662,7 +733,7 @@ class _GusOrb extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withOpacity(opacity),
+        color: color.withValues(alpha: opacity),
       ),
       child: ClipOval(
         child: BackdropFilter(

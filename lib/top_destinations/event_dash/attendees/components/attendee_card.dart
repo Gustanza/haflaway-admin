@@ -14,11 +14,41 @@ import 'package:url_launcher/url_launcher.dart';
 
 FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-// ── Warm palette ────────────────────────────────────────────
-const _warmBg = Color(0xFF3A2D20);
+// ─────────────────────────────────────────────────────────────────────────────
+// Design tokens  ·  mirrors admin_pane.dart / attendees.dart
+// ─────────────────────────────────────────────────────────────────────────────
+
+abstract class _C {
+  static const card    = Color(0xFF1C1C1E);
+  static const card2   = Color(0xFF28282C);
+  static const card3   = Color(0xFF3A3A3C);
+  static const sep     = Color(0xFF2C2C2E);
+  static const lime    = Color(0xFFC9A84C);
+  static const limeDim = Color(0xFF2A2210);
+  static const white   = Color(0xFFFFFFFF);
+  static const lbl1    = Color(0xFFEEEEF0);
+  static const lbl2    = Color(0xFFAEAEB2);
+  static const lbl3    = Color(0xFF8E8E93);
+  static const lbl4    = Color(0xFF48484A);
+
+  static TextStyle f({
+    double size = 14,
+    FontWeight weight = FontWeight.w400,
+    Color color = white,
+    double letterSpacing = 0,
+    double? height,
+  }) =>
+      GoogleFonts.inter(
+        fontSize: size,
+        fontWeight: weight,
+        color: color,
+        letterSpacing: letterSpacing,
+        height: height,
+      );
+}
 
 // ═══════════════════════════════════════════════════════════
-//  Simplified Apple-style attendee tile
+//  Attendee list tile
 // ═══════════════════════════════════════════════════════════
 
 Widget buildAttendeeCard({
@@ -28,316 +58,274 @@ Widget buildAttendeeCard({
   required bool hasKey,
   required String campaignId,
   required String eventId,
-  required List<AttendeeLabel> allLabels, // Added
+  required List<AttendeeLabel> allLabels,
   required Function() onSelected,
   required Function(String) onStatusChange,
+  bool showMessageStatus = true,
 }) {
-  var fullname = attendee.fullName;
+  final fullname = attendee.fullName;
 
-  // Derive initials for avatar
-  final initials =
-      fullname
-          .split(' ')
-          .where((w) => w.isNotEmpty)
-          .take(2)
-          .map((w) => w[0].toUpperCase())
-          .join();
+  // Initials
+  final initials = fullname
+      .split(' ')
+      .where((w) => w.isNotEmpty)
+      .take(2)
+      .map((w) => w[0].toUpperCase())
+      .join();
 
-  // Warm avatar colors based on name hash
+  // Consistent per-name hue, kept in the 40–60 % lightness band so it's
+  // always visible against the card background.
   final hue = (fullname.hashCode % 360).abs().toDouble();
-  final avatarColor = HSLColor.fromAHSL(1, hue, 0.45, 0.55).toColor();
+  final avatarColor = HSLColor.fromAHSL(1, hue, 0.55, 0.60).toColor();
 
-  int messageCount = (attendee.messageIndexes)?.length ?? 0;
+  final int messageCount = attendee.messages.length;
 
   return StatefulBuilder(
     builder: (context, setState) {
       return GestureDetector(
         onLongPress: onSelected,
-        onTap:
-            () => _showDetailPopup(
-              context: context,
-              attendee: attendee,
-              kardType: kardType,
-              campaignId: campaignId,
-              eventId: eventId,
-              onEdit: onEdit,
-              onStatusChange: onStatusChange,
-            ),
+        onTap: () => _showDetailPopup(
+          context: context,
+          attendee: attendee,
+          kardType: kardType,
+          campaignId: campaignId,
+          eventId: eventId,
+          onEdit: onEdit,
+          onStatusChange: onStatusChange,
+          showMessageStatus: showMessageStatus,
+        ),
         child: Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: Builder(
-            builder: (context) {
-              final isPending = attendee.isCardPending(kardType);
+          child: Builder(builder: (context) {
+            final isPending = attendee.isCardPending(kardType);
 
-              return ClipRRect(
-                borderRadius: BorderRadius.zero,
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          hasKey
-                              ? const Color(0xFF1E2800)
-                              : const Color(0xFF141414),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color:
-                            isPending
-                                ? Colors.orange.withOpacity(0.3)
-                                : hasKey
-                                ? const Color(
-                                  0xFFC9A84C,
-                                ).withValues(alpha: 0.45)
-                                : const Color(0xFF1F1F1F),
-                        width: isPending ? 1.5 : 1,
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              decoration: BoxDecoration(
+                color: hasKey ? _C.limeDim : _C.card,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isPending
+                      ? Colors.orange.withValues(alpha: 0.35)
+                      : hasKey
+                          ? _C.lime.withValues(alpha: 0.45)
+                          : _C.sep,
+                  width: isPending || hasKey ? 1.2 : 0.8,
+                ),
+              ),
+              child: Row(
+                children: [
+                  // ── Avatar ──────────────────────────────────────────
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: avatarColor.withValues(alpha: 0.14),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: avatarColor.withValues(alpha: 0.35),
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            initials,
+                            style: _C.f(
+                              size: 16,
+                              weight: FontWeight.w700,
+                              color: avatarColor,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
                       ),
-                      boxShadow:
-                          isPending
-                              ? [
-                                BoxShadow(
-                                  color: Colors.orange.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  spreadRadius: 1,
-                                ),
-                              ]
-                              : null,
-                    ),
-                    child: Row(
-                      children: [
-                        // ... (avatars and initials)
-
-                        // ── Avatar ──
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: avatarColor.withValues(alpha: 0.3),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  initials,
-                                  style: TextStyle(
-                                    color: avatarColor,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
+                      if (messageCount > 0)
+                        Positioned(
+                          top: -3,
+                          right: -3,
+                          child: Container(
+                            padding: EdgeInsets.all(messageCount > 9 ? 2 : 3),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: _C.card, width: 2),
+                            ),
+                            constraints:
+                                const BoxConstraints(minWidth: 16, minHeight: 16),
+                            child: Text(
+                              messageCount > 99 ? "99+" : "$messageCount",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.w800,
+                                height: 1,
                               ),
                             ),
-                            if (messageCount > 0)
-                              Positioned(
-                                top: -3,
-                                right: -3,
-                                child: Container(
-                                  padding: EdgeInsets.all(
-                                    messageCount > 9 ? 3 : 4,
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  // ── Name + Phone + Labels ────────────────────────────
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          fullname,
+                          style: _C.f(
+                            size: 15,
+                            weight: FontWeight.w600,
+                            color: _C.lbl1,
+                            letterSpacing: 0.1,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                attendee.phone,
+                                style: _C.f(size: 13, color: _C.lbl3),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (isPending)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color:
+                                      Colors.orange.withValues(alpha: 0.10),
+                                  borderRadius: BorderRadius.circular(5),
+                                  border: Border.all(
+                                    color:
+                                        Colors.orange.withValues(alpha: 0.30),
+                                    width: 0.6,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: _warmBg,
-                                      width: 2,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.hourglass_empty_rounded,
+                                      color: Colors.orange,
+                                      size: 9,
                                     ),
-                                  ),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 16,
-                                    minHeight: 16,
-                                  ),
-                                  child: Text(
-                                    messageCount > 99 ? "99+" : "$messageCount",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.bold,
-                                      height: 1,
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      "PENDING",
+                                      style: _C.f(
+                                        size: 9,
+                                        weight: FontWeight.w800,
+                                        color: Colors.orange,
+                                        letterSpacing: 0.5,
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
                               ),
                           ],
                         ),
-                        const SizedBox(width: 14),
-                        // ── Name + Phone ──
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                fullname,
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                  letterSpacing: 0.1,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 3),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      attendee.phone,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        color: Colors.white.withValues(
-                                          alpha: 0.5,
-                                        ),
-                                        fontStyle: FontStyle.italic,
-                                        letterSpacing: 0.2,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  if (isPending)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.orange.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(
-                                          color: Colors.orange.withOpacity(0.3),
-                                          width: 0.5,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.hourglass_empty_rounded,
-                                            color: Colors.orange,
-                                            size: 10,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            "PENDING",
-                                            style: GoogleFonts.inter(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.w700,
-                                              color: Colors.orange,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                ],
-                              ),
 
-                              if (attendee.labelIds != null &&
-                                  attendee.labelIds!.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                Wrap(
-                                  spacing: 6,
-                                  runSpacing: 4,
-                                  children:
-                                      attendee.labelIds!.map((labelId) {
-                                        final label = allLabels.firstWhere(
-                                          (l) => l.id == labelId,
-                                          orElse:
-                                              () => AttendeeLabel(
-                                                id: '',
-                                                name: '?',
-                                                colorValue: 0xFF555555,
-                                              ),
-                                        );
-                                        return Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Color(
-                                              label.colorValue,
-                                            ).withOpacity(0.15),
-                                            borderRadius: BorderRadius.circular(
-                                              40,
-                                            ),
-                                            border: Border.all(
-                                              color: Color(
-                                                label.colorValue,
-                                              ).withOpacity(0.5),
-                                              width: 0.5,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            label.name,
-                                            style: TextStyle(
-                                              fontSize: 8,
-                                              color: Color(label.colorValue),
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                        );
-                                      }).toList(),
+                        // Labels
+                        if (attendee.labelIds != null &&
+                            attendee.labelIds!.isNotEmpty) ...[
+                          const SizedBox(height: 7),
+                          Wrap(
+                            spacing: 5,
+                            runSpacing: 4,
+                            children: attendee.labelIds!.map((labelId) {
+                              final label = allLabels.firstWhere(
+                                (l) => l.id == labelId,
+                                orElse: () => AttendeeLabel(
+                                  id: '',
+                                  name: '?',
+                                  colorValue: 0xFF8E8E93,
                                 ),
-                              ],
-                            ],
+                              );
+                              final c = Color(label.colorValue);
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: c.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: c.withValues(alpha: 0.4),
+                                    width: 0.6,
+                                  ),
+                                ),
+                                child: Text(
+                                  label.name,
+                                  style: _C.f(
+                                    size: 9,
+                                    weight: FontWeight.w700,
+                                    color: c,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
                           ),
-                        ),
-                        // ── Attendance dot indicator ──
-                        if (kardType == KardType.invitation)
-                          _buildStatusDot(attendee.attendanceStatus),
+                        ],
                       ],
                     ),
                   ),
-                ),
-              );
-            },
-          ),
+
+                  // ── Status dot ──────────────────────────────────────
+                  if (kardType == KardType.invitation)
+                    _buildStatusDot(attendee.attendanceStatus),
+                ],
+              ),
+            );
+          }),
         ),
       );
     },
   );
 }
 
-// ── Tiny colored dot showing attendance status ──
+// ── Attendance status dot ────────────────────────────────────────────────────
+
 Widget _buildStatusDot(String? status) {
   Color dotColor;
   switch (status) {
     case atconfstate:
-      dotColor = Colors.green;
+      dotColor = const Color(0xFF30D158); // Apple green
       break;
     case atdeclstate:
-      dotColor = Colors.red;
+      dotColor = const Color(0xFFFF453A); // Apple red
       break;
     case atcallstate:
-      dotColor = Colors.teal;
+      dotColor = const Color(0xFF64D2FF); // Apple teal
       break;
     case atunreachablestate:
-      dotColor = Colors.orange;
+      dotColor = const Color(0xFFFF9F0A); // Apple orange
       break;
     default:
-      dotColor = Colors.grey;
+      dotColor = _C.lbl4;
   }
   return Container(
-    width: 10,
-    height: 10,
-    margin: const EdgeInsets.only(left: 8),
+    width: 9,
+    height: 9,
+    margin: const EdgeInsets.only(left: 10),
     decoration: BoxDecoration(
       color: dotColor,
       shape: BoxShape.circle,
       boxShadow: [
         BoxShadow(
-          color: dotColor.withValues(alpha: 0.5),
+          color: dotColor.withValues(alpha: 0.45),
           blurRadius: 6,
           spreadRadius: 1,
         ),
@@ -347,7 +335,7 @@ Widget _buildStatusDot(String? status) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  Detail popup — shows everything on tap
+//  Detail popup — glassmorphic bottom sheet
 // ═══════════════════════════════════════════════════════════
 
 void _showDetailPopup({
@@ -358,24 +346,22 @@ void _showDetailPopup({
   required String eventId,
   required Function() onEdit,
   required Function(String) onStatusChange,
+  bool showMessageStatus = true,
 }) {
-  var attrCrdMap = attendee.cards[kardType.name];
-  AttributeCard? attributeCard;
-  attributeCard =
+  final attrCrdMap = attendee.cards[kardType.name];
+  final attributeCard =
       attrCrdMap != null ? AttributeCard.fromMap(map: attrCrdMap) : null;
-  String crdnm =
-      attributeCard != null ? attributeCard.name ?? "Not Set" : "Not Set";
+  final crdnm = attributeCard?.name ?? "Not Set";
 
   final fullname = attendee.fullName;
   final hue = (fullname.hashCode % 360).abs().toDouble();
-  final avatarColor = HSLColor.fromAHSL(1, hue, 0.45, 0.55).toColor();
-  final initials =
-      fullname
-          .split(' ')
-          .where((w) => w.isNotEmpty)
-          .take(2)
-          .map((w) => w[0].toUpperCase())
-          .join();
+  final avatarColor = HSLColor.fromAHSL(1, hue, 0.55, 0.60).toColor();
+  final initials = fullname
+      .split(' ')
+      .where((w) => w.isNotEmpty)
+      .take(2)
+      .map((w) => w[0].toUpperCase())
+      .join();
 
   showModalBottomSheet(
     context: context,
@@ -384,206 +370,214 @@ void _showDetailPopup({
     builder: (ctx) {
       return StatefulBuilder(
         builder: (ctx, popupSetState) {
-          return Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.72,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0A0A0A),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(28),
-              ),
-              border: Border(
-                top: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  width: 1,
+          return ClipRRect(
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(28)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.75,
                 ),
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(28),
-              ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                decoration: BoxDecoration(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(28)),
+                  border: Border(
+                    top: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 0.8),
+                    left: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 0.8),
+                    right: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 0.8),
+                  ),
+                ),
                 child: SingleChildScrollView(
                   padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).padding.bottom + 20,
+                    bottom: MediaQuery.of(context).padding.bottom + 24,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // ── Handle bar ──
+                      // ── Handle ────────────────────────────────────
                       Container(
-                        margin: const EdgeInsets.only(top: 12, bottom: 20),
-                        width: 40,
+                        margin: const EdgeInsets.only(top: 12, bottom: 24),
+                        width: 36,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: _C.card3,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
 
-                      // ── Avatar + Name header ──
+                      // ── Avatar + identity ─────────────────────────
                       Container(
-                        width: 72,
-                        height: 72,
+                        width: 76,
+                        height: 76,
                         decoration: BoxDecoration(
-                          color: avatarColor.withValues(alpha: 0.25),
+                          color: avatarColor.withValues(alpha: 0.14),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: avatarColor.withValues(alpha: 0.4),
+                            color: avatarColor.withValues(alpha: 0.45),
                             width: 2,
                           ),
                         ),
                         child: Center(
                           child: Text(
                             initials,
-                            style: TextStyle(
+                            style: _C.f(
+                              size: 28,
+                              weight: FontWeight.w800,
                               color: avatarColor,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 26,
                               letterSpacing: 0.5,
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 14),
+
                       Text(
                         fullname,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 0.2,
+                        style: _C.f(
+                          size: 22,
+                          weight: FontWeight.w800,
+                          color: _C.white,
+                          letterSpacing: -0.3,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         attendee.phone,
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.white.withValues(alpha: 0.5),
-                          letterSpacing: 0.3,
-                        ),
+                        style: _C.f(size: 14, color: _C.lbl3),
                       ),
-                      const SizedBox(height: 6),
-                      // ── Card type badge ──
+                      const SizedBox(height: 10),
+
+                      // ── Card-type badge ───────────────────────────
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 5,
-                        ),
+                            horizontal: 12, vertical: 5),
                         decoration: BoxDecoration(
-                          color: _warmBg.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(14),
+                          color: _C.limeDim,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _C.lime.withValues(alpha: 0.35),
+                            width: 0.7,
+                          ),
                         ),
                         child: Text(
                           crdnm,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontWeight: FontWeight.w500,
+                          style: _C.f(
+                            size: 11,
+                            weight: FontWeight.w700,
+                            color: _C.lime,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
-                      // ── Quick action buttons ──
+                      // ── Quick actions ─────────────────────────────
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildPopupAction(
-                              icon: Icons.call,
-                              label: "Call",
-                              color: Colors.green,
-                              onTap: () => callNumber(attendee.phone),
-                            ),
-                            if (kardType == KardType.invitation ||
-                                kardType == KardType.contribution)
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _C.card2,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: _C.sep, width: 0.8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
                               _buildPopupAction(
-                                icon: Clarity.eye_show_line,
-                                label: "Card",
-                                color: Colors.blueAccent,
-                                onTap: () {
-                                  var vcrd = attendee.cards[kardType.name];
-                                  if (vcrd != null) {
-                                    AttributeCard attrCrd =
-                                        AttributeCard.fromMap(map: vcrd);
-                                    try {
-                                      launchUrl(Uri.parse(attrCrd.url ?? ""));
-                                    } catch (e) {
-                                      showToast(isGood: false, msg: "$e");
+                                icon: Icons.call_rounded,
+                                label: "Call",
+                                color: const Color(0xFF30D158),
+                                onTap: () => callNumber(attendee.phone),
+                              ),
+                              if (kardType == KardType.invitation ||
+                                  kardType == KardType.contribution)
+                                _buildPopupAction(
+                                  icon: Clarity.eye_show_line,
+                                  label: "Card",
+                                  color: const Color(0xFF0A84FF),
+                                  onTap: () {
+                                    final vcrd =
+                                        attendee.cards[kardType.name];
+                                    if (vcrd != null) {
+                                      final attrCrd =
+                                          AttributeCard.fromMap(map: vcrd);
+                                      try {
+                                        launchUrl(
+                                            Uri.parse(attrCrd.url ?? ""));
+                                      } catch (e) {
+                                        showToast(
+                                            isGood: false, msg: "$e");
+                                      }
+                                    } else {
+                                      showToast(
+                                          isGood: false,
+                                          msg: "Unable to View");
                                     }
-                                  } else {
-                                    showToast(
-                                      isGood: false,
-                                      msg: "Unable to View",
-                                    );
-                                  }
+                                  },
+                                ),
+                              _buildPopupAction(
+                                icon: Icons.edit_rounded,
+                                label: "Edit",
+                                color: const Color(0xFFFF9F0A),
+                                onTap: () {
+                                  Navigator.of(ctx).pop();
+                                  onEdit();
                                 },
                               ),
-                            _buildPopupAction(
-                              icon: Icons.edit,
-                              label: "Edit",
-                              color: Colors.orangeAccent,
-                              onTap: () {
-                                Navigator.of(ctx).pop();
-                                onEdit();
-                              },
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
 
                       const SizedBox(height: 24),
 
-                      // ── Delivery status section ──
-                      _buildPopupSection(
-                        title: "Message Status",
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: _buildDeliveryStatusIndicators(
-                            attendee,
-                            kardType,
-                            campaignId,
+                      // ── Message status ─────────────────────────────
+                      if (showMessageStatus)
+                        _buildPopupSection(
+                          title: "Message Status",
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 20),
+                            child: _buildDeliveryStatusIndicators(
+                                attendee, kardType, campaignId),
                           ),
                         ),
-                      ),
 
                       const SizedBox(height: 16),
 
-                      // ── Attendance controls — for invitations ──
+                      // ── Attendance controls ────────────────────────
                       if (kardType == KardType.invitation)
                         _buildPopupSection(
                           title: "Attendance Status",
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: _buildAttendanceControls(attendee, eventId, (
-                              status,
-                            ) {
-                              onStatusChange(status);
-                              popupSetState(() {});
-                            }),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 20),
+                            child: _buildAttendanceControls(
+                              attendee,
+                              eventId,
+                              (status) {
+                                onStatusChange(status);
+                                popupSetState(() {});
+                              },
+                            ),
                           ),
                         ),
 
-                      // ── Michango display — for contributions ──
+                      // ── Contribution details ───────────────────────
                       if (kardType == KardType.contribution ||
                           kardType == KardType.contact)
                         _buildPopupSection(
                           title: "Contribution Details",
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 20),
                             child: buildMichangoDisplay(
-                              context,
-                              attendee,
-                              eventId,
-                              onStatusChange,
-                            ),
+                                context, attendee, eventId, onStatusChange),
                           ),
                         ),
 
@@ -600,7 +594,8 @@ void _showDetailPopup({
   );
 }
 
-// ── Popup circular action button ──
+// ── Circular quick-action button ─────────────────────────────────────────────
+
 Widget _buildPopupAction({
   required IconData icon,
   required String label,
@@ -616,41 +611,51 @@ Widget _buildPopupAction({
           width: 52,
           height: 52,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
+            color: color.withValues(alpha: 0.13),
             shape: BoxShape.circle,
-            border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+            border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
           ),
-          child: Icon(icon, color: color, size: 22),
+          child: Icon(icon, color: color, size: 21),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 7),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.6),
-            fontWeight: FontWeight.w500,
-          ),
+          style: _C.f(size: 11, weight: FontWeight.w600, color: _C.lbl3),
         ),
       ],
     ),
   );
 }
 
-// ── Section header inside popup ──
+// ── Section header inside popup ──────────────────────────────────────────────
+
 Widget _buildPopupSection({required String title, required Widget child}) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Padding(
-        padding: const EdgeInsets.only(left: 28, bottom: 10),
-        child: Text(
-          title.toUpperCase(),
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: Colors.white.withValues(alpha: 0.35),
-            letterSpacing: 1.2,
-          ),
+        padding: const EdgeInsets.only(left: 24, bottom: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 3,
+              height: 12,
+              decoration: BoxDecoration(
+                color: _C.lime,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title.toUpperCase(),
+              style: _C.f(
+                size: 10,
+                weight: FontWeight.w700,
+                color: _C.lbl3,
+                letterSpacing: 1.3,
+              ),
+            ),
+          ],
         ),
       ),
       child,
@@ -659,17 +664,18 @@ Widget _buildPopupSection({required String title, required Widget child}) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  Existing logic widgets (unchanged functionality)
+//  Logic widgets — functionality unchanged, surfaces updated
 // ═══════════════════════════════════════════════════════════
 
-Widget buildMichangoDisplay(context, attendee, eventId, onStatusChange) {
+Widget buildMichangoDisplay(
+    context, Attendee attendee, String eventId, Function(String) onStatusChange) {
   return Container(
     width: double.maxFinite,
-    padding: const EdgeInsets.all(14),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.05),
+      color: _C.card2,
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1),
+      border: Border.all(color: _C.sep, width: 0.8),
     ),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -679,33 +685,47 @@ Widget buildMichangoDisplay(context, attendee, eventId, onStatusChange) {
           children: [
             Text(
               "Pledged: Tsh ${attendee.pledgedAmount}",
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontStyle: FontStyle.italic,
-              ),
+              style: _C.f(size: 13, weight: FontWeight.w600, color: _C.lbl1),
             ),
+            const SizedBox(height: 3),
             Text(
               "Paid: Tsh ${attendee.paidAmount}",
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontStyle: FontStyle.italic,
-              ),
+              style: _C.f(size: 13, weight: FontWeight.w600, color: _C.lbl2),
             ),
           ],
         ),
-        TextButton.icon(
-          icon: const Icon(Icons.edit),
-          label: const Text("Edit"),
-          onPressed: () async {
+        GestureDetector(
+          onTap: () async {
             await Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) {
-                  return MichangoEditor(attendee: attendee, eventId: eventId);
-                },
+                builder: (context) =>
+                    MichangoEditor(attendee: attendee, eventId: eventId),
               ),
             );
             onStatusChange("str");
           },
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: _C.limeDim,
+              borderRadius: BorderRadius.circular(10),
+              border:
+                  Border.all(color: _C.lime.withValues(alpha: 0.35), width: 0.7),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.edit_rounded, color: _C.lime, size: 14),
+                const SizedBox(width: 6),
+                Text(
+                  "Edit",
+                  style: _C.f(
+                      size: 13, weight: FontWeight.w700, color: _C.lime),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     ),
@@ -720,30 +740,23 @@ Widget _buildDeliveryStatusIndicators(
   String smsStatus = "unsent";
   String whatsappStatus = "unsent";
   try {
-    var msgIndexes = attendee.messageIndexes ?? [];
-    for (var msgIndex in msgIndexes) {
-      var parts = msgIndex.split("_");
-      if (parts[0] == "sms" && parts[1] == campaignId) {
-        smsStatus = parts[2];
-      }
-      if (parts[0] == "whatsapp" && parts[1] == campaignId) {
+    final msgIndexes = attendee.messageIndexes ?? [];
+    for (final msgIndex in msgIndexes) {
+      final parts = msgIndex.split("_");
+      if (parts[0] == "sms" && parts[1] == campaignId) smsStatus = parts[2];
+      if (parts[0] == "whatsapp" && parts[1] == campaignId)
         whatsappStatus = parts[2];
-      }
     }
-  } catch (e) {}
+  } catch (_) {}
+
   return Row(
     children: [
-      _buildStatusChip(
-        label: "SMS",
-        status: smsStatus,
-        brandData: Brands.wechat,
-      ),
+      _buildStatusChip(label: "SMS", status: smsStatus, brandData: Brands.wechat),
       const SizedBox(width: 10),
       _buildStatusChip(
-        label: "WhatsApp",
-        status: whatsappStatus,
-        brandData: Brands.whatsapp,
-      ),
+          label: "WhatsApp",
+          status: whatsappStatus,
+          brandData: Brands.whatsapp),
     ],
   );
 }
@@ -754,53 +767,55 @@ Widget _buildStatusChip({
   required String brandData,
 }) {
   Color statusColor;
-  Color backgroundColor;
+  Color bgColor;
 
   switch (status.toLowerCase()) {
     case "delivered":
     case "read":
-      statusColor = Colors.greenAccent;
-      backgroundColor = Colors.green.withValues(alpha: 0.2);
+      statusColor = const Color(0xFF30D158);
+      bgColor = const Color(0xFF30D158);
       break;
     case "sent":
-      statusColor = Colors.lightBlueAccent;
-      backgroundColor = Colors.blue.withValues(alpha: 0.2);
+      statusColor = const Color(0xFF64D2FF);
+      bgColor = const Color(0xFF64D2FF);
       break;
     case "pending":
     case "queued":
-      statusColor = Colors.orangeAccent;
-      backgroundColor = Colors.orange.withValues(alpha: 0.2);
+      statusColor = const Color(0xFFFF9F0A);
+      bgColor = const Color(0xFFFF9F0A);
       break;
     case "failed":
     case "undelivered":
-      statusColor = Colors.redAccent;
-      backgroundColor = Colors.red.withValues(alpha: 0.2);
+      statusColor = const Color(0xFFFF453A);
+      bgColor = const Color(0xFFFF453A);
       break;
     default:
-      statusColor = Colors.grey.shade400;
-      backgroundColor = Colors.grey.withValues(alpha: 0.2);
+      statusColor = _C.lbl4;
+      bgColor = _C.lbl4;
   }
+
   return Expanded(
     child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 7),
       decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(60),
-        border: Border.all(color: statusColor.withValues(alpha: 0.4), width: 1),
+        color: bgColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(50),
+        border:
+            Border.all(color: statusColor.withValues(alpha: 0.4), width: 0.8),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Brand(brandData, size: 14),
+          Brand(brandData, size: 13),
           const SizedBox(width: 5),
           Text(
             status.toUpperCase(),
-            style: TextStyle(
-              fontSize: 8,
-              fontWeight: FontWeight.bold,
+            style: _C.f(
+              size: 8,
+              weight: FontWeight.w800,
               color: statusColor,
-              letterSpacing: 0.5,
+              letterSpacing: 0.6,
               height: 1,
             ),
             maxLines: 1,
@@ -817,61 +832,32 @@ Widget _buildAttendanceControls(
   Function(String) onStatusChange,
 ) {
   return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.05),
+      color: _C.card2,
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1),
+      border: Border.all(color: _C.sep, width: 0.8),
     ),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildStatusButton(
-          eventId,
-          attendee,
-          atconfstate,
-          Icons.check_circle,
-          Colors.green,
-          attendee.attendanceStatus == atconfstate,
-          onStatusChange,
-        ),
-        _buildStatusButton(
-          eventId,
-          attendee,
-          atnotconfstate,
-          Icons.schedule,
-          Colors.grey,
-          attendee.attendanceStatus == atnotconfstate ||
-              attendee.attendanceStatus == null,
-          onStatusChange,
-        ),
-        _buildStatusButton(
-          eventId,
-          attendee,
-          atdeclstate,
-          Icons.cancel,
-          Colors.red,
-          attendee.attendanceStatus == atdeclstate,
-          onStatusChange,
-        ),
-        _buildStatusButton(
-          eventId,
-          attendee,
-          atcallstate,
-          Icons.call_made,
-          Colors.teal,
-          attendee.attendanceStatus == atcallstate,
-          onStatusChange,
-        ),
-        _buildStatusButton(
-          eventId,
-          attendee,
-          atunreachablestate,
-          Icons.cloud_off_outlined,
-          Colors.orange,
-          attendee.attendanceStatus == atunreachablestate,
-          onStatusChange,
-        ),
+        _buildStatusButton(eventId, attendee, atconfstate,
+            Icons.check_circle_rounded, const Color(0xFF30D158),
+            attendee.attendanceStatus == atconfstate, onStatusChange),
+        _buildStatusButton(eventId, attendee, atnotconfstate,
+            Icons.schedule_rounded, _C.lbl4,
+            attendee.attendanceStatus == atnotconfstate ||
+                attendee.attendanceStatus == null,
+            onStatusChange),
+        _buildStatusButton(eventId, attendee, atdeclstate,
+            Icons.cancel_rounded, const Color(0xFFFF453A),
+            attendee.attendanceStatus == atdeclstate, onStatusChange),
+        _buildStatusButton(eventId, attendee, atcallstate,
+            Icons.call_made_rounded, const Color(0xFF64D2FF),
+            attendee.attendanceStatus == atcallstate, onStatusChange),
+        _buildStatusButton(eventId, attendee, atunreachablestate,
+            Icons.cloud_off_rounded, const Color(0xFFFF9F0A),
+            attendee.attendanceStatus == atunreachablestate, onStatusChange),
       ],
     ),
   );
@@ -887,26 +873,26 @@ Widget _buildStatusButton(
   Function(String) onStatusChange,
 ) {
   return Expanded(
-    child: InkWell(
-      onTap: () {
-        _updateAttendanceStatus(attendee, status, eventId, onStatusChange);
-      },
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
+    child: GestureDetector(
+      onTap: () =>
+          _updateAttendanceStatus(attendee, status, eventId, onStatusChange),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(vertical: 10),
         margin: const EdgeInsets.symmetric(horizontal: 3),
         decoration: BoxDecoration(
-          color: isActive ? color : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          color: isActive ? color.withValues(alpha: 0.20) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isActive ? color : color.withValues(alpha: 0.3),
-            width: isActive ? 1.5 : 1,
+            color:
+                isActive ? color : color.withValues(alpha: 0.25),
+            width: isActive ? 1.2 : 0.8,
           ),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: isActive ? Colors.white : color.withValues(alpha: 0.7),
+          color: isActive ? color : color.withValues(alpha: 0.5),
         ),
       ),
     ),

@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/utils/globalfns.dart';
@@ -13,22 +15,27 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Design Tokens (Matching AdminPane)
+// Design Tokens  ·  Apple-dark, not pitch-black
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _T {
-  static const bg = Color(0xFF0A0A0A);
-  static const card = Color(0xFF141414);
-  static const lime = Color(0xFFC9A84C);
-  static const limeDim = Color(0xFF1E2800);
+  static const bg    = Color(0xFF111114);
+  static const card  = Color(0xFF1C1C1E);
+  static const card2 = Color(0xFF28282C);
+  static const card3 = Color(0xFF3A3A3C);
+  static const sep   = Color(0xFF2C2C2E);
+  static const lime    = Color(0xFFC9A84C);
+  static const limeDim = Color(0xFF2A2210);
   static const white = Color(0xFFFFFFFF);
-  static const grey1 = Color(0xFFAAAAAA);
-  static const grey2 = Color(0xFF555555);
+  static const lbl1  = Color(0xFFEEEEF0);
+  static const lbl2  = Color(0xFFAEAEB2);
+  static const lbl3  = Color(0xFF8E8E93);
+  static const lbl4  = Color(0xFF48484A);
 
   static TextStyle f({
     double size = 14,
     FontWeight weight = FontWeight.w400,
-    Color color = white,
+    Color color = lbl1,
     double letterSpacing = 0,
     double? height,
   }) => GoogleFonts.inter(
@@ -63,6 +70,7 @@ class _EventSettingsState extends State<EventSettings> {
   bool publicEvent = false;
   bool requireApproval = false;
   int reminderHoursBefore = 24;
+  bool _isPublished = false;
 
   @override
   void initState() {
@@ -75,6 +83,7 @@ class _EventSettingsState extends State<EventSettings> {
       setState(() {
         usePng = widget.event?.usepng ?? true;
         selectedLanguage = widget.event?.language ?? 'sw';
+        _isPublished = (widget.event?.status ?? 'draft').toLowerCase() == 'published';
       });
     }
   }
@@ -174,6 +183,8 @@ class _EventSettingsState extends State<EventSettings> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const SizedBox(height: 8),
+                          _titleBlock(),
                           const SizedBox(height: 20),
                           _sectionHeader(
                             icon: Icons.language_rounded,
@@ -202,6 +213,29 @@ class _EventSettingsState extends State<EventSettings> {
                           const SizedBox(height: 12),
                           _buildReportsSection(),
                           const SizedBox(height: 32),
+
+                          _sectionHeader(
+                            icon: Icons.public_rounded,
+                            title: "VISIBILITY",
+                            subtitle: "Control who can see this event",
+                          ),
+                          const SizedBox(height: 12),
+                          _buildActionTile(
+                            icon: _isPublished ? Icons.public_off_rounded : Icons.public_rounded,
+                            title: _isPublished ? "Published  ·  Tap to Unpublish" : "Draft  ·  Tap to Publish",
+                            isLoading: false,
+                            onTap: _showPublishDialog,
+                          ),
+                          const SizedBox(height: 32),
+
+                          _sectionHeader(
+                            icon: Icons.warning_amber_rounded,
+                            title: "DANGER ZONE",
+                            subtitle: "Irreversible actions",
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDangerTile(),
+                          const SizedBox(height: 40),
                         ],
                       ),
                     ),
@@ -217,22 +251,26 @@ class _EventSettingsState extends State<EventSettings> {
 
   Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 4),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: _T.lime,
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text('Back', style: _T.f(size: 15, weight: FontWeight.w500)),
-              ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _T.sep, width: 0.8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_back_ios_new_rounded, color: _T.lime, size: 13),
+                  const SizedBox(width: 5),
+                  Text('Back', style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl1)),
+                ],
+              ),
             ),
           ),
           const Spacer(),
@@ -241,11 +279,36 @@ class _EventSettingsState extends State<EventSettings> {
           else
             GestureDetector(
               onTap: _saveSettings,
-              child: Text(
-                'Save Settings',
-                style: _T.f(size: 15, weight: FontWeight.w600, color: _T.lime),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  color: _T.limeDim,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: _T.lime.withValues(alpha: 0.35), width: 0.8),
+                ),
+                child: Text('Save', style: _T.f(size: 13, weight: FontWeight.w700, color: _T.lime)),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _titleBlock() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Event Settings',
+            style: _T.f(size: 28, weight: FontWeight.w800, color: _T.white, letterSpacing: -0.8, height: 1.12),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Manage language, card format and reports.',
+            style: _T.f(size: 13, color: _T.lbl3, height: 1.5),
+          ),
         ],
       ),
     );
@@ -256,27 +319,30 @@ class _EventSettingsState extends State<EventSettings> {
     required String title,
     required String subtitle,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: _T.lime, size: 14),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: _T.f(
-                size: 11,
-                weight: FontWeight.w700,
-                color: _T.grey2,
-                letterSpacing: 1.2,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 3,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: _T.lime,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(subtitle, style: _T.f(size: 13, color: _T.grey1)),
-      ],
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: _T.f(size: 11, weight: FontWeight.w700, color: _T.lbl3, letterSpacing: 1.3),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -285,6 +351,7 @@ class _EventSettingsState extends State<EventSettings> {
       decoration: BoxDecoration(
         color: _T.card,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _T.sep, width: 0.8),
       ),
       child: Column(
         children: [
@@ -298,7 +365,7 @@ class _EventSettingsState extends State<EventSettings> {
           Container(
             height: 1,
             margin: const EdgeInsets.symmetric(horizontal: 16),
-            color: _T.white.withOpacity(0.05),
+            color: _T.sep,
           ),
           _buildLanguageOption(
             language: 'English',
@@ -342,7 +409,7 @@ class _EventSettingsState extends State<EventSettings> {
             else
               Icon(
                 Icons.circle_outlined,
-                color: _T.white.withOpacity(0.1),
+                color: _T.sep,
                 size: 20,
               ),
           ],
@@ -393,7 +460,7 @@ class _EventSettingsState extends State<EventSettings> {
           color: isSelected ? _T.limeDim : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? _T.lime.withOpacity(0.3) : Colors.transparent,
+            color: isSelected ? _T.lime.withValues(alpha: 0.3) : Colors.transparent,
           ),
         ),
         child: Center(
@@ -402,7 +469,7 @@ class _EventSettingsState extends State<EventSettings> {
             style: _T.f(
               size: 13,
               weight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? _T.lime : _T.grey1,
+              color: isSelected ? _T.lime : _T.lbl2,
             ),
           ),
         ),
@@ -453,7 +520,7 @@ class _EventSettingsState extends State<EventSettings> {
                     (context, index) => Container(
                       height: 1,
                       margin: const EdgeInsets.symmetric(horizontal: 16),
-                      color: _T.white.withOpacity(0.05),
+                      color: _T.sep,
                     ),
                 itemBuilder: (context, index) {
                   final report = docs[index].data() as Map<String, dynamic>;
@@ -484,7 +551,7 @@ class _EventSettingsState extends State<EventSettings> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: _T.lime.withOpacity(0.1),
+                              color: _T.lime.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(
@@ -508,7 +575,7 @@ class _EventSettingsState extends State<EventSettings> {
                                 if (dt != null)
                                   Text(
                                     timeago.format(dt),
-                                    style: _T.f(size: 12, color: _T.grey1),
+                                    style: _T.f(size: 12, color: _T.lbl2),
                                   ),
                               ],
                             ),
@@ -521,7 +588,7 @@ class _EventSettingsState extends State<EventSettings> {
                                 ),
                             icon: Icon(
                               Icons.delete_outline_rounded,
-                              color: Colors.red.withOpacity(0.7),
+                              color: Colors.redAccent.withValues(alpha: 0.8),
                               size: 18,
                             ),
                             padding: EdgeInsets.zero,
@@ -563,8 +630,8 @@ class _EventSettingsState extends State<EventSettings> {
           border: Border.all(
             color:
                 isLoading
-                    ? _T.lime.withOpacity(0.3)
-                    : _T.white.withOpacity(0.05),
+                    ? _T.lime.withValues(alpha: 0.3)
+                    : _T.sep,
           ),
         ),
         child: Row(
@@ -586,10 +653,282 @@ class _EventSettingsState extends State<EventSettings> {
             if (!isLoading)
               Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: _T.white.withOpacity(0.2),
+                color: _T.lbl4,
                 size: 14,
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ── Publish Dialog ────────────────────────────────────────────────────────
+
+  void _showPublishDialog() {
+    if (widget.event == null) return;
+    final isPublished = _isPublished;
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (ctx) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _T.card.withValues(alpha: 0.72),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: _T.sep.withValues(alpha: 0.6), width: 0.8),
+                ),
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: _T.lime.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.public_rounded, color: _T.lime, size: 26),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      isPublished ? 'Unpublish Event?' : 'Publish Event?',
+                      style: _T.f(size: 18, weight: FontWeight.w700, color: _T.white),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      isPublished
+                          ? 'This will hide the event from end-users.'
+                          : 'This will make the event visible to all users.',
+                      textAlign: TextAlign.center,
+                      style: _T.f(size: 13, color: _T.lbl2, height: 1.5),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => Navigator.of(ctx).pop(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              decoration: BoxDecoration(
+                                color: _T.card2,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: _T.sep, width: 0.8),
+                              ),
+                              child: Center(
+                                child: Text('Cancel', style: _T.f(size: 14, weight: FontWeight.w600, color: _T.lbl2)),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () async {
+                              Navigator.of(ctx).pop();
+                              final newStatus = isPublished ? 'Draft' : 'Published';
+                              try {
+                                await firestore.collection(ecol).doc(widget.event!.id).update({'status': newStatus});
+                                if (mounted) setState(() => _isPublished = !isPublished);
+                                showToast(isGood: true, msg: isPublished ? 'Event set as Draft' : 'Event Published');
+                              } catch (e) {
+                                showToast(isGood: false, msg: 'Error: $e');
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              decoration: BoxDecoration(
+                                color: isPublished
+                                    ? const Color(0xFFFF453A).withValues(alpha: 0.15)
+                                    : _T.limeDim,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isPublished
+                                      ? const Color(0xFFFF453A).withValues(alpha: 0.4)
+                                      : _T.lime.withValues(alpha: 0.4),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  isPublished ? 'Unpublish' : 'Publish',
+                                  style: _T.f(
+                                    size: 14,
+                                    weight: FontWeight.w700,
+                                    color: isPublished ? const Color(0xFFFF453A) : _T.lime,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Delete Tile + Dialog ──────────────────────────────────────────────────
+
+  Widget _buildDangerTile() {
+    return GestureDetector(
+      onTap: _showDeleteDialog,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFF453A).withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFFF453A).withValues(alpha: 0.3), width: 0.8),
+        ),
+        child: Row(
+          children: [
+            const Icon(CupertinoIcons.delete, color: Color(0xFFFF453A), size: 20),
+            const SizedBox(width: 12),
+            Text('Delete Event', style: _T.f(size: 15, weight: FontWeight.w600, color: Color(0xFFFF453A))),
+            const Spacer(),
+            Icon(Icons.arrow_forward_ios_rounded, color: const Color(0xFFFF453A).withValues(alpha: 0.5), size: 14),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteDialog() {
+    if (widget.event == null) return;
+    final confirmCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (ctx) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+              child: StatefulBuilder(
+                builder: (ctx2, setDs) => Container(
+                  decoration: BoxDecoration(
+                    color: _T.card.withValues(alpha: 0.72),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: _T.sep.withValues(alpha: 0.6), width: 0.8),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF453A).withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(CupertinoIcons.delete, color: Color(0xFFFF453A), size: 26),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Delete Event',
+                        style: _T.f(size: 18, weight: FontWeight.w700, color: _T.white),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'This is irreversible. Type "delete" below to confirm.',
+                        textAlign: TextAlign.center,
+                        style: _T.f(size: 13, color: _T.lbl2, height: 1.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: _T.card2,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _T.sep, width: 0.8),
+                        ),
+                        child: TextField(
+                          controller: confirmCtrl,
+                          style: _T.f(size: 14, color: _T.white),
+                          onChanged: (_) => setDs(() {}),
+                          decoration: InputDecoration(
+                            hintText: 'delete',
+                            hintStyle: _T.f(size: 14, color: _T.lbl4),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => Navigator.of(ctx2).pop(),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 13),
+                                decoration: BoxDecoration(
+                                  color: _T.card2,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: _T.sep, width: 0.8),
+                                ),
+                                child: Center(
+                                  child: Text('Cancel', style: _T.f(size: 14, weight: FontWeight.w600, color: _T.lbl2)),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: confirmCtrl.text.trim() == 'delete'
+                                  ? () async {
+                                      Navigator.of(ctx2).pop();
+                                      try {
+                                        await firestore.collection(ecol).doc(widget.event!.id).delete();
+                                        if (mounted) Phoenix.rebirth(context);
+                                      } catch (e) {
+                                        showToast(isGood: false, msg: 'Error: $e');
+                                      }
+                                    }
+                                  : null,
+                              child: AnimatedOpacity(
+                                opacity: confirmCtrl.text.trim() == 'delete' ? 1.0 : 0.35,
+                                duration: const Duration(milliseconds: 200),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 13),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF453A).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: const Color(0xFFFF453A).withValues(alpha: 0.4), width: 0.8),
+                                  ),
+                                  child: Center(
+                                    child: Text('Delete', style: _T.f(size: 14, weight: FontWeight.w700, color: Color(0xFFFF453A))),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -602,12 +941,12 @@ class _EventSettingsState extends State<EventSettings> {
       decoration: BoxDecoration(
         color: _T.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _T.white.withOpacity(0.05)),
+        border: Border.all(color: _T.sep),
       ),
       child: Center(
         child: Text(
           text,
-          style: _T.f(size: 13, color: _T.grey2, weight: FontWeight.w500),
+          style: _T.f(size: 13, color: _T.lbl3, weight: FontWeight.w500),
         ),
       ),
     );
@@ -618,11 +957,7 @@ class _GusOrb extends StatelessWidget {
   final double size;
   final Color color;
   final double opacity;
-  const _GusOrb({
-    required this.size,
-    required this.color,
-    required this.opacity,
-  });
+  const _GusOrb({required this.size, required this.color, required this.opacity});
 
   @override
   Widget build(BuildContext context) {
@@ -631,8 +966,12 @@ class _GusOrb extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [color.withOpacity(opacity), color.withOpacity(0)],
+        color: color.withValues(alpha: opacity),
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          child: const SizedBox.shrink(),
         ),
       ),
     );

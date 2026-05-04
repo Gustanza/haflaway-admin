@@ -5,6 +5,8 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/templates.dart' hide buildActionButton;
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
+import 'package:haflaway/components/sheets.dart';
+import 'package:haflaway/top_destinations/event_dash/admin_panel/admin_pane.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
 
@@ -33,7 +35,18 @@ class _CheckPointsState extends State<CheckPoints> {
         actions: appBarActionButton(
           icon: Icons.add,
           onTap: () {
-            //
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (ctx) => SizedBox(
+                height: MediaQuery.of(ctx).size.height * 0.85,
+                child: modalBtmSheet(
+                  bdrdm: 28,
+                  child: ChkpnForm(eId: widget.edata.id ?? ''),
+                ),
+              ),
+            );
           },
         ),
       ),

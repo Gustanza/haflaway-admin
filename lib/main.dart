@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:go_router/go_router.dart';
-import 'package:haflaway/firebase_options.dart';
+import 'package:haflaway/firebase_options.dart'; 
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/providers/package_provider.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/public_attendees.dart';
@@ -15,7 +15,7 @@ import 'package:haflaway/utils/urls.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
-void main(List<String> args) async {
+void main(List<String> args) async { 
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -52,7 +52,7 @@ class HfApp extends StatelessWidget {
     // }
     return Center(
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 1400),
+        constraints: BoxConstraints(maxWidth: 500),
         child: MaterialApp(
           home: const SplashScreen(),
           debugShowCheckedModeBanner: false,

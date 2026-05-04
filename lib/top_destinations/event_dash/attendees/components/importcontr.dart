@@ -151,7 +151,7 @@ Widget buildContrList({
           if (availableLabels.isNotEmpty) ...[
             const SizedBox(height: psm * 0.5),
             Text(
-              "Assign to Lists",
+              "Assign to Labels",
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
             const SizedBox(height: psm * 0.5),

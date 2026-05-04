@@ -41,7 +41,7 @@ class _LabelManagerState extends State<LabelManager> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "Manage Lists",
+              "Manage Labels",
               style: Teme.f(size: 20, weight: FontWeight.bold),
             ),
             IconButton(

@@ -11,6 +11,39 @@ import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/gus_theme.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Design Tokens  ·  Apple-dark, not pitch-black
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _T {
+  static const bg    = Color(0xFF111114);
+  static const card  = Color(0xFF1C1C1E);
+  static const card2 = Color(0xFF28282C);
+  static const card3 = Color(0xFF3A3A3C);
+  static const sep   = Color(0xFF2C2C2E);
+  static const lime    = Color(0xFFC9A84C);
+  static const limeDim = Color(0xFF2A2210);
+  static const white = Color(0xFFFFFFFF);
+  static const lbl1  = Color(0xFFEEEEF0);
+  static const lbl2  = Color(0xFFAEAEB2);
+  static const lbl3  = Color(0xFF8E8E93);
+  static const lbl4  = Color(0xFF48484A);
+
+  static TextStyle f({
+    double size = 14,
+    FontWeight weight = FontWeight.w400,
+    Color color = lbl1,
+    double letterSpacing = 0,
+    double? height,
+  }) => GoogleFonts.inter(
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
+}
+
 class AppUsersScreen extends StatefulWidget {
   const AppUsersScreen({super.key});
 
@@ -153,7 +186,7 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: const Color(0xFF0A0A0A),
+        backgroundColor: _T.bg,
         body: Stack(
           children: [
             // Ambient Orbs
@@ -162,7 +195,7 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
               right: -60,
               child: _GusOrb(
                 size: 300,
-                color: Color(0xFFC9A84C),
+                color: _T.lime,
                 opacity: 0.08,
               ),
             ),
@@ -171,7 +204,7 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
               left: -80,
               child: _GusOrb(
                 size: 250,
-                color: Color(0xFFC9A84C),
+                color: _T.lime,
                 opacity: 0.05,
               ),
             ),
@@ -179,8 +212,8 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
             SafeArea(
               child: RefreshIndicator(
                 onRefresh: () async => await loadUsers(),
-                color: const Color(0xFFC9A84C),
-                backgroundColor: const Color(0xFF141414),
+                color: _T.lime,
+                backgroundColor: _T.card2,
                 child: CustomScrollView(
                   controller: scrollController,
                   physics: const BouncingScrollPhysics(
@@ -197,7 +230,7 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                             controller: searchController,
                             placeholder: "Search users...",
                             placeholderStyle: TextStyle(
-                              color: Colors.white.withOpacity(0.3),
+                              color: _T.lbl4,
                             ),
                             style: const TextStyle(color: Colors.white),
                             onChanged: (v) {
@@ -236,7 +269,7 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                                   padding: EdgeInsets.all(16.0),
                                   child: Center(
                                     child: CupertinoActivityIndicator(
-                                      color: GusTheme.gold,
+                                      color: _T.lime,
                                     ),
                                   ),
                                 );
@@ -261,29 +294,26 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
 
   Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 4),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => popper(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: Color(0xFFC9A84C),
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Dashboard',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _T.sep, width: 0.8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_back_ios_new_rounded, color: _T.lime, size: 13),
+                  const SizedBox(width: 5),
+                  Text('Back', style: _T.f(size: 13, weight: FontWeight.w500, color: _T.lbl1)),
+                ],
+              ),
             ),
           ),
           const Spacer(),
@@ -300,13 +330,21 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                     }
                   });
                 },
-                child: Icon(
-                  isSearching ? Icons.close_rounded : Icons.search_rounded,
-                  color: const Color(0xFFC9A84C),
-                  size: 22,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _T.card,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _T.sep, width: 0.8),
+                  ),
+                  child: Icon(
+                    isSearching ? Icons.close_rounded : Icons.search_rounded,
+                    color: _T.lbl2,
+                    size: 18,
+                  ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: () async {
                   await Navigator.of(context).push(
@@ -314,10 +352,14 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                   );
                   loadUsers();
                 },
-                child: const Icon(
-                  Icons.add_rounded,
-                  color: Color(0xFFC9A84C),
-                  size: 26,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _T.limeDim,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _T.lime.withValues(alpha: 0.35), width: 0.8),
+                  ),
+                  child: const Icon(Icons.add_rounded, color: _T.lime, size: 18),
                 ),
               ),
             ],
@@ -335,22 +377,12 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
         children: [
           Text(
             "App Users",
-            style: GoogleFonts.inter(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: -0.5,
-              height: 1.1,
-            ),
+            style: _T.f(size: 28, weight: FontWeight.w800, color: _T.white, letterSpacing: -0.8, height: 1.12),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             "Manage your organization's members",
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: Colors.white.withOpacity(0.5),
-              fontWeight: FontWeight.w400,
-            ),
+            style: _T.f(size: 13, color: _T.lbl3, height: 1.5),
           ),
         ],
       ),
@@ -364,14 +396,14 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
+        color: _T.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: _T.sep, width: 0.8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: _T.lime.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -384,18 +416,11 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      GusTheme.gold.withOpacity(0.3),
-                      GusTheme.gold.withOpacity(0.1),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: _T.lime.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
-                  border: Border.all(color: GusTheme.glassBorder),
+                  border: Border.all(color: _T.sep, width: 0.8),
                 ),
-                child: const Icon(Icons.person_rounded, color: GusTheme.gold),
+                child: const Icon(Icons.person_rounded, color: _T.lime, size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -404,21 +429,12 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                   children: [
                     Text(
                       "${userr.firstName} ${userr.lastName}",
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        letterSpacing: -0.2,
-                      ),
+                      style: _T.f(size: 15, weight: FontWeight.w700, color: _T.lbl1, letterSpacing: -0.2),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       userr.phoneNumber ?? "No Phone Number",
-                      style: GoogleFonts.inter(
-                        color: GusTheme.textMuted,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: _T.f(size: 13, color: _T.lbl3),
                     ),
                   ],
                 ),
@@ -479,10 +495,11 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: _T.card2,
           borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: _T.sep, width: 0.8),
         ),
-        child: Icon(icon, color: Colors.white70, size: 20),
+        child: Icon(icon, color: _T.lbl2, size: 18),
       ),
     );
   }
@@ -498,23 +515,16 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: _T.card2,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: _T.sep, width: 0.8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: color),
+            Icon(icon, size: 13, color: color),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text(label, style: _T.f(size: 12, weight: FontWeight.w600, color: _T.lbl2)),
           ],
         ),
       ),
@@ -536,47 +546,24 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                   children: [
                     Text(
                       "${userr.firstName} ${userr.lastName}",
-                      style: GoogleFonts.cormorantGaramond(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: _T.f(size: 22, weight: FontWeight.w800, color: _T.white, letterSpacing: -0.5),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      "Update Account Status",
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: GusTheme.textMuted,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Text("Update Account Status", style: _T.f(size: 13, color: _T.lbl3)),
                     const SizedBox(height: 24),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.03),
+                        color: _T.card,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.05),
+                          color: _T.sep,
                         ),
                       ),
                       child: SwitchListTile(
-                        title: Text(
-                          "Active Account",
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
+                        title: Text("Active Account", style: _T.f(size: 15, weight: FontWeight.w600, color: _T.lbl1)),
                         subtitle: Text(
-                          isActive
-                              ? "User can access all features"
-                              : "User access is restricted",
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: GusTheme.textMuted,
-                          ),
+                          isActive ? "User can access all features" : "User access is restricted",
+                          style: _T.f(size: 12, color: _T.lbl3),
                         ),
                         value: isActive,
                         activeColor: GusTheme.green,
@@ -592,8 +579,8 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: GusTheme.gold,
-                          foregroundColor: GusTheme.obsidian,
+                          backgroundColor: _T.lime,
+                          foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -614,7 +601,7 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                         },
                         child: Text(
                           "Save Changes",
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                          style: _T.f(weight: FontWeight.w700, color: Colors.black),
                         ),
                       ),
                     ),
@@ -623,10 +610,7 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                       onPressed: () => popper(),
                       child: Text(
                         "Cancel",
-                        style: GoogleFonts.inter(
-                          color: GusTheme.textMuted,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: _T.f(color: _T.lbl3, weight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -658,19 +642,12 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                     children: [
                       Text(
                         "${userr.firstName} ${userr.lastName}",
-                        style: GoogleFonts.cormorantGaramond(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                        style: _T.f(size: 22, weight: FontWeight.w800, color: _T.white, letterSpacing: -0.5),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         "Manage Wallet Balance",
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: GusTheme.textMuted,
-                          fontWeight: FontWeight.w500,
+                        style: _T.f(size: 13, color: _T.lbl3,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -683,29 +660,19 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                       const SizedBox(height: 16),
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.03),
+                          color: _T.card,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.05),
+                            color: _T.sep,
                           ),
                         ),
                         child: SwitchListTile(
                           value: overwriteSgn,
-                          activeColor: GusTheme.gold,
-                          title: Text(
-                            "Overwrite Balance",
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
+                          activeColor: _T.lime,
+                          title: Text("Overwrite Balance", style: _T.f(size: 15, weight: FontWeight.w600, color: _T.lbl1)),
                           subtitle: Text(
                             "Current Balance: TZS ${userr.balance?.toInt() ?? 0}",
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: GusTheme.gold.withOpacity(0.7),
-                            ),
+                            style: _T.f(size: 12, color: _T.lbl2),
                           ),
                           onChanged: (v) {
                             settState(() {
@@ -719,8 +686,8 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: GusTheme.gold,
-                            foregroundColor: GusTheme.obsidian,
+                            backgroundColor: _T.lime,
+                            foregroundColor: Colors.black,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -768,7 +735,7 @@ class _AppUsersScreenState extends State<AppUsersScreen> {
                         child: Text(
                           "Cancel",
                           style: GoogleFonts.inter(
-                            color: GusTheme.textMuted,
+                            color: _T.lbl3,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -799,7 +766,7 @@ class _GusOrb extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withOpacity(opacity),
+        color: color.withValues(alpha: opacity),
       ),
       child: ClipOval(
         child: BackdropFilter(
