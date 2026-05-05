@@ -800,7 +800,7 @@ class _MsajiliState extends State<Msajili> {
         safeState(() => nalodi = true);
         if (widget.isSelfRegistration) {
           UserCredential creds = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-            email: baruapepeCon.text.trim(),
+            email: baruapepeCon.text.trim().toLowerCase(),
             password: nenoSiriCon.text.trim(),
           );
           await createDeits(userId: creds.user?.uid);
@@ -825,7 +825,7 @@ class _MsajiliState extends State<Msajili> {
 
           FirebaseAuth tempAuth = FirebaseAuth.instanceFor(app: tempApp);
           UserCredential creds = await tempAuth.createUserWithEmailAndPassword(
-            email: baruapepeCon.text.trim(),
+            email: baruapepeCon.text.trim().toLowerCase(),
             password: nenoSiriCon.text.trim(),
           );
 
@@ -877,7 +877,7 @@ class _MsajiliState extends State<Msajili> {
         firstName: jinafestCon.text.trim(),
         lastName: jinalastCon.text.trim(),
         phoneNumber: phnnumber,
-        email: baruapepeCon.text.trim(),
+        email: baruapepeCon.text.trim().toLowerCase(),
         balance: 1000.0,
         clearanceLevel: selClrnc,
         registrationDate: DateTime.now().toIso8601String(),

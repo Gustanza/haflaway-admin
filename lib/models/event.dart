@@ -64,6 +64,44 @@ const cardcount = 'Card Count';
 const cardcap = 'Card Capacity';
 /* create card strings */
 
+class EventLocation {
+  final String id;
+  final String label;
+  final String placeName;
+  final double? lat;
+  final double? lng;
+  final String? mapsUrl;
+
+  EventLocation({
+    required this.id,
+    required this.label,
+    required this.placeName,
+    this.lat,
+    this.lng,
+    this.mapsUrl,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'label': label,
+    'placeName': placeName,
+    if (lat != null) 'lat': lat,
+    if (lng != null) 'lng': lng,
+    if (mapsUrl != null) 'mapsUrl': mapsUrl,
+  };
+
+  factory EventLocation.fromMap(Map<String, dynamic> map) {
+    return EventLocation(
+      id: map['id'] ?? '',
+      label: map['label'] ?? '',
+      placeName: map['placeName'] ?? '',
+      lat: (map['lat'] as num?)?.toDouble(),
+      lng: (map['lng'] as num?)?.toDouble(),
+      mapsUrl: map['mapsUrl'] as String?,
+    );
+  }
+}
+
 class AttendeeLabel {
   final String id;
   final String name;
@@ -115,6 +153,7 @@ class Event {
   double? totalPayment;
   List<EventCalendar>? calendar;
   List<AttendeeLabel>? labels;
+  List<EventLocation>? locations;
 
   Event({
     this.id,
@@ -141,6 +180,7 @@ class Event {
     this.totalPayment,
     this.calendar = const [],
     this.labels = const [],
+    this.locations = const [],
   });
 
   Map<String, dynamic> toMap() => {
@@ -174,6 +214,11 @@ class Event {
     if (labels != null)
       'labels':
           labels?.map((e) {
+            return e.toMap();
+          }).toList(),
+    if (locations != null)
+      'locations':
+          locations?.map((e) {
             return e.toMap();
           }).toList(),
   };
@@ -215,6 +260,11 @@ class Event {
       labels:
           (map['labels'] as List?)?.map<AttendeeLabel>((e) {
             return AttendeeLabel.fromMap(e);
+          }).toList() ??
+          [],
+      locations:
+          (map['locations'] as List?)?.map<EventLocation>((e) {
+            return EventLocation.fromMap(e as Map<String, dynamic>);
           }).toList() ??
           [],
     );
