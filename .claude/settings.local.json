@@ -4,7 +4,9 @@
       "WebFetch(domain:maps.app.goo.gl)",
       "WebFetch(domain:www.google.com)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Administrator\\\\Documents\\\\CODEZ\\\\haflaway-admin\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Administrator\\\\Documents\\\\CODEZ\\\\haflaway-admin\" -Force)",
+      "Bash(xargs grep *)"
     ]
   }
 }
