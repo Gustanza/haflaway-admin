@@ -7,7 +7,12 @@
       "Bash(Select-Object Name)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Administrator\\\\Documents\\\\CODEZ\\\\haflaway-admin\" -Force)",
       "Bash(xargs grep *)",
-      "Bash(xargs basename -a)"
+      "Bash(xargs basename -a)",
+      "Bash(Test-Path \"c:\\\\Users\\\\Administrator\\\\Documents\\\\CODEZ\\\\haflaway-admin\\\\functions\\\\sms\\\\scanPromo.js\")",
+      "Bash(node -e \"require\\('./imagine/index'\\)\")",
+      "Bash(node -e \"require\\('./attendees/imagen'\\)\")",
+      "Bash(npm install *)",
+      "Bash(node -e \"require\\('./index'\\)\")"
     ]
   }
 }
