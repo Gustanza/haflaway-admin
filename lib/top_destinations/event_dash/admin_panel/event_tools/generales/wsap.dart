@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:http/http.dart' as http;
+import 'package:haflaway/utils/urls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:haflaway/components/buttons.dart';
@@ -290,37 +293,37 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
       isLoading = true;
     });
     try {
-      String searchKey = query.toLowerCase();
-
-      // Ensure we filter by current kardType and prefix search on name
-      QuerySnapshot<Map<String, dynamic>> res =
-          await firestore
-              .collection(ecol)
-              .doc(widget.event.id)
-              .collection(atcol)
-              .where('fullNameLower', isGreaterThanOrEqualTo: searchKey)
-              .where('fullNameLower', isLessThanOrEqualTo: searchKey + '\uf8ff')
-              .limit(100)
-              .get();
-
-      safeState(() {
-        searchResults =
-            res.docs
-                .where((doc) {
-                  try {
-                    // Adhere to kardType
-                    var krd = doc.data()['cards'][widget.kardType.name];
-                    return krd != null;
-                  } catch (e) {
-                    return false;
-                  }
-                })
-                .map<Attendee>((doc) => Attendee.fromMap(doc.id, doc.data()))
-                .take(20)
-                .toList();
-        isLoading = false;
-      });
+      final uri = Uri.parse(
+        "$getAttsUrl/?eventId=${widget.event.id}&searchKey=${Uri.encodeComponent(query)}&kardType=${widget.kardType.name}",
+      );
+      final response = await http.get(uri);
+      final body = jsonDecode(response.body);
+      if (body['status'] == true) {
+        final List data = body['data'];
+        safeState(() {
+          searchResults =
+              data
+                  .map((e) {
+                    final item = Map<String, dynamic>.from(e['item']);
+                    return Attendee.fromMap(item['id'] ?? '', item);
+                  })
+                  .where((at) {
+                    try {
+                      return at.cards[widget.kardType.name] != null;
+                    } catch (_) {
+                      return false;
+                    }
+                  })
+                  .toList();
+          isLoading = false;
+        });
+      } else {
+        safeState(() {
+          isLoading = false;
+        });
+      }
     } catch (e) {
+      debugPrint("search_error: $e");
       safeState(() {
         isLoading = false;
       });

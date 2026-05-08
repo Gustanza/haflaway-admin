@@ -12,7 +12,8 @@
       "Bash(node -e \"require\\('./imagine/index'\\)\")",
       "Bash(node -e \"require\\('./attendees/imagen'\\)\")",
       "Bash(npm install *)",
-      "Bash(node -e \"require\\('./index'\\)\")"
+      "Bash(node -e \"require\\('./index'\\)\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Administrator\\\\Documents\\\\CODEZ\\\\haflaway-admin\\\\documentation\\\\\" -Recurse -File | Select-Object FullName)"
     ]
   }
 }

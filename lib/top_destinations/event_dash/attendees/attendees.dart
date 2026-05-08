@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -30,6 +32,7 @@ import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:haflaway/utils/styles.dart';
+import 'package:haflaway/utils/urls.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'imp_preview.dart';
 
@@ -112,50 +115,55 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
   // Load first batch of attendees
   Future<void> _loadAttendees() async {
     if (isLoading) return;
+    atList = [];
+    lastDocument = null;
     setState(() {
       isLoading = true;
-      hasMore = true; // Reset hasMore on full reload
-      pageSize = atsPageSize; // Always use standard page size for initial load
+      hasMore = true;
+      pageSize = atsPageSize;
     });
     try {
-      Query<Map<String, dynamic>> query = nQwrBuilder();
-      var snapshot = await query.get();
-      if (snapshot.docs.isEmpty) {
-        setState(() {
+      // Keep fetching pages until we find records of the correct kardType
+      // (avoids showing empty when contacts are buried past the first page)
+      const maxPages = 50;
+      int pages = 0;
+      while (atList.isEmpty && hasMore && pages < maxPages) {
+        Query<Map<String, dynamic>> query =
+            lastDocument == null ? nQwrBuilder() : mQwrBuilder();
+        var snapshot = await query.get();
+        pages++;
+
+        if (snapshot.docs.isEmpty) {
           hasMore = false;
-          isLoading = false;
-          atList = []; // CRITICAL: Clear the list if no results found
-        });
-        if (_selectedKardFilter != null ||
-            _attendanceFilter != "All" ||
-            _labelFilterId != null) {
-          showToast(isGood: true, msg: "No guests found matching filters");
+          if (_selectedKardFilter != null ||
+              _attendanceFilter != "All" ||
+              _labelFilterId != null) {
+            showToast(isGood: true, msg: "No guests found matching filters");
+          }
+          break;
         }
-        return;
-      }
-      lastDocument = snapshot.docs.last;
-      setState(() {
+
+        lastDocument = snapshot.docs.last;
+        if (snapshot.docs.length < pageSize) hasMore = false;
+
         atList =
             snapshot.docs
                 .where((test) {
                   try {
                     var krd = test['cards'][widget.kardType.name];
-                    if (krd == null) {
-                      return false;
-                    } else {
-                      return true;
-                    }
+                    return krd != null;
                   } catch (e) {
                     return false;
                   }
                 })
-                .map<Attendee>((doc) {
-                  return Attendee.fromMap(doc.id, doc.data());
-                })
+                .map<Attendee>((doc) => Attendee.fromMap(doc.id, doc.data()))
                 .toList();
+      }
+      setState(() {
         isLoading = false;
       });
     } catch (e) {
+      debugPrint("_loadAttendees error: $e");
       setState(() {
         isLoading = false;
       });
@@ -180,15 +188,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       q = q.where("labelIds", arrayContains: _labelFilterId);
     }
 
-    // Add ordering based on filters
     if (_selectedKardFilter != null) {
       q = q.orderBy("cards.${widget.kardType.name}.templateCardId");
     }
     if (_attendanceFilter != "All") {
       q = q.orderBy("attendanceStatus");
     }
-
-    // Default order if no specific ordering was added
     if (_selectedKardFilter == null && _attendanceFilter == "All") {
       q = q.orderBy("createdAt", descending: true);
     }
@@ -214,14 +219,12 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       q = q.where("labelIds", arrayContains: _labelFilterId);
     }
 
-    // Add ordering
     if (_selectedKardFilter != null) {
       q = q.orderBy("cards.${widget.kardType.name}.templateCardId");
     }
     if (_attendanceFilter != "All") {
       q = q.orderBy("attendanceStatus");
     }
-
     if (_selectedKardFilter == null && _attendanceFilter == "All") {
       q = q.orderBy("createdAt", descending: true);
     }
@@ -290,35 +293,35 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       isLoading = true;
     });
     try {
-      String searchKey = query.toLowerCase();
-
-      // Ensure we filter by current kardType and prefix search on name
-      QuerySnapshot<Map<String, dynamic>> res =
-          await firestore
-              .collection(ecol)
-              .doc(widget.edata.id)
-              .collection(atcol)
-              .where('fullNameLower', isGreaterThanOrEqualTo: searchKey)
-              .where('fullNameLower', isLessThanOrEqualTo: searchKey + '\uf8ff')
-              .limit(100) // Increased limit to ensure enough filtered results
-              .get();
-
-      setState(() {
-        searchResults =
-            res.docs
-                .where((doc) {
-                  try {
-                    var krd = doc.data()['cards'][widget.kardType.name];
-                    return krd != null;
-                  } catch (e) {
-                    return false;
-                  }
-                })
-                .map<Attendee>((doc) => Attendee.fromMap(doc.id, doc.data()))
-                .take(20) // Only take top 20 after filtering
-                .toList();
-        isLoading = false;
-      });
+      final uri = Uri.parse(
+        "$getAttsUrl/?eventId=${widget.edata.id}&searchKey=${Uri.encodeComponent(query)}&kardType=${widget.kardType.name}",
+      );
+      final response = await http.get(uri);
+      final body = jsonDecode(response.body);
+      if (body['status'] == true) {
+        final List data = body['data'];
+        setState(() {
+          searchResults =
+              data
+                  .map((e) {
+                    final item = Map<String, dynamic>.from(e['item']);
+                    return Attendee.fromMap(item['id'] ?? '', item);
+                  })
+                  .where((at) {
+                    try {
+                      return at.cards[widget.kardType.name] != null;
+                    } catch (_) {
+                      return false;
+                    }
+                  })
+                  .toList();
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+      }
     } catch (e) {
       debugPrint("search_error: $e");
       setState(() {
@@ -771,7 +774,20 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
               child: _GusOrb(size: 260, color: _T.lime, opacity: 0.06),
             ),
 
-            RefreshIndicator(
+            Column(
+              children: [
+                SafeArea(
+                  bottom: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _topBar(inSelectMode),
+                      if (!isSearching) _titleBlock(),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
               onRefresh: () async {
                 await _loadAttendees();
               },
@@ -783,20 +799,6 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
                 slivers: [
-                  // ── Header Section ──
-                  SliverToBoxAdapter(
-                    child: SafeArea(
-                      bottom: false,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _topBar(inSelectMode),
-                          if (!isSearching) _titleBlock(),
-                        ],
-                      ),
-                    ),
-                  ),
-
                   // ── Pending Notice ──
                   if (!isSearching &&
                       atList.any((at) => at.isCardPending(widget.kardType)))
@@ -842,19 +844,22 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                     )
                   else if ((isSearching ? searchResults : atList).isEmpty &&
                       !isLoading)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child:
-                          isSearching
-                              ? searchController.text.isEmpty
-                                  ? const GusSearchEmpty.prompt()
-                                  : GusSearchEmpty.noResults(
-                                    query: searchController.text,
-                                  )
-                              : BuildNoDt(
-                                string: "no data",
-                                isRefreshed: () async => await _loadAttendees(),
-                              ),
+                    SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.65,
+                        child:
+                            isSearching
+                                ? searchController.text.isEmpty
+                                    ? const GusSearchEmpty.prompt()
+                                    : GusSearchEmpty.noResults(
+                                      query: searchController.text,
+                                    )
+                                : BuildNoDt(
+                                  string: "no data",
+                                  isRefreshed: () async =>
+                                      await _loadAttendees(),
+                                ),
+                      ),
                     )
                   else
                     SliverPadding(
@@ -967,6 +972,9 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                   ),
                 ],
               ),
+            ),
+                ),
+              ],
             ),
           ],
         ),
