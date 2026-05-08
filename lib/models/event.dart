@@ -38,6 +38,7 @@ String eadminsIds = 'adminsIds';
 String eusersIds = 'usersIds';
 String einvmessage = "invitationMessage";
 String eremmessage = "reminderMessage";
+String eScanPromo = "scanPromo";
 /* important */
 
 String estartdate = "start_date";
@@ -154,6 +155,7 @@ class Event {
   List<EventCalendar>? calendar;
   List<AttendeeLabel>? labels;
   List<EventLocation>? locations;
+  String? scanPromo;
 
   Event({
     this.id,
@@ -181,6 +183,7 @@ class Event {
     this.calendar = const [],
     this.labels = const [],
     this.locations = const [],
+    this.scanPromo,
   });
 
   Map<String, dynamic> toMap() => {
@@ -221,6 +224,7 @@ class Event {
           locations?.map((e) {
             return e.toMap();
           }).toList(),
+    if (scanPromo != null) 'scanPromo': scanPromo,
   };
 
   factory Event.fromMap(String id, Map<String, dynamic> map) {
@@ -267,6 +271,7 @@ class Event {
             return EventLocation.fromMap(e as Map<String, dynamic>);
           }).toList() ??
           [],
+      scanPromo: map['scanPromo'] as String?,
     );
   }
 }

@@ -73,6 +73,7 @@ class _EventSettingsState extends State<EventSettings> {
   int reminderHoursBefore = 24;
   bool _isPublished = false;
   List<EventLocation> _locations = [];
+  String? _scanPromo;
 
   @override
   void initState() {
@@ -87,6 +88,7 @@ class _EventSettingsState extends State<EventSettings> {
         selectedLanguage = widget.event?.language ?? 'sw';
         _isPublished = (widget.event?.status ?? 'draft').toLowerCase() == 'published';
         _locations = List<EventLocation>.from(widget.event?.locations ?? []);
+        _scanPromo = widget.event?.scanPromo;
       });
     }
   }
@@ -170,6 +172,38 @@ class _EventSettingsState extends State<EventSettings> {
     }
   }
 
+  Future<void> _saveScanPromo(String msg) async {
+    if (widget.event == null) return;
+    final trimmed = msg.trim();
+    setState(() => _scanPromo = trimmed.isEmpty ? null : trimmed);
+    try {
+      if (trimmed.isEmpty) {
+        await firestore.collection(ecol).doc(widget.event!.id).update({
+          eScanPromo: FieldValue.delete(),
+        });
+      } else {
+        await firestore.collection(ecol).doc(widget.event!.id).update({
+          eScanPromo: trimmed,
+        });
+      }
+      showToast(isGood: true, msg: trimmed.isEmpty ? 'Promo message removed' : 'Promo message saved');
+    } catch (e) {
+      showToast(isGood: false, msg: 'Error: $e');
+    }
+  }
+
+  void _showScanPromoSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ScanPromoSheet(
+        initial: _scanPromo,
+        onSave: _saveScanPromo,
+      ),
+    );
+  }
+
   Future<void> _deleteReport(String reportId, String? storagePath) async {
     if (widget.event == null) return;
     try {
@@ -242,6 +276,15 @@ class _EventSettingsState extends State<EventSettings> {
                           ),
                           const SizedBox(height: 12),
                           _buildReportsSection(),
+                          const SizedBox(height: 24),
+
+                          _sectionHeader(
+                            icon: Icons.campaign_rounded,
+                            title: "SCAN PROMO",
+                            subtitle: "Post check-in promotional message",
+                          ),
+                          const SizedBox(height: 12),
+                          _buildScanPromoSection(),
                           const SizedBox(height: 24),
 
                           _sectionHeader(
@@ -403,8 +446,10 @@ class _EventSettingsState extends State<EventSettings> {
           isLoading: false,
           onTap: _showAddLocationSheet,
         ),
-        if (_locations.isNotEmpty) ...[
-          const SizedBox(height: 12),
+        const SizedBox(height: 12),
+        if (_locations.isEmpty)
+          _buildPlaceholderSection("No locations added yet")
+        else
           Container(
             decoration: BoxDecoration(
               color: _T.card,
@@ -423,7 +468,6 @@ class _EventSettingsState extends State<EventSettings> {
               itemBuilder: (_, i) => _buildLocationTile(_locations[i]),
             ),
           ),
-        ],
       ],
     );
   }
@@ -488,6 +532,63 @@ class _EventSettingsState extends State<EventSettings> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildScanPromoSection() {
+    final hasMsg = _scanPromo != null && _scanPromo!.isNotEmpty;
+    return Column(
+      children: [
+        _buildActionTile(
+          icon: hasMsg ? Icons.edit_rounded : Icons.add_comment_rounded,
+          title: hasMsg ? 'Edit Promo Message' : 'Set Promo Message',
+          isLoading: false,
+          onTap: _showScanPromoSheet,
+        ),
+        const SizedBox(height: 12),
+        if (!hasMsg)
+          _buildPlaceholderSection("No promo message set")
+        else
+          GestureDetector(
+            onTap: _showScanPromoSheet,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _T.sep),
+              ),
+              padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _T.lime.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.campaign_rounded, color: _T.lime, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _scanPromo!,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: _T.f(size: 13, color: _T.lbl2, height: 1.55),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _saveScanPromo(''),
+                    child: Icon(Icons.delete_outline_rounded, color: Colors.redAccent.withValues(alpha: 0.7), size: 18),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1702,6 +1803,152 @@ class _AddLocationSheetState extends State<_AddLocationSheet> {
               'Add Location',
               style: _T.f(size: 15, weight: FontWeight.w700, color: _T.lime),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scan Promo Bottom Sheet
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ScanPromoSheet extends StatefulWidget {
+  final String? initial;
+  final Future<void> Function(String) onSave;
+  const _ScanPromoSheet({required this.initial, required this.onSave});
+
+  @override
+  State<_ScanPromoSheet> createState() => _ScanPromoSheetState();
+}
+
+class _ScanPromoSheetState extends State<_ScanPromoSheet> {
+  late final TextEditingController _ctrl;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.initial ?? '');
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+    await widget.onSave(_ctrl.text);
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top:   BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 0.5),
+              left:  BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 0.5),
+              right: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 0.5),
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 12,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Scan Promo Message', style: _T.f(size: 18, weight: FontWeight.w700, color: _T.white)),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 0.5),
+                      ),
+                      child: const Icon(Icons.close, color: _T.lbl2, size: 16),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'This message will be sent to attendees after a successful check-in scan.',
+                style: _T.f(size: 12, color: _T.lbl3, height: 1.5),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 0.5),
+                ),
+                child: TextField(
+                  controller: _ctrl,
+                  maxLines: 6,
+                  minLines: 4,
+                  style: _T.f(size: 14, height: 1.55),
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: 'Write your promotional message here...',
+                    hintStyle: _T.f(size: 14, color: _T.lbl4),
+                    contentPadding: const EdgeInsets.all(14),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: _ctrl.text.trim().isNotEmpty && !_isSaving ? _submit : null,
+                child: AnimatedOpacity(
+                  opacity: _ctrl.text.trim().isNotEmpty && !_isSaving ? 1.0 : 0.4,
+                  duration: const Duration(milliseconds: 150),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    decoration: BoxDecoration(
+                      color: _T.limeDim,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _T.lime.withValues(alpha: 0.5), width: 0.8),
+                    ),
+                    child: Center(
+                      child: _isSaving
+                          ? const CupertinoActivityIndicator(color: _T.lime)
+                          : Text('Save Message', style: _T.f(size: 15, weight: FontWeight.w700, color: _T.lime)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

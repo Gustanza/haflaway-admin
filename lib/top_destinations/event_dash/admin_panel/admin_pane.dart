@@ -1025,7 +1025,7 @@ class _AdminPanelState extends State<AdminPanel> {
               'Delete Checkpoint',
               style: _T.f(size: 17, weight: FontWeight.w700),
             ),
-            content: Text(
+            content: Text( 
               'Delete "${checkpoint.name}"?\nThis cannot be undone.',
               style: _T.f(size: 14, color: _T.lbl2, height: 1.5),
             ),
