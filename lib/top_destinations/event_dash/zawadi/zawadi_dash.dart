@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/models/zawadi_item.dart';
 import 'package:haflaway/top_destinations/event_dash/zawadi/zawadi_item_detail.dart';
+import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 
@@ -86,34 +87,16 @@ class _ZawadiDashState extends State<ZawadiDash> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
-            child: Container(
-              decoration: BoxDecoration(
-                color: _T.bg.withValues(alpha: 0.72),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(28)),
-                border: Border(
-                  top: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.13), width: 0.8),
-                  left: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.13), width: 0.8),
-                  right: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.13), width: 0.8),
-                ),
-              ),
-              child: _SheetForm(
-                formKey: _formKey,
-                titleCtrl: _titleCtrl,
-                descCtrl: _descCtrl,
-                amountCtrl: _amountCtrl,
-                isEdit: item != null,
-                saving: _saving,
-                onSave: () => _save(item?.id),
-              ),
-            ),
+        child: modalBtmSheet(
+          bdrdm: 28,
+          child: _SheetForm(
+            formKey: _formKey,
+            titleCtrl: _titleCtrl,
+            descCtrl: _descCtrl,
+            amountCtrl: _amountCtrl,
+            isEdit: item != null,
+            saving: _saving,
+            onSave: () => _save(item?.id),
           ),
         ),
       ),
@@ -157,9 +140,8 @@ class _ZawadiDashState extends State<ZawadiDash> {
   void _confirmDelete(ZawadiItem item) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: _T.card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (ctx) => glassDialog(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -189,44 +171,48 @@ class _ZawadiDashState extends State<ZawadiDash> {
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _T.red,
-                        foregroundColor: Colors.white,
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
-                      ),
-                      onPressed: () async {
+                    child: GestureDetector(
+                      onTap: () async {
                         Navigator.of(ctx).pop();
                         await _col.doc(item.id).delete();
                         showToast(isGood: true, msg: 'Deleted');
                       },
-                      child: Text('Delete',
-                          style: _T.f(
-                              size: 14,
-                              weight: FontWeight.w700,
-                              color: Colors.white)),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: _T.red.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: _T.red.withValues(alpha: 0.4), width: 0.8),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text('Delete',
+                            style: _T.f(
+                                size: 14,
+                                weight: FontWeight.w700,
+                                color: _T.red)),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: _T.lbl2,
-                        side:
-                            const BorderSide(color: _T.sep, width: 0.8),
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(ctx).pop(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.1)),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text('Cancel',
+                            style: _T.f(
+                                size: 14,
+                                weight: FontWeight.w600,
+                                color: _T.lbl2)),
                       ),
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      child: Text('Cancel',
-                          style: _T.f(
-                              size: 14, weight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -791,7 +777,7 @@ class _SheetForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
       child: Form(
         key: formKey,
         child: Column(
@@ -920,6 +906,7 @@ class _SheetForm extends StatelessWidget {
       child: TextFormField(
         controller: controller,
         keyboardType: keyboard,
+        textCapitalization: TextCapitalization.sentences,
         maxLines: maxLines,
         style: _T.f(size: 15),
         decoration: InputDecoration(

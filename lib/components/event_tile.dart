@@ -294,23 +294,32 @@ class EventCardHero extends StatelessWidget {
   }
 
   Widget _frostedZone(String formattedDt, int attendeeCount) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 26, sigmaY: 26),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 22, 20, 36),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0x00000000), Color(0x85000000), Color(0xC7000000)],
-              stops: [0.0, 0.38, 1.0],
+    return ShaderMask(
+      shaderCallback: (bounds) => const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Colors.transparent, Colors.white],
+        stops: [0.0, 0.28],
+      ).createShader(bounds),
+      blendMode: BlendMode.dstIn,
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 72, sigmaY: 72),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 36),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0x00000000), Color(0x44000000), Color(0x88000000)],
+                stops: [0.0, 0.45, 1.0],
+              ),
             ),
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              const SizedBox(height: 180),
               if (attendeeCount > 0) ...[
                 _attendeeRow(attendeeCount),
                 const SizedBox(height: 14),
@@ -363,7 +372,8 @@ class EventCardHero extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _attendeeRow(int total) {

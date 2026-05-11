@@ -9,6 +9,7 @@ import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
+import 'package:haflaway/models/zawadi_item.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/in_check.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/gallery/event_gallery.dart';
@@ -89,6 +90,10 @@ class _AdminPanelState extends State<AdminPanel> {
   int cardTempsNo = 0;
   int evMsgTmpCount = 0;
   int galleryCount = 0;
+  double _zawadiTotalFunded = 0;
+  double _zawadiTotalTarget = 0;
+  int _zawadiItemCount = 0;
+  int _zawadiContributors = 0;
   List<CheckPoint> checkpoints = [];
 
   final firestore = FirebaseFirestore.instance;
@@ -128,7 +133,11 @@ class _AdminPanelState extends State<AdminPanel> {
       final galleryRef = firestore
           .collection(ecol)
           .doc(widget.eventO.id)
-          .collection(egalsub);
+          .collection('galleryFolders');
+      final zawadiRef = firestore
+          .collection(ecol)
+          .doc(widget.eventO.id)
+          .collection(zawadiItemsCol);
 
       final result = await Future.wait([
         eventRef.get(),
@@ -137,6 +146,7 @@ class _AdminPanelState extends State<AdminPanel> {
         msgsRef.count().get(),
         checkPointsRef.get(),
         galleryRef.count().get(),
+        zawadiRef.get(),
       ]);
 
       final eventSnapshot = result[0] as DocumentSnapshot<Map<String, dynamic>>;
@@ -182,6 +192,14 @@ class _AdminPanelState extends State<AdminPanel> {
       cardTempsNo = crdsSnapshot.count ?? 0;
       evMsgTmpCount = msgsSnapshot.count ?? 0;
       galleryCount = galSnapshot.count ?? 0;
+
+      final zawadiSnapshot = result[6] as QuerySnapshot<Map<String, dynamic>>;
+      final zawadiItems = zawadiSnapshot.docs.map((d) => ZawadiItem.fromDoc(d)).toList();
+      _zawadiTotalFunded = zawadiItems.fold(0, (s, i) => s + i.totalFunded);
+      _zawadiTotalTarget = zawadiItems.fold(0, (s, i) => s + i.targetAmount);
+      _zawadiItemCount = zawadiItems.length;
+      _zawadiContributors = zawadiItems.fold(0, (s, i) => s + i.contributorCount);
+
       adminsCount = event?.adminsIds?.length ?? 0;
       scannersCount = event?.usersIds?.length ?? 0;
 
@@ -478,7 +496,7 @@ class _AdminPanelState extends State<AdminPanel> {
           // Meta row — date + location
           if (date.isNotEmpty || loc.isNotEmpty)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
               decoration: BoxDecoration(
                 color: _T.card,
                 borderRadius: BorderRadius.circular(14),
@@ -1309,86 +1327,172 @@ class _AdminPanelState extends State<AdminPanel> {
     );
   }
 
+  // ── Gift of Love card (mirrors _contributionsCard) ───────────────────────
+
+  Widget _zawadiCard() {
+    double pct = _zawadiTotalTarget > 0
+        ? (_zawadiTotalFunded / _zawadiTotalTarget).clamp(0.0, 1.0)
+        : 0.0;
+
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ZawadiDash(
+              eventId: event?.id ?? widget.eventO.id ?? '',
+              eventTitle: event?.title ?? widget.eventO.title ?? '',
+            ),
+          ),
+        );
+        loadData();
+      },
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 28, 16, 8),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: _T.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _T.sep, width: 0.8),
+          boxShadow: [
+            BoxShadow(
+              color: _T.lime.withValues(alpha: 0.06),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header row ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: _T.lime.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: const Icon(
+                        Icons.card_giftcard_rounded,
+                        color: _T.lime,
+                        size: 15,
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    Text(
+                      'GIFT OF LOVE',
+                      style: _T.f(
+                        size: 11,
+                        weight: FontWeight.w700,
+                        color: _T.lbl3,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _T.limeDim,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _T.lime.withValues(alpha: 0.3),
+                      width: 0.6,
+                    ),
+                  ),
+                  child: Text(
+                    '${(pct * 100).round()}%',
+                    style: _T.f(size: 13, weight: FontWeight.w800, color: _T.lime),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // ── Total funded ──
+            Text(
+              formatMoney(_zawadiTotalFunded, currency: 'TZS'),
+              style: _T.f(
+                size: 28,
+                weight: FontWeight.w800,
+                color: _T.white,
+                letterSpacing: -1.2,
+                height: 1.0,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Progress bar ──
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Stack(
+                children: [
+                  Container(height: 6, color: _T.card3),
+                  FractionallySizedBox(
+                    widthFactor: pct,
+                    child: Container(
+                      height: 6,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [_T.lime.withValues(alpha: 0.7), _T.lime],
+                        ),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // ── Footer row ──
+            Row(
+              children: [
+                Text(
+                  'Goal: ${formatMoney(_zawadiTotalTarget, currency: "TZS")}',
+                  style: _T.f(size: 12, color: _T.lbl3),
+                ),
+                const Spacer(),
+                if (_zawadiItemCount > 0) ...[
+                  Text(
+                    '$_zawadiItemCount ${_zawadiItemCount == 1 ? 'item' : 'items'}',
+                    style: _T.f(size: 12, color: _T.lbl3),
+                  ),
+                  Container(
+                    width: 3,
+                    height: 3,
+                    margin: const EdgeInsets.symmetric(horizontal: 6),
+                    decoration: const BoxDecoration(
+                      color: _T.lbl4,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Text(
+                    '$_zawadiContributors ${_zawadiContributors == 1 ? 'gift' : 'gifts'}',
+                    style: _T.f(size: 12, color: _T.lbl3),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                const Icon(Icons.chevron_right_rounded, color: _T.lbl4, size: 18),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ── Gift of Love + Gallery section ───────────────────────────────────────
 
   Widget _zawadiSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionHeader('GIFT OF LOVE'),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: GestureDetector(
-            onTap: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ZawadiDash(
-                    eventId: event?.id ?? widget.eventO.id ?? '',
-                    eventTitle: event?.title ?? widget.eventO.title ?? '',
-                  ),
-                ),
-              );
-              loadData();
-            },
-            child: Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: _T.card,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _T.sep, width: 0.8),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(9),
-                    decoration: BoxDecoration(
-                      color: _T.lime.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    child: const Icon(
-                      Icons.card_giftcard_rounded,
-                      color: _T.lime,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Gift of Love',
-                          style: _T.f(
-                            size: 15,
-                            weight: FontWeight.w500,
-                            color: _T.lbl1,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          'Gift fund items',
-                          style: _T.f(size: 12, color: _T.lbl3),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: _T.card2,
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                    child: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: _T.lbl3,
-                      size: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        _zawadiCard(),
         _sectionHeader('GALLERY', topPadding: 14),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -1435,7 +1539,7 @@ class _AdminPanelState extends State<AdminPanel> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '$galleryCount photos',
+                          '$galleryCount ${galleryCount == 1 ? 'folder' : 'folders'}',
                           style: _T.f(size: 12, color: _T.lbl3),
                         ),
                       ],

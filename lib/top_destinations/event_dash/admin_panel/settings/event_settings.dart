@@ -48,7 +48,7 @@ class _T {
   );
 }
 
-class EventSettings extends StatefulWidget {
+class EventSettings extends StatefulWidget { 
   final Event? event;
   const EventSettings({super.key, required this.event});
 
