@@ -5,7 +5,6 @@ import 'package:haflaway/hfhttp/clientelle.dart';
 import 'package:haflaway/models/mchango.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:excel/excel.dart' as xcl;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -88,13 +87,13 @@ class ImpPreview extends StatefulWidget {
   final List<Attendee>? atList;
   final String templateCardId;
   final Map<String, dynamic>? mapp;
-  final Uint8List? xcelBytes;
+  final List<List<dynamic>>? importRows;
   final List<String> labelIds;
   const ImpPreview({
     super.key,
     this.mapp,
     this.atList,
-    this.xcelBytes,
+    this.importRows,
     this.labelIds = const [],
     required this.event,
     required this.templateCardId,
@@ -106,7 +105,6 @@ class ImpPreview extends StatefulWidget {
 }
 
 class _ImpPreviewState extends State<ImpPreview> {
-  xcl.Excel? excel;
   List chk = [];
   List<Attendee> attendees = [];
   bool isLoading = false;
@@ -119,7 +117,7 @@ class _ImpPreviewState extends State<ImpPreview> {
   @override
   void initState() {
     super.initState();
-    if (widget.xcelBytes != null) {
+    if (widget.importRows != null) {
       manouverExcel();
     } else {
       setAtList();
@@ -152,72 +150,47 @@ class _ImpPreviewState extends State<ImpPreview> {
 
   manouverExcel() async {
     try {
-      if (mounted) {
-        setState(() {
-          isLoading = true;
-          hasError = false;
-        });
-      }
-      //
+      if (mounted) setState(() { isLoading = true; hasError = false; });
+
       int atnidx = widget.mapp!['fullName']!;
       int atphnidx = widget.mapp!['phone']!;
       int? atahadiidx = widget.mapp!['ahadi'];
       int? atmchangoidx = widget.mapp!['mchango'];
-      //
-      //
-      var bytes = widget.xcelBytes;
-      excel = xcl.Excel.decodeBytes(bytes!);
-      var tblKey = excel?.tables.keys.firstOrNull;
-      var table = excel?.tables[tblKey];
-      List<List<xcl.Data?>>? rows = table?.rows;
-      if (rows == null || rows.isEmpty) {
-        return;
-      }
-      for (var i = 0; i < rows.length; i++) {
-        if (i == 0) {
-          continue;
-        }
-        var namecell = rows[i][atnidx];
-        var phonecell = rows[i][atphnidx];
-        var ahadicell = atahadiidx != null ? rows[i][atahadiidx] : null;
-        var mchangocell = atmchangoidx != null ? rows[i][atmchangoidx] : null;
-        var phoneItself = transformNumber("${phonecell?.value}");
-        Attendee attendee = Attendee(
+
+      final rows = widget.importRows ?? [];
+      for (final row in rows) {
+        final name = row.length > atnidx ? "${row[atnidx]}" : "";
+        final phone = row.length > atphnidx ? "${row[atphnidx]}" : "";
+        if (name.isEmpty && phone.isEmpty) continue;
+
+        final ahadi = atahadiidx != null && row.length > atahadiidx
+            ? "${row[atahadiidx]}"
+            : null;
+        final mchango = atmchangoidx != null && row.length > atmchangoidx
+            ? "${row[atmchangoidx]}"
+            : null;
+
+        final isContrib = widget.kardType == KardType.contribution ||
+            widget.kardType == KardType.contact;
+
+        attendees.add(Attendee(
           cards: {},
           checkinStatus: [],
           createdAt: DateTime.now(),
           email: '',
-          phone: phoneItself,
+          phone: transformNumber(phone),
           messages: {},
           labelIds: List<String>.from(widget.labelIds),
-          pledgedAmount:
-              (widget.kardType == KardType.contribution ||
-                      widget.kardType == KardType.contact)
-                  ? double.tryParse("${ahadicell?.value}") ?? 0.0
-                  : null,
-          paidAmount:
-              (widget.kardType == KardType.contribution ||
-                      widget.kardType == KardType.contact)
-                  ? double.tryParse("${mchangocell?.value}") ?? 0.0
-                  : null,
-          fullName: "${namecell?.value}".toUpperCase(),
-          fullNameLower: "${namecell?.value}".toLowerCase(),
-        );
-        attendees.add(attendee);
+          pledgedAmount: isContrib ? double.tryParse(ahadi ?? "") ?? 0.0 : null,
+          paidAmount: isContrib ? double.tryParse(mchango ?? "") ?? 0.0 : null,
+          fullName: name.toUpperCase(),
+          fullNameLower: name.toLowerCase(),
+        ));
       }
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-          hasError = false;
-        });
-      }
+
+      if (mounted) setState(() { isLoading = false; hasError = false; });
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-          hasError = true;
-        });
-      }
+      if (mounted) setState(() { isLoading = false; hasError = true; });
     }
   }
 

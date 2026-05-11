@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:haflaway/components/event_tile.dart';
+import 'package:haflaway/components/event_tile.dart' show EventTile, EventCardHero;
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/admin_pane.dart';
@@ -73,6 +73,8 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
   bool isSearching = false;
   TextEditingController searchController = TextEditingController();
   List<Event> searchResults = [];
+  final PageController _pageController = PageController(viewportFraction: 0.90);
+  int _currentPage = 0;
 
   @override
   void initState() {
@@ -87,6 +89,7 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
     super.dispose();
     scrollController.removeListener(_scrollListener);
     scrollController.dispose();
+    _pageController.dispose();
   }
 
   void _scrollListener() {
@@ -104,7 +107,8 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
     var nowDt = DateTime.now();
     var now = nowDt.toIso8601String();
     try {
-      Query<Map<String, dynamic>> query = firestore.collection(ecol)
+      Query<Map<String, dynamic>> query = firestore
+          .collection(ecol)
           .where("adminsIds", arrayContains: uid);
       if (currentFilter == 'Upcoming') {
         // Events that haven't started yet — soonest first
@@ -173,7 +177,11 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
     } catch (e) {
       showToast(isGood: false, msg: "$e");
     }
-    safeState(() => isLoading = false);
+    safeState(() {
+      isLoading = false;
+      _currentPage = 0;
+    });
+    if (_pageController.hasClients) _pageController.jumpToPage(0);
   }
 
   loadMoreEvents() async {
@@ -181,7 +189,8 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
     var nowDt = DateTime.now();
     var now = nowDt.toIso8601String();
     try {
-      Query<Map<String, dynamic>> query = firestore.collection(ecol)
+      Query<Map<String, dynamic>> query = firestore
+          .collection(ecol)
           .where("adminsIds", arrayContains: uid);
       if (currentFilter == 'Upcoming') {
         query = query
@@ -258,7 +267,6 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
 
   @override
   Widget build(BuildContext context) {
-    final activeList = isSearching ? searchResults : events;
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: _T.bg,
@@ -285,80 +293,33 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                     onRefresh: () async => await loadEvents(),
                     color: _T.lime,
                     backgroundColor: _T.card2,
-                    child:
-                        activeList.isEmpty && isLoading && !isSearching
+                    child: isSearching
+                        // ── Search mode: vertical list with EventTile ──────
+                        ? (searchResults.isEmpty && isLoading
                             ? buildLoader()
-                            : activeList.isEmpty && !isLoading
+                            : searchResults.isEmpty
                             ? BuildNoDt(
-                              string:
-                                  isSearching
-                                      ? "No Results Found"
-                                      : "No Events Found",
-                              isRefreshed: () async {
-                                if (isSearching) {
-                                  performSearch(searchController.text);
-                                } else {
-                                  await loadEvents();
-                                }
-                              },
-                            )
+                                string: "No Results Found",
+                                isRefreshed: () async =>
+                                    performSearch(searchController.text),
+                              )
                             : ListView.builder(
-                              controller: scrollController,
-                              padding: const EdgeInsets.fromLTRB(
-                                psm,
-                                16,
-                                psm,
-                                120,
-                              ),
-                              itemCount:
-                                  activeList.length + (isSearching ? 0 : 1),
-                              itemBuilder: (context, index) {
-                                if (index == activeList.length) {
-                                  return isLoading
-                                      ? Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 24,
-                                        ),
-                                        child: Center(
-                                          child: CupertinoActivityIndicator(
-                                            color: _T.lime,
-                                          ),
-                                        ),
-                                      )
-                                      : const SizedBox.shrink();
-                                }
-                                if (index >= activeList.length) {
-                                  return const SizedBox.shrink();
-                                }
-                                final ev = activeList[index];
-                                return TweenAnimationBuilder<double>(
-                                  key: ValueKey('ev_${ev.id}'),
-                                  tween: Tween(begin: 0.0, end: 1.0),
-                                  duration: Duration(
-                                    milliseconds:
-                                        300 + (index.clamp(0, 8) * 60),
-                                  ),
-                                  curve: Curves.easeOutCubic,
-                                  builder:
-                                      (context, value, child) => Opacity(
-                                        opacity: value,
-                                        child: Transform.translate(
-                                          offset: Offset(0, 20 * (1 - value)),
-                                          child: child,
-                                        ),
-                                      ),
-                                  child: Padding(
+                                controller: scrollController,
+                                padding: const EdgeInsets.fromLTRB(psm, 16, psm, 120),
+                                itemCount: searchResults.length,
+                                itemBuilder: (context, index) {
+                                  final ev = searchResults[index];
+                                  return Padding(
                                     padding: const EdgeInsets.only(bottom: 14),
                                     child: GestureDetector(
                                       onTap: () async {
                                         if (ev.categoryLevel == '0') {
                                           await Navigator.of(context).push(
                                             MaterialPageRoute(
-                                              builder:
-                                                  (_) => AdminPanel(
-                                                    isAdmin: true,
-                                                    eventO: ev,
-                                                  ),
+                                              builder: (_) => AdminPanel(
+                                                isAdmin: true,
+                                                eventO: ev,
+                                              ),
                                             ),
                                           );
                                           loadEvents();
@@ -369,10 +330,68 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                                         onRefresh: loadEvents,
                                       ),
                                     ),
+                                  );
+                                },
+                              ))
+                        // ── Normal mode: horizontal hero carousel ──────────
+                        : events.isEmpty && isLoading
+                        ? buildLoader()
+                        : events.isEmpty
+                        ? BuildNoDt(
+                            string: "No Events Found",
+                            isRefreshed: () async => await loadEvents(),
+                          )
+                        : Column(
+                            children: [
+                              Expanded(
+                                child: RefreshIndicator(
+                                  onRefresh: () async => await loadEvents(),
+                                  color: _T.lime,
+                                  backgroundColor: _T.card2,
+                                  child: PageView.builder(
+                                    controller: _pageController,
+                                    onPageChanged: (i) {
+                                      safeState(() => _currentPage = i);
+                                      if (i >= events.length - 2 && !isLoading) {
+                                        loadMoreEvents();
+                                      }
+                                    },
+                                    itemCount: events.length,
+                                    itemBuilder: (ctx, i) {
+                                      final ev = events[i];
+                                      return Padding(
+                                        padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            if (ev.categoryLevel == '0') {
+                                              await Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) => AdminPanel(
+                                                    isAdmin: true,
+                                                    eventO: ev,
+                                                  ),
+                                                ),
+                                              );
+                                              loadEvents();
+                                            }
+                                          },
+                                          child: EventCardHero(eventData: ev),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                );
-                              },
-                            ),
+                                ),
+                              ),
+                              if (events.length > 1) ...[
+                                const SizedBox(height: 12),
+                                _PageDots(
+                                  count: events.length,
+                                  current: _currentPage,
+                                ),
+                              ],
+                              const SizedBox(height: 24),
+                            ],
+                          ),
                   ),
                 ),
               ],
@@ -616,7 +635,8 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
     }
     safeState(() => isLoading = true);
     try {
-      Query<Map<String, dynamic>> queryRef = firestore.collection(ecol)
+      Query<Map<String, dynamic>> queryRef = firestore
+          .collection(ecol)
           .where("adminsIds", arrayContains: uid);
       final searchKey = query.toLowerCase();
       queryRef = queryRef
@@ -631,6 +651,37 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
       showToast(isGood: false, msg: "Search failed: $e");
     }
     safeState(() => isLoading = false);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page-dot indicator for the hero carousel
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PageDots extends StatelessWidget {
+  final int count;
+  final int current;
+  const _PageDots({required this.count, required this.current});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(count.clamp(0, 10), (i) {
+        final isActive = i == current;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          width: isActive ? 20 : 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: isActive ? _T.lime : _T.sep,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        );
+      }),
+    );
   }
 }
 

@@ -1,3 +1,4 @@
+import 'dart:ui' show ImageFilter;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -235,4 +236,230 @@ class _EventTileState extends State<EventTile> {
     );
   }
 
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EventCardHero — full-bleed carousel card (Apple Invites style)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class EventCardHero extends StatelessWidget {
+  final Event eventData;
+  const EventCardHero({super.key, required this.eventData});
+
+  @override
+  Widget build(BuildContext context) {
+    final parsed       = DateTime.parse(eventData.startDate!);
+    final formattedDt  = formatDate(dtime: parsed);
+    final status       = eventData.status ?? 'Draft';
+    final isPublished  = status.toLowerCase() == 'published';
+    final attendeeCount = (eventData.usersIds ?? []).length;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 1. Full-bleed image
+          buildImage(url: eventData.eventThumbnail),
+
+          // 2. Top vignette — keeps badges readable against bright photos
+          Positioned(
+            top: 0, left: 0, right: 0,
+            child: Container(
+              height: 130,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x73000000), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+
+          // 3. Bottom frosted glass zone — blurs the image behind it
+          Positioned(
+            bottom: 0, left: 0, right: 0,
+            child: _frostedZone(formattedDt, attendeeCount),
+          ),
+
+          // 4. "Hosting" badge — top-left
+          Positioned(top: 16, left: 16, child: _hostingBadge()),
+
+          // 5. Status badge — top-right
+          Positioned(top: 16, right: 16, child: _statusBadge(isPublished, status)),
+        ],
+      ),
+    );
+  }
+
+  Widget _frostedZone(String formattedDt, int attendeeCount) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 26, sigmaY: 26),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 36),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0x00000000), Color(0x85000000), Color(0xC7000000)],
+              stops: [0.0, 0.38, 1.0],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (attendeeCount > 0) ...[
+                _attendeeRow(attendeeCount),
+                const SizedBox(height: 14),
+              ],
+              Text(
+                eventData.title ?? '',
+                style: _E.f(
+                  size: 26,
+                  weight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.6,
+                  height: 1.15,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Icon(Icons.access_time_rounded, color: _E.lime, size: 13),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      formattedDt,
+                      style: _E.f(size: 12, color: Color(0xBFFFFFFF)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              if ((eventData.location ?? '').isNotEmpty) ...[
+                const SizedBox(height: 5),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, color: _E.lime, size: 13),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        eventData.location!,
+                        style: _E.f(size: 12, color: Color(0x99FFFFFF)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _attendeeRow(int total) {
+    const avatarColors = [
+      Color(0xFF5E5CE6),
+      Color(0xFFFF6B6B),
+      Color(0xFF30D158),
+      Color(0xFFFF9F0A),
+      Color(0xFF64D2FF),
+    ];
+    final shown = total.clamp(0, 5);
+
+    return Row(
+      children: [
+        SizedBox(
+          height: 28,
+          width: shown * 20.0 + 8,
+          child: Stack(
+            children: List.generate(shown, (i) => Positioned(
+              left: i * 20.0,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: avatarColors[i % avatarColors.length],
+                  border: Border.all(color: const Color(0x99000000), width: 1.5),
+                ),
+                child: const Icon(Icons.person, size: 13, color: Colors.white),
+              ),
+            )),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          '$total attending',
+          style: _E.f(size: 12, weight: FontWeight.w600, color: Color(0xCCFFFFFF)),
+        ),
+      ],
+    );
+  }
+
+  Widget _hostingBadge() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: const Color(0x61000000),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0x26FFFFFF), width: 0.8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.workspace_premium_rounded, color: _E.lime, size: 14),
+              const SizedBox(width: 6),
+              Text('Hosting', style: _E.f(size: 12, weight: FontWeight.w700, color: Colors.white)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statusBadge(bool isPublished, String status) {
+    final color = isPublished ? const Color(0xFF30D158) : const Color(0xFF48484A);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0x59000000),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.4), width: 0.7),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 5, height: 5,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                status.toUpperCase(),
+                style: _E.f(size: 9, weight: FontWeight.w800, color: color, letterSpacing: 0.7),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

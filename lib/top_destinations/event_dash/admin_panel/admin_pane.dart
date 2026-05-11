@@ -19,6 +19,7 @@ import 'package:haflaway/top_destinations/eventz/create_event.dart';
 import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/attendees.dart';
+import 'package:haflaway/top_destinations/event_dash/zawadi/zawadi_dash.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:intl/intl.dart';
 
@@ -282,7 +283,7 @@ class _AdminPanelState extends State<AdminPanel> {
                   SliverToBoxAdapter(child: _miniStatRow()),
                   SliverToBoxAdapter(child: _checkpointsSection()),
                   SliverToBoxAdapter(child: _toolsSection()),
-                  SliverToBoxAdapter(child: _gallerySection()),
+                  SliverToBoxAdapter(child: _zawadiSection()),
                   SliverToBoxAdapter(
                     child: SizedBox(
                       height: MediaQuery.of(context).padding.bottom + 32,
@@ -1308,13 +1309,87 @@ class _AdminPanelState extends State<AdminPanel> {
     );
   }
 
-  // ── Gallery section ───────────────────────────────────────────────────────
+  // ── Gift of Love + Gallery section ───────────────────────────────────────
 
-  Widget _gallerySection() {
+  Widget _zawadiSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionHeader('GALLERY'),
+        _sectionHeader('GIFT OF LOVE'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: GestureDetector(
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ZawadiDash(
+                    eventId: event?.id ?? widget.eventO.id ?? '',
+                    eventTitle: event?.title ?? widget.eventO.title ?? '',
+                  ),
+                ),
+              );
+              loadData();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: _T.card,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _T.sep, width: 0.8),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      color: _T.lime.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: const Icon(
+                      Icons.card_giftcard_rounded,
+                      color: _T.lime,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Gift of Love',
+                          style: _T.f(
+                            size: 15,
+                            weight: FontWeight.w500,
+                            color: _T.lbl1,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Gift fund items',
+                          style: _T.f(size: 12, color: _T.lbl3),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: _T.card2,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: _T.lbl3,
+                      size: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        _sectionHeader('GALLERY', topPadding: 14),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: GestureDetector(
@@ -1393,9 +1468,10 @@ class _AdminPanelState extends State<AdminPanel> {
     String label, {
     String? action,
     VoidCallback? onAction,
+    double topPadding = 28,
   }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
+      padding: EdgeInsets.fromLTRB(16, topPadding, 16, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:excel/excel.dart' as exl;
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -51,7 +50,7 @@ class Attendees extends StatefulWidget {
 }
 
 class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
-  Uint8List? xcelBytes;
+  List<List<dynamic>>? importRows;
   List<Kard> lcrds = [];
   String? _selectedKardFilter;
   List<Attendee> atList = [];
@@ -2044,28 +2043,152 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
       allowedExtensions: ['xls', 'xlsx', 'xlsm', 'xlsb'],
       withData: true,
     );
-    if (result != null) {
-      var bytes = result.files.single.bytes;
-      var excel = exl.Excel.decodeBytes(bytes!);
-      var tblKey = excel.tables.keys.firstOrNull;
-      var table = excel.tables[tblKey];
+    if (result == null) return;
 
-      var frow = table!.rows.first;
-      Map<dynamic, dynamic> sels = {};
-      for (var cell in frow) {
-        sels[cell!.columnIndex] = cell.value;
-      }
-      xcelBytes = bytes;
+    final file = result.files.single;
+    final bytes = file.bytes;
+    if (bytes == null) return;
 
-      // Reset selected labels when opening import dialog
-      setState(() {
-        importSelectedLabels = [];
-      });
-
-      await showMatcher(sels);
-    } else {
-      showToast(isGood: false, msg: genErrMsg);
+    final ext = file.name.split('.').last.toLowerCase();
+    if (!['xls', 'xlsx', 'xlsm', 'xlsb'].contains(ext)) {
+      showToast(isGood: false, msg: "Please select a valid Excel file");
+      return;
     }
+
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => _buildFileConfirmDialog(ctx, file.name),
+    );
+    if (confirmed != true) return;
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _buildFileLoadingDialog(),
+    );
+
+    Map<dynamic, dynamic>? sels;
+
+    try {
+      final base64File = base64Encode(bytes);
+      final response = await http.post(
+        Uri.parse(excelToCsvUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'fileBase64': base64File}),
+      );
+      final body = jsonDecode(response.body);
+      if (body['status'] != true) {
+        throw Exception(body['message'] ?? "Processing failed");
+      }
+
+      final rawHeaders = Map<String, dynamic>.from(body['headers'] ?? {});
+      sels = {};
+      rawHeaders.forEach((k, v) => sels![int.parse(k)] = v);
+
+      importRows = List<List<dynamic>>.from(
+        (body['rows'] as List).map((r) => List<dynamic>.from(r)),
+      );
+
+      setState(() => importSelectedLabels = []);
+    } catch (_) {
+      if (mounted) Navigator.of(context).pop();
+      showToast(isGood: false, msg: "Failed to process file");
+      return;
+    }
+
+    if (mounted) Navigator.of(context).pop();
+    await showMatcher(sels);
+  }
+
+  Widget _buildFileConfirmDialog(BuildContext ctx, String fileName) {
+    return glassDialog(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: _T.limeDim,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.table_chart_rounded, color: _T.lime, size: 32),
+            ),
+            const SizedBox(height: 16),
+            Text("Process File?", style: _T.f(size: 18, weight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Text(
+              fileName,
+              textAlign: TextAlign.center,
+              style: _T.f(size: 12, color: _T.lime, weight: FontWeight.w500),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              "We'll upload and convert this file so you can map columns for import.",
+              textAlign: TextAlign.center,
+              style: _T.f(size: 13, color: _T.lbl3),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(ctx).pop(false),
+                    child: Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text("Cancel", style: _T.f(size: 14, weight: FontWeight.w600, color: _T.lbl2)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(ctx).pop(true),
+                    child: Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: _T.limeDim,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _T.lime.withValues(alpha: 0.4)),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text("Proceed", style: _T.f(size: 14, weight: FontWeight.w600, color: _T.lime)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFileLoadingDialog() {
+    return glassDialog(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CupertinoActivityIndicator(color: _T.lime, radius: 14),
+            const SizedBox(height: 16),
+            Text("Processing file...", style: _T.f(size: 14, color: _T.lbl2)),
+          ],
+        ),
+      ),
+    );
   }
 
   showMatcher(Map<dynamic, dynamic> sels) {
@@ -2319,7 +2442,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
                               builder:
                                   (context) => ImpPreview(
                                     mapp: mapp,
-                                    xcelBytes: xcelBytes!,
+                                    importRows: importRows!,
                                     templateCardId: cardId,
                                     event: widget.edata,
                                     kardType: widget.kardType,
