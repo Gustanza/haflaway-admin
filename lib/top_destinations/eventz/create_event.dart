@@ -862,6 +862,7 @@ class _CreateEventState extends State<CreateEvent> {
           endDate: evenddt?.toIso8601String(),
           locations: eventt?.locations,
           usepng: eventt == null ? true : eventt.usepng,
+          labels: eventt?.labels,
         );
         batch.set(evRef, event.toMap(), SetOptions(merge: true));
         batch.commit();
