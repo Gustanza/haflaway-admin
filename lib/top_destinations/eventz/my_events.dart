@@ -344,42 +344,79 @@ class _HaflaWayHomeState extends State<HaflaWayHome> {
                         : Column(
                             children: [
                               Expanded(
-                                child: RefreshIndicator(
-                                  onRefresh: () async => await loadEvents(),
-                                  color: _T.lime,
-                                  backgroundColor: _T.card2,
-                                  child: PageView.builder(
-                                    controller: _pageController,
-                                    onPageChanged: (i) {
-                                      safeState(() => _currentPage = i);
-                                      if (i >= events.length - 2 && !isLoading) {
-                                        loadMoreEvents();
-                                      }
-                                    },
-                                    itemCount: events.length,
-                                    itemBuilder: (ctx, i) {
-                                      final ev = events[i];
-                                      return Padding(
-                                        padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
-                                        child: GestureDetector(
-                                          onTap: () async {
-                                            if (ev.categoryLevel == '0') {
-                                              await Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (_) => AdminPanel(
-                                                    isAdmin: true,
-                                                    eventO: ev,
-                                                  ),
-                                                ),
-                                              );
-                                              loadEvents();
+                                child: Stack(
+                                  children: [
+                                    RefreshIndicator(
+                                      onRefresh: () async => await loadEvents(),
+                                      color: _T.lime,
+                                      backgroundColor: _T.card2,
+                                      child: ScrollConfiguration(
+                                        behavior: _WebScrollBehavior(),
+                                        child: PageView.builder(
+                                          controller: _pageController,
+                                          onPageChanged: (i) {
+                                            safeState(() => _currentPage = i);
+                                            if (i >= events.length - 2 && !isLoading) {
+                                              loadMoreEvents();
                                             }
                                           },
-                                          child: EventCardHero(eventData: ev),
+                                          itemCount: events.length,
+                                          itemBuilder: (ctx, i) {
+                                            final ev = events[i];
+                                            return Padding(
+                                              padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
+                                              child: GestureDetector(
+                                                onTap: () async {
+                                                  if (ev.categoryLevel == '0') {
+                                                    await Navigator.of(context).push(
+                                                      MaterialPageRoute(
+                                                        builder: (_) => AdminPanel(
+                                                          isAdmin: true,
+                                                          eventO: ev,
+                                                        ),
+                                                      ),
+                                                    );
+                                                    loadEvents();
+                                                  }
+                                                },
+                                                child: EventCardHero(eventData: ev),
+                                              ),
+                                            );
+                                          },
                                         ),
-                                      );
-                                    },
-                                  ),
+                                      ),
+                                    ),
+                                    if (kIsWeb && _currentPage > 0)
+                                      Positioned(
+                                        left: 8,
+                                        top: 0,
+                                        bottom: 0,
+                                        child: Center(
+                                          child: _ArrowBtn(
+                                            icon: Icons.chevron_left_rounded,
+                                            onTap: () => _pageController.previousPage(
+                                              duration: const Duration(milliseconds: 350),
+                                              curve: Curves.easeInOut,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    if (kIsWeb && _currentPage < events.length - 1)
+                                      Positioned(
+                                        right: 8,
+                                        top: 0,
+                                        bottom: 0,
+                                        child: Center(
+                                          child: _ArrowBtn(
+                                            icon: Icons.chevron_right_rounded,
+                                            onTap: () => _pageController.nextPage(
+                                              duration: const Duration(milliseconds: 350),
+                                              curve: Curves.easeInOut,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                               if (events.length > 1) ...[
@@ -710,6 +747,45 @@ class _GusOrb extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
           child: const SizedBox.shrink(),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Web scroll behavior — enables mouse drag on PageView
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _WebScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Arrow button for web carousel navigation
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ArrowBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _ArrowBtn({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: _T.card2,
+          shape: BoxShape.circle,
+          border: Border.all(color: _T.sep, width: 0.8),
+        ),
+        child: Icon(icon, color: _T.lbl2, size: 20),
       ),
     );
   }

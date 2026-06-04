@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Administrator\\\\Documents\\\\CODEZ\\\\haflaway-admin\\\\haflaway_spa\\\\src\" -Recurse -File)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Administrator\\\\Documents\\\\CODEZ\\\\haflaway-admin\\\\haflaway_spa\" -Recurse -Directory)"
+    ]
+  }
+}
