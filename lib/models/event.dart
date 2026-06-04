@@ -124,8 +124,19 @@ class AttendeeLabel {
     return AttendeeLabel(
       id: map['id'] ?? '',
       name: map['name'] ?? '',
-      colorValue: map['colorValue'] ?? 0xFF000000,
+      colorValue: _parseColorValue(map['colorValue']),
     );
+  }
+
+  // Handles both int (Flutter/correct web) and legacy hex String (old web labels)
+  static int _parseColorValue(dynamic v) {
+    if (v is int) return v;
+    if (v is String && v.startsWith('#') && v.length == 7) {
+      try {
+        return int.parse('FF${v.substring(1)}', radix: 16);
+      } catch (_) {}
+    }
+    return 0xFF000000;
   }
 }
 

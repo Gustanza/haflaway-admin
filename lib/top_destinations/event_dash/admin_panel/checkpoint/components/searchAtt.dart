@@ -1,20 +1,18 @@
-import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
+import 'package:haflaway/services/checkpoint_db.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/resolver.dart';
 import 'package:haflaway/utils/globalwids.dart';
-import 'package:haflaway/utils/urls.dart';
-import 'package:http/http.dart' as http;
 
-// ── Design tokens — mirrors attendees.dart ────────────────────────────────────
+// ── Design tokens ─────────────────────────────────────────────────────────────
 class _T {
-  static const bg = Color(0xFF111114);
+  static const bg   = Color(0xFF111114);
   static const card = Color(0xFF1C1C1E);
-  static const sep = Color(0xFF2C2C2E);
+  static const sep  = Color(0xFF2C2C2E);
   static const lime = Color(0xFFC9A84C);
   static const white = Color(0xFFFFFFFF);
   static const lbl1 = Color(0xFFEEEEF0);
@@ -128,9 +126,9 @@ class CheckPnSearchDelegate extends SearchDelegate {
   );
 }
 
-// ── Results list ──────────────────────────────────────────────────────────────
+// ── Results list — reads from local SQLite ────────────────────────────────────
 
-class _ResultsList extends StatelessWidget {
+class _ResultsList extends StatefulWidget {
   final String query;
   final String eId;
   final KardType kardType;
@@ -144,64 +142,72 @@ class _ResultsList extends StatelessWidget {
   });
 
   @override
+  State<_ResultsList> createState() => _ResultsListState();
+}
+
+class _ResultsListState extends State<_ResultsList> {
+  List<Attendee> _results = [];
+  bool _loading = false;
+  String _lastQuery = '';
+
+  @override
+  void didUpdateWidget(_ResultsList old) {
+    super.didUpdateWidget(old);
+    if (old.query != widget.query) _runSearch();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _runSearch();
+  }
+
+  Future<void> _runSearch() async {
+    final q = widget.query.trim();
+    if (q == _lastQuery) return;
+    _lastQuery = q;
+
+    if (q.isEmpty) {
+      if (mounted) setState(() { _results = []; _loading = false; });
+      return;
+    }
+
+    if (mounted) setState(() => _loading = true);
+
+    final results = await CheckpointLocalDB.instance.search(widget.eId, q);
+
+    // Filter by kardType (same logic as before)
+    final filtered = results.where((at) {
+      try {
+        return at.cards[widget.kardType.name] != null;
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+
+    if (mounted) setState(() { _results = filtered; _loading = false; });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final Widget body;
 
-    if (query.isEmpty) {
+    if (widget.query.isEmpty) {
       body = const GusSearchEmpty.prompt();
+    } else if (_loading) {
+      body = const Center(child: CupertinoActivityIndicator(color: _T.lime));
+    } else if (_results.isEmpty) {
+      body = GusSearchEmpty.noResults(query: widget.query);
     } else {
-      body = FutureBuilder<http.Response>(
-        future: http.get(
-          Uri.parse(
-            "$getAttsUrl/?eventId=$eId&searchKey=${Uri.encodeComponent(query)}&kardType=${kardType.name}",
-          ),
+      body = ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+        itemCount: _results.length,
+        itemBuilder: (_, i) => _AttendeeRow(
+          attendee: _results[i],
+          kardType: widget.kardType,
+          eId: widget.eId,
+          checkpnId: widget.checkpnId,
         ),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CupertinoActivityIndicator(color: _T.lime),
-            );
-          }
-          if (!snapshot.hasData || snapshot.hasError) return _errorView();
-
-          try {
-            final body = jsonDecode(snapshot.data!.body);
-            if (body['status'] != true) return _errorView();
-
-            final List data = body['data'];
-            final attendees =
-                data
-                    .map((e) {
-                      final item = Map<String, dynamic>.from(e['item']);
-                      return Attendee.fromMap(item['id'] ?? '', item);
-                    })
-                    .where((at) {
-                      try {
-                        return at.cards[kardType.name] != null;
-                      } catch (_) {
-                        return false;
-                      }
-                    })
-                    .toList();
-
-            if (attendees.isEmpty) {
-              return GusSearchEmpty.noResults(query: query);
-            }
-
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-              itemCount: attendees.length,
-              itemBuilder: (_, index) => _AttendeeRow(
-                attendee: attendees[index],
-                kardType: kardType,
-                eId: eId,
-                checkpnId: checkpnId,
-              ),
-            );
-          } catch (_) {
-            return _errorView();
-          }
-        },
       );
     }
 
@@ -220,40 +226,6 @@ class _ResultsList extends StatelessWidget {
         ),
         Positioned.fill(child: body),
       ],
-    );
-  }
-
-  Widget _errorView() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: _T.card,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _T.sep, width: 0.8),
-            ),
-            child: const Icon(Icons.wifi_off_rounded, color: _T.lbl4, size: 28),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Something went wrong',
-            style: _T.f(
-              size: 15,
-              weight: FontWeight.w600,
-              color: _T.lbl1,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Check your connection and try again',
-            style: _T.f(size: 13, color: _T.lbl3),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -287,14 +259,13 @@ class _AttendeeRow extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder:
-                (_) => AttendeeCheckInView(
-                  attId: attendee.id ?? 'nan',
-                  eId: eId,
-                  showAppBar: true,
-                  onPressed: () async {},
-                  chckpntId: checkpnId,
-                ),
+            builder: (_) => AttendeeCheckInView(
+              attId: attendee.id ?? 'nan',
+              eId: eId,
+              showAppBar: true,
+              onPressed: () async {},
+              chckpntId: checkpnId,
+            ),
           ),
         );
       },
@@ -315,11 +286,7 @@ class _AttendeeRow extends StatelessWidget {
                 color: _T.lime.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
-                Icons.person_rounded,
-                color: _T.lime,
-                size: 22,
-              ),
+              child: const Icon(Icons.person_rounded, color: _T.lime, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -330,11 +297,7 @@ class _AttendeeRow extends StatelessWidget {
                     attendee.fullName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: _T.f(
-                      size: 14,
-                      weight: FontWeight.w600,
-                      color: _T.lbl1,
-                    ),
+                    style: _T.f(size: 14, weight: FontWeight.w600, color: _T.lbl1),
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -347,11 +310,7 @@ class _AttendeeRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: _T.lbl4,
-              size: 12,
-            ),
+            const Icon(Icons.arrow_forward_ios_rounded, color: _T.lbl4, size: 12),
           ],
         ),
       ),
@@ -359,18 +318,14 @@ class _AttendeeRow extends StatelessWidget {
   }
 }
 
-// ── Ambient orb — mirrors attendees.dart ─────────────────────────────────────
+// ── Ambient orb ───────────────────────────────────────────────────────────────
 
 class _GusOrb extends StatelessWidget {
   final double size;
   final Color color;
   final double opacity;
 
-  const _GusOrb({
-    required this.size,
-    required this.color,
-    this.opacity = 0.05,
-  });
+  const _GusOrb({required this.size, required this.color, this.opacity = 0.05});
 
   @override
   Widget build(BuildContext context) {
