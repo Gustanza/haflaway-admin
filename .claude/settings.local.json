@@ -19,7 +19,9 @@
       "Bash(dart analyze *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Administrator\\\\Documents\\\\CODEZ\\\\haflaway-admin\\\\haflaway_spa\" -Recurse -Force)",
       "Bash(Select-Object -First 100)",
-      "Bash(Format-Table -AutoSize)"
+      "Bash(Format-Table -AutoSize)",
+      "Bash(npx vite *)",
+      "Bash(grep -v \"//\\\\|<!--\")"
     ]
   }
 }
