@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
+import 'package:haflaway/services/checkpoint_db.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Design Tokens  ·  Apple-dark
@@ -368,6 +369,10 @@ class _AttendeeCheckInViewState extends State<AttendeeCheckInView> {
               if (!isIn) {
                 attendee.checkinStatus[idx][crdChkpns][widget.chckpntId] = true;
                 docRef.update({'checkinStatus': attendee.checkinStatus});
+                CheckpointLocalDB.instance.updateCheckin(
+                  widget.attId,
+                  attendee.checkinStatus,
+                );
               } else {
                 await _showCheckout(
                   idx: idx,
@@ -436,6 +441,10 @@ class _AttendeeCheckInViewState extends State<AttendeeCheckInView> {
                   attendee.checkinStatus[idx][crdChkpns][widget.chckpntId] =
                       false;
                   docRef.update({'checkinStatus': attendee.checkinStatus});
+                  CheckpointLocalDB.instance.updateCheckin(
+                    widget.attId,
+                    attendee.checkinStatus,
+                  );
                   Navigator.pop(ctx);
                 },
                 child: Text(

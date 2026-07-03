@@ -8,6 +8,8 @@ import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/checkpoint.dart';
 import 'package:haflaway/models/event.dart';
+import 'package:haflaway/services/checkpoint_db.dart';
+import 'package:haflaway/services/checkpoint_sync.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/components/searchAtt.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/checkpoint/checktemps.dart'
     show PinPutty;
@@ -193,6 +195,54 @@ class InCheck extends StatefulWidget {
 
 class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  late final CheckpointSyncService _sync;
+  bool _checkingLocal = true;
+  bool _needsDownload = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _sync = CheckpointSyncService(eId: widget.eId);
+    _sync.addListener(_onSyncChanged);
+    _initSync();
+  }
+
+  Future<void> _initSync() async {
+    final count = await CheckpointLocalDB.instance.count(widget.eId);
+    if (!mounted) return;
+    if (count == 0) {
+      setState(() {
+        _checkingLocal = false;
+        _needsDownload = true;
+      });
+    } else {
+      setState(() {
+        _checkingLocal = false;
+        _needsDownload = false;
+      });
+      _sync.startAutoSync();
+    }
+  }
+
+  void _onSyncChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _startDownload() async {
+    final ok = await _sync.downloadAll();
+    if (!mounted) return;
+    if (ok) {
+      setState(() => _needsDownload = false);
+      _sync.startAutoSync();
+    }
+  }
+
+  @override
+  void dispose() {
+    _sync.removeListener(_onSyncChanged);
+    _sync.dispose();
+    super.dispose();
+  }
 
   // ── Build ─────────────────────────────────────────────────────────────────
 
@@ -319,6 +369,14 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
                   ],
                 ),
               ),
+
+              // Download gate — blocks interaction until data is local
+              if (_checkingLocal || _needsDownload)
+                _DownloadGate(
+                  isChecking: _checkingLocal,
+                  sync: _sync,
+                  onDownload: _startDownload,
+                ),
             ],
           ),
         ),
@@ -364,6 +422,11 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
             ),
           ),
           const Spacer(),
+          // Sync status chip
+          if (!_needsDownload && !_checkingLocal) ...[
+            _SyncChip(sync: _sync),
+            const SizedBox(width: 8),
+          ],
           GestureDetector(
             onTap: () {
               showSearch(
@@ -852,6 +915,220 @@ class _InCheckState extends State<InCheck> with TickerProviderStateMixin {
       if (status['checkpoints'][widget.checkpoint.id] ?? false) count++;
     }
     return count;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sync status chip
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SyncChip extends StatelessWidget {
+  final CheckpointSyncService sync;
+  const _SyncChip({required this.sync});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color dot;
+    final String label;
+
+    switch (sync.status) {
+      case SyncStatus.syncing:
+        dot = _T.lime;
+        label = 'Syncing…';
+      case SyncStatus.synced:
+        final ago = sync.lastSynced != null
+            ? DateTime.now().difference(sync.lastSynced!).inSeconds
+            : 0;
+        dot = const Color(0xFF30D158);
+        label = ago < 5 ? 'Synced' : '${ago}s ago';
+      case SyncStatus.error:
+        dot = const Color(0xFFFF453A);
+        label = 'Offline';
+      default:
+        dot = _T.lbl4;
+        label = 'Sync';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: _T.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _T.sep, width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (sync.status == SyncStatus.syncing)
+            SizedBox(
+              width: 8,
+              height: 8,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                valueColor: AlwaysStoppedAnimation<Color>(dot),
+              ),
+            )
+          else
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: dot,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: dot.withValues(alpha: 0.5),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(width: 5),
+          Text(label, style: _T.f(size: 11, weight: FontWeight.w500, color: _T.lbl2)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Download gate overlay
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DownloadGate extends StatelessWidget {
+  final bool isChecking;
+  final CheckpointSyncService sync;
+  final VoidCallback onDownload;
+
+  const _DownloadGate({
+    required this.isChecking,
+    required this.sync,
+    required this.onDownload,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDownloading = sync.status == SyncStatus.downloading;
+    final isError = sync.status == SyncStatus.error;
+
+    return Positioned.fill(
+      child: Container(
+        color: _T.bg.withValues(alpha: 0.96),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: _T.lime.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: _T.lime.withValues(alpha: 0.28),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: isChecking || isDownloading
+                      ? const Center(
+                          child: CupertinoActivityIndicator(color: _T.lime),
+                        )
+                      : const Icon(
+                          Icons.download_rounded,
+                          color: _T.lime,
+                          size: 28,
+                        ),
+                ),
+                const SizedBox(height: 20),
+
+                if (isChecking) ...[
+                  Text(
+                    'Checking local data…',
+                    style: _T.f(size: 16, weight: FontWeight.w600, color: _T.lbl1),
+                  ),
+                ] else if (isDownloading) ...[
+                  Text(
+                    'Downloading attendees',
+                    style: _T.f(size: 16, weight: FontWeight.w700, color: _T.lbl1),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    sync.downloadTotal > 0
+                        ? '${sync.downloadDone} of ${sync.downloadTotal}'
+                        : '${sync.downloadDone} downloaded…',
+                    style: _T.f(size: 13, color: _T.lbl3),
+                  ),
+                  const SizedBox(height: 20),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: sync.downloadTotal > 0
+                          ? sync.downloadDone / sync.downloadTotal
+                          : null,
+                      backgroundColor: _T.sep,
+                      valueColor: const AlwaysStoppedAnimation<Color>(_T.lime),
+                      minHeight: 4,
+                    ),
+                  ),
+                ] else ...[
+                  Text(
+                    'Download Required',
+                    style: _T.f(size: 18, weight: FontWeight.w800, color: _T.white, letterSpacing: -0.4),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Search works instantly once attendee data is saved on this device. Data syncs automatically every 15 seconds while online.',
+                    style: _T.f(size: 13, color: _T.lbl3, height: 1.55),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (isError) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Could not connect. Check your network and try again.',
+                      style: _T.f(size: 12, color: Color(0xFFFF453A)),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                  const SizedBox(height: 28),
+                  GestureDetector(
+                    onTap: onDownload,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      decoration: BoxDecoration(
+                        color: _T.lime,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _T.lime.withValues(alpha: 0.35),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.download_rounded, color: Colors.black, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            isError ? 'Retry Download' : 'Download Now',
+                            style: _T.f(size: 15, weight: FontWeight.w700, color: Colors.black),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
