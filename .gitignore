@@ -47,3 +47,4 @@ app.*.map.json
 # Access Control Stuff
 functions/
 haflaway_admin_spa/
+hafla_tickets/
