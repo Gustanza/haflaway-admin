@@ -21,7 +21,7 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/gen
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reusables/stuff.dart';
 import 'package:haflaway/top_destinations/event_dash/attendees/components/attendee_card.dart';
 import 'package:haflaway/utils/styles.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -1232,14 +1232,14 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
                 const SizedBox(width: 12),
                 if (selChannel == "sms")
                   _buildActionButton(
-                    icon: Icons.sms_rounded,
+                    icon: const Icon(Icons.sms_rounded, size: 18, color: Colors.blue),
                     label: "Send SMS",
                     onTap: () => pushToSend(prefix: "sms", isWhatsApp: false),
                     color: Colors.blue,
                   ),
                 if (selChannel == "whatsapp")
                   _buildActionButton(
-                    icon: Bootstrap.whatsapp,
+                    icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 18, color: Colors.green),
                     label: "Send WhatsApp",
                     onTap:
                         () => pushToSend(prefix: "whatsapp", isWhatsApp: true),
@@ -1254,7 +1254,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
   }
 
   Widget _buildActionButton({
-    required IconData icon,
+    required Widget icon,
     required String label,
     required VoidCallback onTap,
     required Color color,
@@ -1270,7 +1270,7 @@ class _InvitesIssuersState extends State<InvitesIssuers> {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: color),
+            icon,
             const SizedBox(width: 6),
             Text(
               label,

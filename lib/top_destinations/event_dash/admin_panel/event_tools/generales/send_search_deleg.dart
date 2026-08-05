@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +19,6 @@ import 'package:haflaway/utils/dimensions.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:haflaway/utils/urls.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'package:http/http.dart' as http;
 
 class SendSearchDelegate extends SearchDelegate {
@@ -51,7 +51,7 @@ class SendSearchDelegate extends SearchDelegate {
             query = '';
           }
         },
-        icon: Icon(Clarity.close_line),
+        icon: Icon(Icons.close),
       ),
     ];
   }
@@ -253,7 +253,7 @@ class _BuildResultsListState extends State<BuildResultsList> {
               foregroundColor: Colors.white,
               child: Padding(
                 padding: const EdgeInsets.all(psm * 0.5),
-                child: Brand(Brands.wechat),
+                child: const Icon(Icons.sms_outlined),
               ),
               onPressed: () async {
                 pushToSend(isWhatsApp: false, prefix: "sms");
@@ -268,7 +268,7 @@ class _BuildResultsListState extends State<BuildResultsList> {
                 side: BorderSide(color: lqassbdrColor, width: bdrWidthGen),
               ),
               foregroundColor: Colors.white,
-              child: Brand(Brands.whatsapp),
+              child: const FaIcon(FontAwesomeIcons.whatsapp),
               onPressed: () async {
                 pushToSend(isWhatsApp: true, prefix: "whatsapp");
               },

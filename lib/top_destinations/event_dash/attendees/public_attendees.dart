@@ -15,7 +15,6 @@ import 'package:haflaway/top_destinations/event_dash/attendees/public_search_del
 import 'package:haflaway/utils/attstates.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/helpers.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/card.dart';
@@ -871,7 +870,7 @@ class _PubAttendeesState extends State<PubAttendees>
                             ),
                             SizedBox(width: psm),
                             Icon(
-                              Clarity.mobile_phone_line,
+                              Icons.smartphone,
                               size: 12,
                               color: Colors.white.withValues(alpha: 0.7),
                             ),
@@ -922,7 +921,7 @@ class _PubAttendeesState extends State<PubAttendees>
                           child: Padding(
                             padding: EdgeInsets.all(6),
                             child: Icon(
-                              Clarity.eye_show_line,
+                              Icons.visibility_outlined,
                               size: icnsm + 2,
                               color: Colors.white.withValues(alpha: 0.8),
                             ),

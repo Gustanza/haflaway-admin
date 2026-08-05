@@ -9,7 +9,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/models/attendee.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:haflaway/models/event.dart';
@@ -583,7 +582,7 @@ class _ImpPreviewState extends State<ImpPreview> {
                               });
                             }
                           },
-                          icon: const Icon(Clarity.close_line),
+                          icon: const Icon(Icons.close),
                           color: _T.lbl2,
                         ),
                       ),

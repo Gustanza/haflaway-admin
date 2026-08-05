@@ -5,7 +5,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/utils/constants.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/models/card.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:haflaway/utils/colors.dart';
@@ -43,7 +42,7 @@ buildImage({url}) {
           highlightColor: primaryColor.withOpacity(0.85),
           child: Container(color: primaryColor),
         ),
-    errorWidget: (context, url, error) => const Icon(Clarity.error_line),
+    errorWidget: (context, url, error) => const Icon(Icons.error_outline),
   );
 }
 

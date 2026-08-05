@@ -9,7 +9,7 @@ import 'package:haflaway/top_destinations/event_dash/michango/michango_editor.da
 import 'package:haflaway/utils/attstates.dart';
 import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/helpers.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -497,7 +497,7 @@ void _showDetailPopup({
                               if (kardType == KardType.invitation ||
                                   kardType == KardType.contribution)
                                 _buildPopupAction(
-                                  icon: Clarity.eye_show_line,
+                                  icon: Icons.visibility_outlined,
                                   label: "Card",
                                   color: const Color(0xFF0A84FF),
                                   onTap: () {
@@ -751,12 +751,12 @@ Widget _buildDeliveryStatusIndicators(
 
   return Row(
     children: [
-      _buildStatusChip(label: "SMS", status: smsStatus, brandData: Brands.wechat),
+      _buildStatusChip(label: "SMS", status: smsStatus, brandIcon: const Icon(Icons.sms_outlined, size: 13)),
       const SizedBox(width: 10),
       _buildStatusChip(
           label: "WhatsApp",
           status: whatsappStatus,
-          brandData: Brands.whatsapp),
+          brandIcon: const FaIcon(FontAwesomeIcons.whatsapp, size: 13)),
     ],
   );
 }
@@ -764,7 +764,7 @@ Widget _buildDeliveryStatusIndicators(
 Widget _buildStatusChip({
   required String label,
   required String status,
-  required String brandData,
+  required Widget brandIcon,
 }) {
   Color statusColor;
   Color bgColor;
@@ -807,7 +807,7 @@ Widget _buildStatusChip({
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Brand(brandData, size: 13),
+          brandIcon,
           const SizedBox(width: 5),
           Text(
             status.toUpperCase(),

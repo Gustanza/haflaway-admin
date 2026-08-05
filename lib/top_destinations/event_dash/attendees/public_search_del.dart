@@ -14,7 +14,6 @@ import 'package:haflaway/utils/globalfns.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:haflaway/utils/urls.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -43,7 +42,7 @@ class PubSearchDelegate extends SearchDelegate {
             query = '';
           }
         },
-        icon: Icon(Clarity.close_line),
+        icon: Icon(Icons.close),
       ),
     ];
   }
@@ -323,7 +322,7 @@ class _BuildResultsListState extends State<BuildResultsList> {
                             ),
                             SizedBox(width: psm),
                             Icon(
-                              Clarity.mobile_phone_line,
+                              Icons.smartphone,
                               size: 12,
                               color: Colors.white.withValues(alpha: 0.7),
                             ),

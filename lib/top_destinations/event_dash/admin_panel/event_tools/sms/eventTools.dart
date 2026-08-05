@@ -9,7 +9,6 @@ import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/reu
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/whatsApp/wsp_host.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/styles.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/top_destinations/event_dash/cards/cards.dart';
 import 'package:haflaway/top_destinations/event_dash/admin_panel/event_tools/inv_editor.dart';
 import 'package:haflaway/utils/dimensions.dart';

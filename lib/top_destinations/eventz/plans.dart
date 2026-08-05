@@ -7,7 +7,6 @@ import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/buttons.dart';
 import 'package:haflaway/utils/constants.dart';
 import 'package:haflaway/utils/globalwids.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'package:haflaway/services/plan_service.dart';
 import 'package:haflaway/utils/colors.dart';
 import 'package:haflaway/utils/dimensions.dart';
@@ -156,7 +155,7 @@ class _BillScreenState extends State<BillScreen> {
                       plan.services.map<Widget>((feature) {
                         return Row(
                           children: [
-                            const Icon(Clarity.shield_check_line, size: 20),
+                            const Icon(Icons.verified_user_outlined, size: 20),
                             const SizedBox(width: psm),
                             Expanded(
                               child: Text(

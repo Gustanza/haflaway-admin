@@ -29,7 +29,14 @@
       "Bash(npm info *)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d[k] for k in ['exports','main','module','style'] if k in d}, indent=2\\)\\)\")",
       "Bash(python3 /tmp/bump_fonts.py)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(flutter pub *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(p['package'],p.get\\('current',{}\\).get\\('version','?'\\),'->', p.get\\('latest',{}\\).get\\('version','?'\\)\\) for p in d.get\\('packages',[]\\) if p['package']=='icons_plus']\")",
+      "Bash(curl -s \"https://pub.dev/api/packages/icons_plus\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['latest']['version']\\)\")",
+      "Bash(curl -s \"https://pub.dev/api/packages/font_awesome_flutter\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Latest:', d['latest']['version']\\)\")",
+      "Bash(flutter analyze *)"
     ]
   }
 }

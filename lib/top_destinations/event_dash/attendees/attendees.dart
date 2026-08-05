@@ -32,7 +32,6 @@ import 'package:haflaway/utils/globalwids.dart';
 import 'package:haflaway/utils/helpers.dart';
 import 'package:haflaway/utils/styles.dart';
 import 'package:haflaway/utils/urls.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'imp_preview.dart';
 
 class Attendees extends StatefulWidget {
@@ -1033,7 +1032,7 @@ class _AttendeesState extends State<Attendees> with TickerProviderStateMixin {
           if (!isSearching) const Spacer(),
           if (inSelectMode)
             _glassActionChip(
-              icon: Clarity.trash_solid,
+              icon: Icons.delete,
               label: "Delete",
               color: Colors.redAccent,
               onTap: delSelect,

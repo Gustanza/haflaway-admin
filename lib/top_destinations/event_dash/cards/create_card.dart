@@ -8,7 +8,6 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:haflaway/components/appbar.dart';
 import 'package:haflaway/components/sheets.dart';
 import 'package:haflaway/utils/strings.dart';
-import 'package:icons_plus/icons_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:haflaway/models/event.dart';
 import 'package:haflaway/models/card.dart';
@@ -328,7 +327,7 @@ class _CardCustomizerState extends State<CardCustomizer> {
         actions: Row(
           children: [
             IconButton(
-              icon: const Icon(Clarity.settings_line),
+              icon: const Icon(Icons.settings_outlined),
               onPressed: () async {
                 await showSettings();
                 if (mounted) {
@@ -337,7 +336,7 @@ class _CardCustomizerState extends State<CardCustomizer> {
               },
             ),
             IconButton(
-              icon: const Icon(Clarity.floppy_line),
+              icon: const Icon(Icons.save_outlined),
               onPressed: () {
                 final config = getCardConfig();
                 Navigator.of(context).pop(config);
@@ -728,7 +727,7 @@ class _SizeEditorState extends State<SizeEditor> {
             });
             widget.isCreased(size);
           },
-          icon: const Icon(Clarity.minus_circle_line),
+          icon: const Icon(Icons.remove_circle_outline),
         ),
         Text("Size: $size dp"),
         IconButton(
@@ -738,7 +737,7 @@ class _SizeEditorState extends State<SizeEditor> {
             });
             widget.isCreased(size);
           },
-          icon: const Icon(Clarity.plus_circle_line),
+          icon: const Icon(Icons.add_circle_outline),
         ),
       ],
     );
