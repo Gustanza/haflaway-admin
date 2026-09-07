@@ -46,3 +46,6 @@ app.*.map.json
 
 # Access Control Stuff
 functions/
+
+# Bulk SMS Project
+smtz_engine/

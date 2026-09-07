@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --color-azure-50: #eaf5ff;
+  --color-azure-100: #d3e9ff;
+  --color-azure-200: #a8d3ff;
+  --color-azure-300: #72b6ff;
+  --color-azure-400: #3f95ff;
+  --color-azure-500: #1c78f5;
+  --color-azure-600: #0e5cd6;
+  --color-azure-700: #0c47ab;
+  --color-azure-800: #0f3a83;
+  --color-azure-900: #12316a;
+
+  --color-ink-950: #07070a;
+  --color-ink-900: #0b0c10;
+  --color-ink-850: #101116;
+  --color-ink-800: #15161d;
+  --color-ink-750: #1a1c24;
+  --color-ink-700: #21232c;
+  --color-ink-600: #2b2e39;
+  --color-ink-500: #3a3d4a;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply text-zinc-100 antialiased;
+    font-family: var(--font-sans);
+    background-color: var(--color-ink-950);
+    background-image:
+      radial-gradient(1100px 550px at 15% -10%, rgba(28, 120, 245, 0.14), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(168, 85, 247, 0.08), transparent 55%),
+      radial-gradient(700px 500px at 50% 110%, rgba(28, 120, 245, 0.06), transparent 60%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background: rgba(28, 120, 245, 0.35);
+    color: #fff;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink-500) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-ink-600);
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-500);
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
